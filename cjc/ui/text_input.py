@@ -77,6 +77,8 @@ class TextInput(InputWidget):
 			self.key_up()
 		elif c=="\x17": # ^W
 			self.key_wrubout()
+		elif c=="\x15": # ^U
+			self.key_uclean()
 		elif c=="\x7f":
 			self.key_del()
 		elif c in self.printable:
@@ -215,6 +217,14 @@ class TextInput(InputWidget):
 		self.win.delch()
 		self.after_del()
 		self.win.refresh()
+
+ 	def key_uclean(self):
+ 		if self.pos==0:
+			curses.beep()
+			return
+		self.content=self.content[self.pos:].rstrip()
+                self.pos=0
+		self.redraw()
 
 	def key_wrubout(self):
 		if self.pos==0:
