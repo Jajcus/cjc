@@ -43,6 +43,10 @@ class EditLine(Widget):
 			return
 		if c==curses.KEY_ENTER:
 			return self.key_enter()
+		elif c==curses.KEY_HOME:
+			return self.key_home()
+		elif c==curses.KEY_END:
+			return self.key_end()
 		elif c==curses.KEY_LEFT:
 			return self.key_left()
 		elif c==curses.KEY_RIGHT:
@@ -107,6 +111,28 @@ class EditLine(Widget):
 		self.win.clear()
 		self.win.refresh()
 
+	def key_home(self):
+		if self.pos<=0:
+			curses.beep()
+			return
+		self.pos=0
+		if self.offset>0:
+			self.scroll_left()
+		else:
+			self.win.move(0,self.pos-self.offset)
+			self.win.refresh()
+
+	def key_end(self):
+		if self.pos>=len(self.content):
+			curses.beep()
+			return
+		self.pos=len(self.content)
+		if self.pos>self.offset+self.w-2:
+			self.scroll_right()
+		else:
+			self.win.move(0,self.pos-self.offset)
+			self.win.refresh()
+
 	def key_left(self):
 		if self.pos<=0:
 			curses.beep()
@@ -138,6 +164,7 @@ class EditLine(Widget):
 		if self.pos and self.pos<self.offset+1:
 			self.scroll_left()
 		else:
+			self.win.move(0,self.pos-self.offset)
 			self.win.delch()
 			self.after_del()
 			self.win.refresh()
