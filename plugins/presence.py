@@ -381,7 +381,7 @@ class Plugin(PluginBase):
                 item=self.cjc.roster.item_by_jid(fr)
             except KeyError:
                 item=None
-            if item and item.subscription() in ("both","to"):
+            if item and item.subscription in ("both","to"):
                 buf.close()
                 stanza.free()
             else:
