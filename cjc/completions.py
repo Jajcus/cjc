@@ -79,7 +79,7 @@ class SettingCompletion(ui.Completion):
         for p in self.app.plugins.keys():
             if p.startswith(word):
                 matches.append([p+".",0])
-        for s in self.app.settings.keys():
+        for s in self.app.available_settings.keys():
             if s.startswith(word) and s not in matches:
                 matches.append([s,1])
         self.__logger.debug("word=%r matches=%r" % (word,matches))
@@ -98,7 +98,7 @@ class SettingCompletion(ui.Completion):
             head=plugin+"."
             word=word[d+1:]
         matches=[]
-        for s in obj.settings.keys():
+        for s in obj.available_settings.keys():
             if s.startswith(word) and s not in matches:
                 matches.append([s,1])
         return self.make_result(head,word,matches)
