@@ -873,7 +873,7 @@ class Application(jabber.Client,tls.TLSHandler):
 	
 		self.info(u"Command /%s:" % (cmd.name,))
 		if type(cmd.usage) in (ListType,TupleType):
-			for u in usage:
+			for u in cmd.usage:
 				self.info(u"  "+u)
 		else:
 			self.info(u"  "+cmd.usage)
