@@ -1,3 +1,8 @@
+2004-09-11  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/shell.py:
+	- encode buffer content to locale's encoding before sending it to an external command
+
 2004-09-10  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/jogger_pl.py:
