@@ -1089,7 +1089,7 @@ class Application(jabber.Client,tls.TLSHandler):
                     ritems=None
                 if ritems:
                     if len(ritems)==1:
-                        return ritems[0].jid()
+                        return ritems[0].jid
             try:
                 return pyxmpp.JID(name)
             except pyxmpp.JIDError:
@@ -1116,7 +1116,7 @@ class Application(jabber.Client,tls.TLSHandler):
                 self.error("ambiguous user name")
                 return None
             else:
-                return ritems[0].jid()
+                return ritems[0].jid
         return None
 
     def get_bare_user_info(self,jid,var=None):

@@ -69,7 +69,7 @@ class Plugin(PluginBase):
                 for group,it in self.extra_items:
                     if not isinstance(it,pyxmpp.JID) or group!=VG_UNKNOWN:
                         continue
-                    jid=item.jid()
+                    jid=item.jid
                     if group==VG_UNKNOWN and it==jid or it.bare()==jid:
                         self.extra_items.remove((VG_UNKNOWN,it))
                         if self.buffer.has_key((VG_UNKNOWN,it)):
@@ -98,8 +98,8 @@ class Plugin(PluginBase):
                     except KeyError:
                         pass
         if isinstance(item,pyxmpp.roster.RosterItem):
-            jid=item.jid()
-            groups=item.groups()
+            jid=item.jid
+            groups=item.groups
             for g,j in self.buffer.get_keys():
                 if j==jid and g not in groups:
                     self.buffer.remove_item((g,j))
@@ -140,10 +140,10 @@ class Plugin(PluginBase):
             else:
                 subs="none"
         else:
-            subs=item.subscription()
-            jid=item.jid()
-            name=item.name()
-            ask=item.ask()
+            subs=item.subscription
+            jid=item.jid
+            name=item.name
+            ask=item.ask
             if jid.resource:
                 self.cjc.set_user_info(jid,"rostername",name)
             else:
@@ -261,8 +261,7 @@ class Plugin(PluginBase):
             name=None
 
         item=self.cjc.roster.add_item(user,name=name)
-        for group in groups:
-            item.add_group(group)
+        item.groups=groups
         iq=item.make_roster_push()
         self.cjc.stream.send(iq)
 
@@ -299,7 +298,7 @@ class Plugin(PluginBase):
         except KeyError:
             self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
             return
-        item.set_name(name)
+        item.name=name
         iq=item.make_roster_push()
         self.cjc.stream.send(iq)
 
@@ -343,14 +342,13 @@ class Plugin(PluginBase):
                 self.error("You cannot use groups with +/- sign and"
                         " without it in one /group command")
                 return
-            item.clear_groups()
-            for group in groups:
-                item.add_group(group)
+            item.groups=groups
         else:
             for group in groups_add:
-                item.add_group(group)
+                if group not in item.groups:
+                    item.groups.append(group)
             for group in groups_remove:
-                item.rm_group(group)
+                item.groups.remove(group)
         iq=item.make_roster_push()
         self.cjc.stream.send(iq)
 
