@@ -15,7 +15,7 @@ class TextBuffer(Buffer):
 	def set_window(self,win):
 		Buffer.set_window(self,win)
 		if win:
-			win.scrollok=1
+			win.scroll_and_wrap=1
 		
 	def append(self,s,attr="default"):
 		self.lock.acquire()
