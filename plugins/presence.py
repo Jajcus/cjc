@@ -256,7 +256,7 @@ class Plugin(PluginBase):
             show="chat"
         else:
             show=mode
-        if keep:
+        if keep and not reason:
             reason=current.get_status()
         p=pyxmpp.Presence(show=show,status=reason,to=to,priority=priority)
         self.set_presence(p)
