@@ -1,5 +1,14 @@
 2004-10-24  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/jogger_pl.py, plugins/message.py, plugins/presence.py, cjc/ui/screen.py:
+	- cosmetics
+
+	* cjc/ui/bool_input.py, cjc/ui/choice_input.py, cjc/ui/input_widget.py, cjc/ui/list_input.py, cjc/ui/split.py, cjc/ui/status_bar.py, cjc/ui/text_buffer.py, cjc/ui/text_input.py, lockdebug.sh, lockundebug.sh:
+	- thread locking debugging helpers
+
+	* cjc/ui/window.py:
+	- deadlock condition in draw_buffer() removed
+
 	* cjc/main.py, detailed.logconf:
 	- flexible logging configuration support and a sample logging configuration file
 
