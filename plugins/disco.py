@@ -70,7 +70,7 @@ class DiscoBuffer:
             self.buffer.update()
 
     def got_disco_items(self,address,items,state):
-        if self.address != (self.jid, self.node):
+        if address != (self.jid, self.node):
             pass
         self.buffer.unask_question()
         format_string=self.plugin.cjc.theme_manager.format_string
@@ -119,7 +119,7 @@ class DiscoBuffer:
         self.buffer.update()
 
     def got_disco_info(self,address,info,state):
-        if self.address != (self.jid, self.node):
+        if address != (self.jid, self.node):
             pass
         self.buffer.unask_question()
         format_string=self.plugin.cjc.theme_manager.format_string
