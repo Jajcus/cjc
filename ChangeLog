@@ -1,5 +1,8 @@
 2004-09-11  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* doc/manual.xml:
+	- changes and additions by Marcin Chojnowski (martii)
+
 	* plugins/shell.py:
 	- encode buffer content to locale's encoding before sending it to an external command
 
