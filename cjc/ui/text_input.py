@@ -11,7 +11,7 @@ class TextInput(InputWidget):
 	def __init__(self,abortable,required,default=u"",history_len=0):
 		InputWidget.__init__(self,abortable,required)
 		self.capture_rest=0
-		self.content=u""
+		self.content=default
 		self.pos=0
 		self.offset=0
 		self.history_len=history_len
@@ -26,6 +26,12 @@ class TextInput(InputWidget):
 		else:
 			keytable.deactivate("text-input",self)
 
+	def set_content(self,s):
+		self.content=s
+	
+	def set_pos(self,pos):
+		self.pos=pos
+
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
 		try:
@@ -39,16 +45,16 @@ class TextInput(InputWidget):
 				self.parent.abort_handler()
 				return
 			else:
-				curses.beep()
+				self.screen._beep()
 				return
 		elif c>255 or c<0 or meta:
-			curses.beep()
+			self.screen._beep()
 			return
 		c=chr(c)
 		if c in self.printable:
 			self.key_char(c)
 		else:
-			curses.beep()
+			self.screen._beep()
 
 	def left_scroll_mark(self):
 		if self.offset>0:
@@ -86,7 +92,8 @@ class TextInput(InputWidget):
 
 	def key_enter(self):
 		if self.required and not self.content:
-			return curses.beep()
+			self.screen.beep()
+			return
 		if self.history_len:
 			if self.history_pos:
 				if self.content==self.history[-self.history_pos]:
@@ -106,7 +113,8 @@ class TextInput(InputWidget):
 
 	def key_kill(self):
 		if not self.content:
-			return curses.beep()
+			self.screen.beep()
+			return
 		self.content=u""
 		self.saved_content=None
 		self.pos=0
@@ -117,7 +125,7 @@ class TextInput(InputWidget):
 
 	def key_home(self):
 		if self.pos<=0:
-			curses.beep()
+			self.screen.beep()
 			return
 		self.pos=0
 		if self.offset>0:
@@ -128,7 +136,7 @@ class TextInput(InputWidget):
 
 	def key_end(self):
 		if self.pos>=len(self.content):
-			curses.beep()
+			self.screen.beep()
 			return
 		self.pos=len(self.content)
 		if self.pos>self.offset+self.w-2:
@@ -139,7 +147,7 @@ class TextInput(InputWidget):
 
 	def key_left(self):
 		if self.pos<=0:
-			curses.beep()
+			self.screen.beep()
 			return
 		self.pos-=1
 		if self.pos and self.pos<self.offset+1:
@@ -150,7 +158,7 @@ class TextInput(InputWidget):
 
 	def key_right(self):
 		if self.pos>=len(self.content):
-			curses.beep()
+			self.screen.beep()
 			return
 		self.pos+=1
 		if self.pos>self.offset+self.w-2:
@@ -161,7 +169,7 @@ class TextInput(InputWidget):
 
 	def key_bs(self):
 		if self.pos<=0:
-			curses.beep()
+			self.screen.beep()
 			return
 		self.content=self.content[:self.pos-1]+self.content[self.pos:]
 		self.pos-=1
@@ -175,7 +183,7 @@ class TextInput(InputWidget):
 
 	def key_del(self):
 		if self.pos>=len(self.content):
-			curses.beep()
+			self.screen.beep()
 			return
 		self.content=self.content[:self.pos]+self.content[self.pos+1:]
 		self.win.delch()
@@ -184,7 +192,7 @@ class TextInput(InputWidget):
 
  	def key_uclean(self):
  		if self.pos==0:
-			curses.beep()
+			self.screen.beep()
 			return
 		self.content=self.content[self.pos:].rstrip()
                 self.pos=0
@@ -192,7 +200,7 @@ class TextInput(InputWidget):
 
 	def key_wrubout(self):
 		if self.pos==0:
-			curses.beep()
+			self.screen.beep()
 			return
 		s=self.content[:self.pos].rstrip()
 		if self.pos>len(s):
@@ -206,6 +214,9 @@ class TextInput(InputWidget):
 			self.content=self.content[:p+1]+self.content[self.pos:]
 			self.pos=p+1
 		self.redraw()
+	
+	def key_complete(self):
+		self.parent.complete(self.content,self.pos)
 
 	def key_char(self,c):
 		c=unicode(c,self.screen.encoding,"replace")
@@ -229,7 +240,7 @@ class TextInput(InputWidget):
 
 	def history_prev(self):
 		if not self.history_len or self.history_pos>=len(self.history):
-			curses.beep()
+			self.screen.beep()
 			return
 		if self.history_pos==0:
 			self.saved_content=self.content
@@ -244,7 +255,7 @@ class TextInput(InputWidget):
 
 	def history_next(self):
 		if not self.history_len or self.history_pos<=0:
-			curses.beep()
+			self.screen.beep()
 			return
 		self.history_pos-=1
 		if self.history_pos==0:
@@ -296,6 +307,10 @@ class TextInput(InputWidget):
 
 from keytable import KeyFunction
 ktb=keytable.KeyTable("text-input",50,(
+		KeyFunction("complete",
+				TextInput.key_complete,
+				"Complete input",
+				("\t")),
 		KeyFunction("accept-line",
 				TextInput.key_enter,
 				"Accept input",

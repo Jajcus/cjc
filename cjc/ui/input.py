@@ -9,6 +9,7 @@ import text_input
 import bool_input
 import choice_input
 import list_input
+import complete
 
 class InputError(StandardError):
 	pass
@@ -32,6 +33,19 @@ class Input(Widget):
 		self.input_widget=self.command_line
 		self.make_windows()
 		self.screen.set_input_handler(self)
+
+	def complete(self,s,pos):
+		if self.input_widget!=self.command_line:
+			self.screen.beep()
+			return
+		head,tails=complete.complete(s[:pos])
+		common.debug("complete() returned: "+`(head,tails)`)
+		if len(tails)!=1:
+			self.screen.beep()
+			return
+		self.input_widget.set_content(head+tails[0]+s[pos:])
+		self.input_widget.set_pos(len(head)+len(tails[0]))
+		self.input_widget.redraw()
 
 	def input_handler(self,answer):
 		if self.input_widget==self.command_line:
