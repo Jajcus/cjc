@@ -346,6 +346,8 @@ class Application(jabber.Client,tls.TLSHandler):
 				os.makedirs(self.home_dir)
 			except (OSError,IOError),e:
 				self.info(e)
+
+		libxml2.registerErrorHandler(self.xml_error_handler,None)
 				
 		self.load_plugins()
 		self.load()
@@ -825,10 +827,10 @@ class Application(jabber.Client,tls.TLSHandler):
 			self.error("JID missing")
 			return
 		args.finish()
-		try:
-			jid=pyxmpp.JID(jid)
-		except pyxmpp.JIDError:
+		jid=self.get_user(jid)
+		if jid is None:
 			self.error("Invalid jabber id")
+			return
 		uinf=self.get_user_info(jid)
 		if uinf is None:
 			self.info(u"I know nothing about "+jid.as_unicode())
@@ -1173,6 +1175,9 @@ class Application(jabber.Client,tls.TLSHandler):
 		if self.settings["debug"]:
 			self.status_buf.append_themed("debug",s)
 			self.status_buf.update(1)
+
+	def xml_error_handler(self,ctx,error):
+		self.debug(u"XML error: "+unicode(error,"utf-8","strict"))
 
 ui.KeyTable("default",0,(
 	ui.KeyFunction("command()",
