@@ -1,3 +1,14 @@
+2004-04-24  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/cmdtable.py:
+	- better handling of quoted arguments
+
+	* cjc/main.py:
+	- default config made really 'default.conf'
+
+	* cjc/main.py:
+	- configs are now stored as ~/.cjc/name.conf, default is: ~/.cjc/default.conf. Old configs are automatically renamed when needed
+
 2004-04-06  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/main.py:
