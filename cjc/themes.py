@@ -3,11 +3,13 @@ import string
 import re
 import time
 from types import UnicodeType,StringType
+import version
 
 import pyxmpp
 
 from commands import CommandError,CommandArgs
 import ui
+import common
 
 attr_sel_re=re.compile(r"(?<!\%)\%\[([^]]*)\]",re.UNICODE)
 preparsed_re=re.compile(r"(?<!\%)\%\{([^]]*)\}",re.UNICODE)
@@ -190,6 +192,10 @@ class ThemeManager:
 		return self.do_format_string(format,"default",params)
 		
 	def do_format_string(self,format,attr,params):
+		if type(params) in (UnicodeType,StringType):
+			params={"msg":params}
+		else:	
+			params=params.copy()
 		l=attr_sel_re.split(format,1)
 		if len(l)==3:
 			format=l[0]
@@ -214,9 +220,6 @@ class ThemeManager:
 					ret+=self.do_format_string(next,next_attr,params)
 				return ret
 
-		if type(params) in (UnicodeType,StringType):
-			params={"msg":params}
-		
 		s=self.substitute(format,params)
 
 		if self.attrs.has_key(attr):
@@ -256,7 +259,16 @@ class ThemeManager:
 		if key in ("now","timestamp"):
 			val=time.time()
 		elif key in ("me","jid"):
-			val=self.app.jid()
+			if self.app.stream:
+				val=self.app.jid
+			else:
+				val=self.app.settings["jid"]
+		elif key=="program_name":
+			val="CJC"
+		elif key=="program_author":
+			val="Jacek Konieczny <jajcus@bnet.pl>"
+		elif key=="program_version":
+			val=version.version
 		else:
 			return None
 		params[key]=val
@@ -285,7 +297,11 @@ class ThemeManager:
 				return format
 		elif typ=="J":
 			if not isinstance(val,pyxmpp.JID):
-				val=pyxmpp.JID(val)
+				try:
+					val=pyxmpp.JID(val)
+				except pyxmpp.JIDError:
+					params[key]=""
+					return format
 			if form=="nick":
 				rostername=self.app.get_user_info(val,"rostername")
 				if rostername:
@@ -301,21 +317,30 @@ class ThemeManager:
 			elif form=="bare":
 				params[key]=val.bare().as_unicode()
 			elif form in ("show","status"):
+				common.debug("Getting presence for user "+str(val))
 				pr=self.app.get_user_info(val,"presence")
+				common.debug("Got: "+`pr`)
+				if pr:
+					common.debug("type: "+`pr.get_type()`)
+					common.debug("show: "+`pr.get_show()`)
+					common.debug("status: "+`pr.get_status()`)
 				if form=="show":
+					common.debug("Getting show")
 					if pr is None or pr.get_type()=="unavailable":
 						val="offline"
 					else:
 						val=pr.get_show()
-						if not val:
+						if not val or val=="":
 							val="online"
 				elif form=="status":
+					common.debug("Getting status")
 					if pr is None:
 						val=""
 					else:
 						val=pr.get_status()
 						if val is None:
 							val=""
+				common.debug("Got: "+`val`)
 				params[key]=val
 			elif form in ("full",None):
 				params[key]=val.as_unicode()
