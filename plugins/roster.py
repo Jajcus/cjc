@@ -308,12 +308,12 @@ class Plugin(PluginBase):
         if user is None:
             self.error(u"/group without arguments!")
             return
+        user=self.cjc.get_user(user)
+        if user is None:
+            return
         if user.bare()==self.cjc.stream.jid.bare():
             self.error("Self presence subscription is automatic."
                     " Cannot group own JID in the roster.")
-            return
-        user=self.cjc.get_user(user)
-        if user is None:
             return
         item=self.cjc.roster.item_by_jid(user)
         if not item:
