@@ -1,3 +1,8 @@
+2004-06-17  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/text_buffer.py:
+	- don't write to the buffer's window when appending text if the buffer is scrolled down
+
 2004-06-16  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* .cvslog:
