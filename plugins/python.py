@@ -15,7 +15,11 @@ class Plugin(PluginBase):
             return
         vars={"app":self.cjc}
         try:
-            r=eval(code,vars,vars)
+            try:
+                r=eval(code,vars,vars)
+            except SyntaxError:
+                r=None
+                exec code in vars
         except:
             self.cjc.print_exception()
             return
