@@ -5,6 +5,7 @@ from types import StringType,UnicodeType,IntType
 import curses
 import curses.textpad
 import traceback
+import threading
 
 import command_args
 
@@ -92,6 +93,7 @@ class Buffer(CommandHandler):
 		CommandHandler.__init__(self)
 		self.name=name
 		self.window=None
+		self.lock=threading.RLock()
 		try:
 			self.buffer_list[self.buffer_list.index(None)]=self
 		except ValueError:
@@ -104,12 +106,14 @@ class Buffer(CommandHandler):
 		pass
 
 	def update(self,now=1):
-		if self.window:
-			self.window.update(now)
+		window=self.window
+		if window:
+			window.update(now)
 
 	def redraw(self,now=1):
-		if self.window:
-			self.window.redraw(now)
+		window=self.window
+		if window:
+			window.redraw(now)
 
 	def user_input(self,s):
 		return 0
@@ -135,6 +139,7 @@ class TextBuffer(Buffer):
 		self.pos=None
 		
 	def append(self,s,attr="default"):
+		self.lock.acquire()
 		if type(attr) is not IntType:
 			attr=self.theme_manager.attrs[attr]
 		if self.window and self.pos is None:
@@ -150,38 +155,32 @@ class TextBuffer(Buffer):
 				self.lines[-1].append((attr,l))
 			newl=1
 		self.lines=self.lines[-self.length:]
+		self.lock.release()
 	
 	def append_line(self,s,attr="default"):
+		self.lock.acquire()
 		if type(attr) is not IntType:
 			attr=self.theme_manager.attrs[attr]
 		self.append(s,attr)
 		self.lines.append([])
 		if self.window and self.pos is None:
 			self.window.write(u"\n",attr)
+		self.lock.release()
 
 	def append_themed(self,format,params):
 		for attr,s in self.theme_manager.format_string(format,params):
 			self.append(s,attr)
 
 	def write(self,s):
+		self.lock.acquire()
 		self.append(s)
 		self.update()
+		self.lock.release()
 
 	def clear(self):
+		self.lock.acquire()
 		self.lines=[[]]
-
-	def page_up(self):
-		if self.pos is None:
-			self.pos=offset_back(self.window.w,self.window.h-2)
-			self.window.draw_buffer()
-		elif self.pos==(0,0):
-			return
-		else:
-			self.pos=offset_back(self.window.w,self.window.h-2,pos[0],pos[1])
-			self.window.draw_buffer()
-
-	def page_down(self):
-		pass
+		self.lock.release()
 
 	def line_length(self,line):
 		ret=0
@@ -190,12 +189,14 @@ class TextBuffer(Buffer):
 		return ret
 
 	def offset_back(self,width,back,l=None,c=0):
+		self.lock.acquire()
 		if l is None:
 			if self.lines[-1]==[]:
 				l=len(self.lines)-1
 			else:
 				l=len(self.lines)
 			if l<=0:
+				self.lock.release()
 				return 0,0
 		while back>0 and l>1:
 			l-=1
@@ -204,6 +205,7 @@ class TextBuffer(Buffer):
 			h=ln/width+1
 			back-=h
 
+		self.lock.release()
 		if back>0:
 			return 0,0
 		if back==0:
@@ -211,11 +213,12 @@ class TextBuffer(Buffer):
 		return l,(-back)*width
 
 	def offset_forward(self,width,forward,l=0,c=0):
-
+		self.lock.acquire()
 		if l>=len(self.lines):
 			l=len(self.lines)-1
 			if self.lines[-1]==[]:
 				l-=1
+			self.lock.release()
 			if l>0:
 				return l
 			else:
@@ -239,6 +242,7 @@ class TextBuffer(Buffer):
 			h=ln/width+1
 			forward-=h
 
+		self.lock.release()
 		if forward>=0:
 			return l,0
 
@@ -265,6 +269,7 @@ class TextBuffer(Buffer):
 		return left,right
 			
 	def format(self,width,height):
+		self.lock.acquire()
 		if self.pos is None:
 			l,c=self.offset_back(width,height)
 		else:
@@ -293,14 +298,17 @@ class TextBuffer(Buffer):
 		if height>=0:
 			if self.lines[-1]==[]:
 				ret.append([])
+			self.lock.release()
 			return ret
 
 		cut=(-height)*width
 		ret[-1],x=self.cut_line(ret[-1],cut)
 		ret.append([])
+		self.lock.release()
 		return ret
 
 	def page_up(self):
+		self.lock.acquire()
 		if self.pos is None:
 			l,c=self.offset_back(self.window.w,self.window.h-2)
 		else:
@@ -311,15 +319,18 @@ class TextBuffer(Buffer):
 			formatted=self.format(self.window.w,self.window.h-1)
 			if len(formatted)<=self.window.h-1:
 				self.pos=None
+			self.lock.release()
 			return
-			
 		l1,c1=self.offset_back(self.window.w,self.window.h-2,l,c)
 		self.pos=l1,c1
+		self.lock.release()
 		self.window.draw_buffer()
 		self.window.update()
 
 	def page_down(self):
+		self.lock.acquire()
 		if self.pos is None:
+			self.lock.release()
 			return
 
 		l,c=self.pos
@@ -331,6 +342,7 @@ class TextBuffer(Buffer):
 		if len(formatted)<=self.window.h-1:
 			self.pos=None
 		
+		self.lock.release()
 		self.window.draw_buffer()
 		self.window.update()
 
@@ -494,10 +506,13 @@ class StatusBar(Widget):
 
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
+		self.screen.lock.acquire()
 		self.win=curses.newwin(self.h,self.w,self.y,self.x)
 		self.win.bkgdset(ord(" "),self.theme_manager.attrs["bar"])
+		self.screen.lock.release()
 		
 	def update(self,now=1):
+		self.screen.lock.acquire()
 		self.win.clear()
 		self.win.move(0,0)
 		x=0
@@ -512,6 +527,7 @@ class StatusBar(Widget):
 			self.win.refresh()
 		else:
 			self.win.noutrefresh()
+		self.screen.lock.release()
 
 class Window(Widget):
 	def __init__(self,theme_manager,title,lock=0):
@@ -587,8 +603,10 @@ class Window(Widget):
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
 		self.status_bar.set_parent(self)
+		self.screen.lock.acquire()
 		self.win=curses.newwin(self.h-1,self.w,self.y,self.x)
 		self.win.scrollok(1)
+		self.screen.lock.release()
 		if self.buffer:
 			self.draw_buffer()
 			
@@ -627,16 +645,20 @@ class Window(Widget):
 
 	def update(self,now=1):
 		self.status_bar.update(now)
+		self.screen.lock.acquire()
 		if now:
 			self.win.refresh()
 		else:
 			self.win.noutrefresh()
+		self.screen.lock.release()
 
 	def draw_buffer(self):
+		self.screen.lock.acquire()
 		self.win.clear()
 		self.win.move(0,0)
 		lines=self.buffer.format(self.w,self.h-1)
 		if not lines:
+			self.screen.lock.release()
 			return
 		if lines[-1]==[]:
 			lines=lines[:-1]
@@ -653,10 +675,12 @@ class Window(Widget):
 			self.newline=1
 		if not has_eol:
 			self.newline=0
+		self.screen.lock.release()
 
 	def write(self,s,attr):
 		if not s:
 			return
+		self.screen.lock.acquire()
 		y,x=self.win.getyx()
 		if self.newline:
 			if y==self.h-2:
@@ -683,6 +707,7 @@ class Window(Widget):
 			s=s.encode(self.screen.encoding,"replace")
 			self.win.addstr(s,attr)
 			if len(paras)==1:
+				self.screen.lock.release()
 				return
 
 		y+=1
@@ -701,8 +726,10 @@ class Window(Widget):
 				y+=1
 			s=s.encode(self.screen.encoding,"replace")
 			self.win.addstr(s,attr)
+		self.screen.lock.release()
 	
 	def redraw(self,now=1):
+		self.screen.lock.acquire()
 		self.status_bar.redraw(now)
 		self.win.clear()
 		if self.buffer:
@@ -711,6 +738,7 @@ class Window(Widget):
 			self.win.refresh()
 		else:
 			self.win.noutrefresh()
+		self.screen.lock.release()
 
 class EditLine(Widget):
 	def __init__(self):
@@ -720,14 +748,17 @@ class EditLine(Widget):
 		
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
+		self.screen.lock.acquire()
 		self.win=curses.newwin(self.h,self.w,self.y,self.x)
 		self.textpad=curses.textpad.Textbox(self.win)
 		self.screen.set_default_key_handler(self)
+		self.screen.lock.release()
 
 	def get_height(self):
 		return 1
 
 	def keypressed(self,c,escape):
+		self.screen.lock.acquire()
 		if escape:
 			self.textpad.do_command(27)
 		if c in (curses.KEY_ENTER,ord("\n"),ord("\r")):
@@ -739,13 +770,16 @@ class EditLine(Widget):
 		else:
 			self.textpad.do_command(c)
 		self.win.refresh()
+		self.screen.lock.release()
 
 	def update(self,now=1):
+		self.screen.lock.acquire()
 		self.win.cursyncup()
 		if now:
 			self.win.refresh()
 		else:
 			self.win.noutrefresh()
+		self.screen.lock.release()
 
 screen_commands={
 	"next": ("focus_next",
@@ -771,6 +805,7 @@ class Screen(CommandHandler):
 		self.default_key_handler=None
 		self.default_command_handler=None
 		self.escape=0
+		self.lock=threading.RLock()
 		screen.keypad(1)
 		screen.nodelay(1)
 		lc,self.encoding=locale.getlocale()
@@ -778,10 +813,14 @@ class Screen(CommandHandler):
 			self.encoding="us-ascii"
 
 	def set_background(self,char,attr):
+		self.lock.acquire()
 		self.scr.bkgdset(ord(char),attr)
+		self.lock.release()
 		
 	def size(self):
+		self.lock.acquire()
 		h,w=self.scr.getmaxyx()
+		self.lock.release()
 		return w-1,h-1
 
 	def set_content(self,widget):
@@ -795,18 +834,22 @@ class Screen(CommandHandler):
 		raise "%r is not a child of mine" % (child,)
 
 	def update(self):
+		self.lock.acquire()
 		if self.content:
 			self.content.update(0)
 		else:
 			self.scr.clear()
 		curses.doupdate()
+		self.lock.release()
 
 	def redraw(self):
+		self.lock.acquire()
 		if self.content:
 			self.content.redraw(0)
 		else:
 			self.scr.clear()
 		curses.doupdate()
+		self.lock.release()
 
 	def set_default_key_handler(self,h):
 		self.default_key_handler=h
@@ -819,7 +862,9 @@ class Screen(CommandHandler):
 			win.set_active(1)
 			self.active_window=win
 		self.windows.append(win)
+		self.lock.acquire()
 		curses.doupdate()
+		self.lock.release()
 
 	def focus_window(self,win):
 		if not win or win is self.active_window:
@@ -828,7 +873,9 @@ class Screen(CommandHandler):
 		self.active_window.set_active(0)
 		win.set_active(1)
 		self.active_window=win
+		self.lock.acquire()
 		curses.doupdate()
+		self.lock.release()
 				
 	def focus_next(self,args=None):
 		if len(self.windows)<=1:

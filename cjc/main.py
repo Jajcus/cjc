@@ -9,6 +9,7 @@ import string
 from types import StringType,UnicodeType,IntType,ListType,TupleType
 import locale
 import curses
+import threading
 
 import pyxmpp
 
@@ -104,6 +105,9 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		self.event_handlers={}
 		self.user_info={}
 		self.info_handlers={}
+		self.exiting=0
+		self.ui_thread=None
+		self.stream_thread=None
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -207,10 +211,12 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			self.info("press Alt-Tab (or Escape Tab) to change active window")
 			self.info("PgUp/PgDown to scroll window content")
 
-		try:
-			self.loop(1)
-		except Exit:
-			pass
+		self.ui_thread=threading.Thread(None,self.ui_loop,"UI")
+		self.stream_thread=threading.Thread(None,self.stream_loop,"Stream")
+
+		self.ui_thread.start()
+		self.stream_thread.start()
+		self.main_loop()
 
 	def session_started(self):
 		for p in self.plugins.values():
@@ -351,8 +357,6 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			obj.settings[var]=val
 		elif location.startswith("."):
 			setattr(obj,location[1:],val)
-			
-		self.screen.update()
 
 	def cmd_unset(self,args):
 		fvar=args.shift()
@@ -537,6 +541,40 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 	def cmd_theme(self,args):
 		self.theme_manager.command(args)
 
+	def ui_loop(self):
+		while not self.exiting:
+			try:
+				self.screen.keypressed()
+			except Exit:
+				self.exiting=1
+			except KeyboardInterrupt,SystemExit:
+				self.exiting=1
+				raise
+
+	def stream_loop(self):
+		while not self.exiting:
+			self.stream_cond.acquire()
+			stream=self.stream
+			if not stream:
+				self.stream_cond.wait()
+				stream=self.stream
+			self.stream_cond.release()
+			if not stream:
+				continue
+			try:
+				self.stream.loop_iter(1)
+			except KeyboardInterrupt,SystemExit:
+				self.exiting=1
+				raise
+
+	def main_loop(self):
+		while not self.exiting:
+			try:
+				time.sleep(1)
+			except KeyboardInterrupt,SystemExit:
+				self.exiting=1
+				raise
+		
 	def loop(self,timeout):
 		while 1:
 			fdlist=[sys.stdin.fileno()]
