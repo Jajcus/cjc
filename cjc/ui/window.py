@@ -79,7 +79,7 @@ class Window(Widget,CommandHandler):
 		if self.buffer:
 			try:
 				if self.buffer.command(cmd,args):
-					return
+					return 1
 			except KeyError:
 				pass
 		return CommandHandler.command(self,cmd,args)
