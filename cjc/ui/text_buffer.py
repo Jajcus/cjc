@@ -23,14 +23,14 @@ class TextBuffer(Buffer):
         else:
             keytable.deactivate("text-buffer",self)
 
-    def append(self,s,attr="default"):
+    def append(self,s,attr="default",activity_level=1):
         self.lock.acquire()
         try:
-            return self._append(s,attr)
+            return self._append(s,attr,activity_level)
         finally:
             self.lock.release()
 
-    def _append(self,s,attr):
+    def _append(self,s,attr,activity_level=1):
         if attr is not None and type(attr) is not IntType:
             attr=self.theme_manager.attrs[attr]
         if not self.lines:
@@ -68,24 +68,24 @@ class TextBuffer(Buffer):
         l=len(self.lines)
         if l>self.length and self.pos is None:
             self.lines=self.lines[-self.length:]
-        if not self.window or self.pos is not None:
-            self.activity(1)
+        if not self.window or self.pos is not None and activity_level:
+            self.activity(activity_level)
 
-    def append_line(self,s,attr="default"):
+    def append_line(self,s,attr="default",activity_level=1):
         self.lock.acquire()
         try:
-            return self._append_line(s,attr)
+            return self._append_line(s,attr,activity_level)
         finally:
             self.lock.release()
 
-    def _append_line(self,s,attr):
+    def _append_line(self,s,attr,activity_level=1):
         if type(attr) is not IntType:
             attr=self.theme_manager.attrs[attr]
-        self._append(s+u"\n",attr)
+        self._append(s+u"\n",attr,activity_level)
 
-    def append_themed(self,format,params):
+    def append_themed(self,format,params,activity_level=1):
         for attr,s in self.theme_manager.format_string(format,params):
-            self.append(s,attr)
+            self.append(s,attr,activity_level)
 
     def write(self,s):
         self.lock.acquire()
