@@ -33,7 +33,7 @@ theme_attrs=(
 
 theme_formats=(
     ("muc.nick",u"%(role?moderator:@,visitor:-,)s%(nick)s"),
-    ("muc.userinfo",u"%(affiliation?none:, (%(affiliation)s))s%(role?participant:, (%(role)s))s%(real_jid? (JID: %(real_jid)s))s"),
+    ("muc.userinfo",u"%(affiliation?none:, (%(affiliation)s))s%(role?participant:, (%(role)s))s%(real_jid? (JID: %(J:real_jid)s))s"),
     ("muc.nickinfo",u"%(nick)s%{@muc.userinfo}"),
     ("muc.joining",u"[%(T:timestamp)s] %[muc.info]* Joining MUC room %(room)s...\n"),
     ("muc.me",u"[%(T:timestamp)s] %[muc.me]<%{@muc.nick}>%[] %(msg)s\n"),

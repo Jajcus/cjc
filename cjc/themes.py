@@ -15,7 +15,6 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import curses
-import string
 import re
 import datetime
 from types import UnicodeType,StringType,ListType
@@ -63,7 +62,7 @@ def attr2name(attr):
             names.append(name)
     if not names:
         return "normal"
-    return string.join(names,"+")
+    return "+".join(names)
 
 def name2color(name):
     if name=="none":
@@ -346,7 +345,7 @@ class ThemeManager:
                 s=format % params
                 break
             except (ValueError,TypeError),e:
-                s=u"[%s: %r, %r]" % (str(e),format,params)
+                s=u"[%s: %r, %r]" % (unicode(e),format,params)
                 break
             except KeyError,key:
                 key=key.args[0]
@@ -450,7 +449,7 @@ class ThemeManager:
                 try:
                     val=pyxmpp.JID(val)
                 except pyxmpp.JIDError:
-                    params[key]=""
+                    params[key]=u""
                     return format
             if form==u"nick":
                 rostername=self.app.get_user_info(val,"rostername")
@@ -493,12 +492,12 @@ class ThemeManager:
             else:
                 ival=self.app.get_user_info(val,form)
                 if not ival:
-                    val=""
+                    val=u""
                 elif ival not in (StringType,UnicodeType):
                     if self.app.info_handlers.has_key(form):
                         val=self.app.info_handlers[form](form,ival)[1]
                     else:
-                        val=str(ival)
+                        val=unicode(ival)
                 params[key]=val
             return format
         else:

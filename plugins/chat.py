@@ -31,12 +31,12 @@ theme_attrs=(
 )
 
 theme_formats=(
-    ("chat.started","[%(T:timestamp)s] %[chat.info]* Chat with %(peer)s started\n"),
-    ("chat.me","[%(T:timestamp)s] %[chat.me]<%(J:me:nick)s>%[] %(msg)s\n"),
-    ("chat.peer","[%(T:timestamp)s] %[chat.peer]<%(J:peer:nick)s>%[] %(msg)s\n"),
-    ("chat.action","[%(T:timestamp)s] %[chat.info]* %(J:jid:nick)s %(msg)s\n"),
-    ("chat.descr","Chat with %(J:peer:full)s [%(J:peer:show)s] %(J:peer:status)s"),
-    ("chat.day_change","%{@day_change}"),
+    ("chat.started",u"[%(T:timestamp)s] %[chat.info]* Chat with %(J:peer)s started\n"),
+    ("chat.me",u"[%(T:timestamp)s] %[chat.me]<%(J:me:nick)s>%[] %(msg)s\n"),
+    ("chat.peer",u"[%(T:timestamp)s] %[chat.peer]<%(J:peer:nick)s>%[] %(msg)s\n"),
+    ("chat.action",u"[%(T:timestamp)s] %[chat.info]* %(J:jid:nick)s %(msg)s\n"),
+    ("chat.descr",u"Chat with %(J:peer:full)s [%(J:peer:show)s] %(J:peer:status)s"),
+    ("chat.day_change",u"%{@day_change}"),
 )
 
 class Conversation:

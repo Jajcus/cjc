@@ -36,27 +36,27 @@ theme_attrs=(
 
 theme_formats=(
     ("message.received",
-"""------------------
+u"""------------------
 %[message.date]Date:    %(T:timestamp:%c)s
-%[message.sender]From:    %(from)s
+%[message.sender]From:    %(J:from)s
 %[message.subject]Subject: %(subject)s
 
 %[message.body]%(body)s
 ------------------
 """),
     ("message.sent",
-"""------------------
+u"""------------------
 %[message.date]Date:    %(T:timestamp:%c)s
-%[message.sender]To:      %(to)s
+%[message.sender]To:      %(J:to)s
 %[message.subject]Subject: %(subject)s
 
 %[message.body]%(body)s
 ------------------
 """),
     ("message.composing",
-"""------------------
+u"""------------------
 %[message.date]Date:    %(T:timestamp:%c)s
-%[message.sender]To:      %(from)s
+%[message.sender]To:      %(J:from)s
 %[message.subject]Subject: %(subject)s
 
 %[message.body]%(body)s
@@ -117,21 +117,21 @@ Subject: %(subject)s
         try:
             template=template.encode(editor_encoding,"strict")
         except UnicodeError:
-            self.plugin.error("Cannot encode message or address to the editor encoding.")
+            self.plugin.error(u"Cannot encode message or address to the editor encoding.")
             return False
 
         try:
             (tmpfd,self.tmpfile_name)=tempfile.mkstemp(
                     prefix="cjc-",suffix=".txt")
         except (IOError,OSError),e:
-            self.plugin.error("Cannot create a temporary file: %s" % (e,))
+            self.plugin.error(u"Cannot create a temporary file: %s" % (e,))
             return False
         try:
             tmpfile=os.fdopen(tmpfd,"w+b")
             tmpfile.write(template)
             tmpfile.close()
         except (IOError,OSError),e:
-            self.plugin.error("Cannot write the temporary file %r (fd: %i): %s"
+            self.plugin.error(u"Cannot write the temporary file %r (fd: %i): %s"
                     % (self.tmpfile_name,tmpfd,e))
             return False
         return self.edit_message()
@@ -153,9 +153,9 @@ Subject: %(subject)s
         if ret:
             es=os.WEXITSTATUS(ret)
             if not os.WIFEXITED(ret):
-                self.error("Editor exited abnormally")
+                self.error(u"Editor exited abnormally")
             elif es:
-                self.warning("Editor exited with status %i" % (es,))
+                self.warning(u"Editor exited with status %i" % (es,))
             ok=False
 
         self.plugin.cjc.screen.display_buffer(self.buffer)
@@ -174,7 +174,7 @@ Subject: %(subject)s
                 except IOError:
                     pass
         except IOError:
-            self.plugin.cjc.error("Error reading the edited message!")
+            self.plugin.cjc.error(u"Error reading the edited message!")
             return
 
         self.buffer.append(msg)
@@ -212,7 +212,7 @@ Subject: %(subject)s
                 self.error(u"No recipient!")
                 ok=False
         else:
-            self.error("Could not find header or body in the message")
+            self.error(u"Could not find header or body in the message")
             ok=False
 
         if not ok:
@@ -297,12 +297,12 @@ class MessageBuffer:
     def error(self,stanza):
         err=stanza.get_error()
         emsg=err.get_message()
-        msg="Error"
+        msg=u"Error"
         if emsg:
-            msg+=": %s" % emsg
+            msg+=u": %s" % emsg
         etxt=err.get_text()
         if etxt:
-            msg+=" ('%s')" % etxt
+            msg+=u" ('%s')" % etxt
         self.buffer.append_themed("error",msg)
         self.buffer.update()
 
@@ -345,7 +345,7 @@ class MessageBuffer:
 
         body=args.all()
         if not body:
-            self.buffer.append_themed("error","Message composition not supported yet"
+            self.buffer.append_themed("error",u"Message composition not supported yet"
                 " - you must include message body on the command line")
             return
 
@@ -382,11 +382,11 @@ class Plugin(PluginBase):
             }
         self.settings={
                 "buffer":"per-user",
-                "log_filename": "%($HOME)s/.cjc/logs/messages/%(J:peer:bare)s",
-                "log_format_in": "[%(T:now:%c)s] Incoming message\n"
+                "log_filename": u"%($HOME)s/.cjc/logs/messages/%(J:peer:bare)s",
+                "log_format_in": u"[%(T:now:%c)s] Incoming message\n"
                         "From: %(sender)s\n"
                         "Subject: %(subject)s\n%(body)s\n",
-                "log_format_out": "[%(T:now:%c)s] Outgoing message\n"
+                "log_format_out": u"[%(T:now:%c)s] Outgoing message\n"
                         "To: %(recipient)s\n"
                         "Subject: %(subject)s\n%(body)s\n",
                 "buffer_preference": 50,
@@ -575,7 +575,7 @@ class Plugin(PluginBase):
             finally:
                 f.close()
         except (IOError,OSError),e:
-            self.cjc.error("Couldn't write message log: "+str(e))
+            self.cjc.error(u"Couldn't write message log: "+unicode(e))
 
 ui.CommandTable("message",50,(
     ui.Command("message",Plugin.cmd_message,
