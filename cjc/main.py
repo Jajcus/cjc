@@ -90,6 +90,7 @@ global_settings={
 	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
 	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
 	"autoconnect": ("Automatically connect on startup.",int),
+	"debug": ("Display some debuging information in status window.",int),
 }
 
 global_theme_attrs=(
@@ -129,7 +130,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			"layout":"plain",
 			"disconnect_timeout":10.0,
 			"disconnect_delay":0.25,
-			"autoconnect":0}
+			"autoconnect":0,
+			"debug":0}
 		self.aliases={}
 		self.available_settings=global_settings
 		self.base_dir=base_dir
@@ -1027,8 +1029,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	def debug(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"DEBUG",s.encode("utf-8","replace")
-		#self.status_buf.append_themed("debug",s)
-		#self.status_buf.update(1)
+		if self.settings["debug"]:
+			self.status_buf.append_themed("debug",s)
+			self.status_buf.update(1)
 
 def usage():
 	print
