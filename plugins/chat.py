@@ -257,7 +257,7 @@ class Plugin(PluginBase):
 				os.makedirs(dirname)
 			f=open(filename,"a")
 			try:
-				f.write(s)
+				f.write(s.encode("utf-8","replace"))
 			finally:
 				f.close()
 		except (IOError,OSError),e:
