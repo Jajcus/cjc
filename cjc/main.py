@@ -31,6 +31,7 @@ import getopt
 import datetime
 import logging
 import logging.config
+import codecs
 
 import pyxmpp.all
 import pyxmpp.jabber.all
@@ -1394,21 +1395,21 @@ class Application(tls.TLSMixIn,jabber.Client):
 
     def stream_state_changed(self,state,arg):
         if state=="resolving":
-            self.__logger.info("Resolving %r..." % (arg,))
+            self.__logger.info(u"Resolving %r..." % (arg,))
         if state=="resolving srv":
-            self.__logger.info("Resolving SRV for %r on %r..." % (arg[1],arg[0]))
+            self.__logger.info(u"Resolving SRV for %r on %r..." % (arg[1],arg[0]))
         elif state=="connecting":
-            self.__logger.info("Connecting to %s:%i..." % (arg[0],arg[1]))
+            self.__logger.info(u"Connecting to %s:%i..." % (arg[0],arg[1]))
         elif state=="connected":
-            self.__logger.info("Connected to %s:%i." % (arg[0],arg[1]))
+            self.__logger.info(u"Connected to %s:%i." % (arg[0],arg[1]))
         elif state=="authenticating":
-            self.__logger.info("Authenticating as %s..." % (arg,))
+            self.__logger.info(u"Authenticating as %s..." % (arg,))
         elif state=="binding":
-            self.__logger.info("Binding to resource %s..." % (arg,))
+            self.__logger.info(u"Binding to resource %s..." % (arg,))
         elif state=="authorized":
-            self.__logger.info("Authorized as %s." % (arg,))
+            self.__logger.info(u"Authorized as %s." % (arg,))
         elif state=="tls connecting":
-            self.__logger.info("Doing TLS handshake with %s." % (arg,))
+            self.__logger.info(u"Doing TLS handshake with %s." % (arg,))
 
     def show_error(self,s):
         self.status_buf.append_themed("error",s)
@@ -1555,6 +1556,11 @@ def main(base_dir,profile=False):
     logger.setLevel(logging.DEBUG)
     libxml2.debugMemory(1)
     locale.setlocale(locale.LC_ALL,"")
+    encoding=locale.getlocale()[1]
+    if not encoding:
+        encoding="us-ascii"
+    sys.stdout=codecs.getwriter(encoding)(sys.stdout,errors="replace")
+    sys.stderr=codecs.getwriter(encoding)(sys.stderr,errors="replace")
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hc:C:t:l:",
                     ["help","config-file=","config-directory=",
@@ -1586,7 +1592,7 @@ def main(base_dir,profile=False):
                 hdlr=logging.StreamHandler(sys.stderr)
             else:
                 hdlr=logging.FileHandler(a,mode)
-            formatter=cjclogging.UnicodeFormatter("utf-8",u'%(asctime)s %(levelname)s %(message)s')
+            formatter=logging.Formatter(u'%(asctime)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
             logger.addHandler(hdlr)
         elif o in ("--log-config",):
