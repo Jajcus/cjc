@@ -42,10 +42,14 @@ class Plugin(PluginBase):
     def vcard_response(self,stanza):
         try:
             node=stanza.get_query()
-            vcard=VCard(node)
-        except (ValueError,pyxmpp.StanzaError),e:
-            self.error(u"Invalid vCard received from: "+stanza.get_from().as_unicode())
-            self.cjc.print_exception()
+            if node:
+                vcard=VCard(node)
+            else:
+                vcard=None
+        except (ValueError,),e:
+            vcard=None
+        if vcard is None:
+            self.error(u"Invalid vCard received from "+stanza.get_from().as_unicode())
             return
         self.cjc.set_user_info(stanza.get_from(),"vcard",vcard)
         msg=u"vCard for %s:\n" % (stanza.get_from(),)
@@ -66,8 +70,9 @@ class Plugin(PluginBase):
         self.info(msg)
 
     def vcard_error(self,stanza):
+        err=stanza.get_error()
         self.error(u"vCard query error from %s: %s" % (stanza.get_from(),
-                        stanza.get_error().serialize()))
+                        err.get_message()))
 
 ui.CommandTable("vcard",50,(
     ui.Command("whois",Plugin.cmd_whois,
