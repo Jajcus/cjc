@@ -1305,7 +1305,7 @@ def main(base_dir):
 		usage()
 		sys.exit(2)
 
-	config_file="config"
+	config_file="default"
 	theme_file="default"
 	for o,a in opts:
 		if o in ("-c","--config-file"):
