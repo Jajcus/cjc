@@ -423,6 +423,31 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			if len(id)==0:
 				self.idle()
 
+	def get_user(self,name):
+		if name.find("@")>=0:
+			try:
+				return pyxmpp.JID(name)
+			except pyxmpp.JIDError:
+				pass
+
+		if not self.roster:
+			self.error("%s not found in roster" % (name,))
+			return None
+
+		try:
+			ritems=self.roster.items_by_name(name)
+		except KeyError:
+			self.error("%s not found in roster" % (name,))
+			return None
+		
+		if ritems:
+			if len(ritems)>1:
+				self.error("ambiguous user name")
+				return None
+			else:
+				return ritems[0].jid()
+		return None
+
 	def get_bare_user_info(self,jid,var=None):
 		if jid.resource:
 			jid=jid.bare()
