@@ -17,6 +17,9 @@
 import string
 import curses
 import os
+import locale
+import tempfile
+import re
 
 import pyxmpp
 from cjc import ui
@@ -63,6 +66,189 @@ theme_formats=(
     ("message.descr","Messages"),
     ("message.day_change",""),
 )
+
+class Composer(ui.TextBuffer):
+    message_template=u"""To: %(recipient)s
+Subject: %(subject)s
+
+%(body)s
+"""
+    hdr_nocont_re=re.compile("\r?\n(?![ \t])")
+    def __init__(self,plugin):
+        self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},
+                "message.composer_descr")
+        self.plugin=plugin
+        self.tmpfile_name=None
+        self.recipient=None
+        self.subject=None
+        self.body=None
+
+    def __del__(self):
+        if self.buffer:
+            self.buffer.close()
+        if self.tmpfile_name:
+            try:
+                os.unlink(self.tmpfile_name)
+            except OSError:
+                pass
+            
+    def fill_template(self,recipient,subject,body):
+        if not recipient:
+            recipient=u""
+        else:
+            recipient=unicode(recipient)
+        if not subject:
+            subject=u""
+        else:
+            subject=self.hdr_nocont_re.sub("\t\n",subject)
+        if not body:
+            body=u""
+        template=self.message_template % {
+                "recipient":recipient,
+                "subject":subject,
+                "body":body}
+        return template
+    
+    def start(self,recipient,subject,body):
+        template=self.fill_template(recipient,subject,body)
+        editor_encoding=self.plugin.settings.get("editor_encoding",
+                locale.getlocale()[1])
+        try:
+            template=template.encode(editor_encoding,"strict")
+        except UnicodeError:
+            self.plugin.error("Cannot encode message or address to the editor encoding.") 
+            return False
+        
+        try:
+            (tmpfd,self.tmpfile_name)=tempfile.mkstemp(
+                    prefix="cjc-",suffix=".txt")
+        except (IOError,OSError),e:
+            self.plugin.error("Cannot create a temporary file: %s" % (e,))
+            return False
+        try:
+            tmpfile=os.fdopen(tmpfd,"w+b")
+            tmpfile.write(template)
+            tmpfile.close()
+        except (IOError,OSError),e:
+            self.plugin.error("Cannot write the temporary file %r (fd: %i): %s" 
+                    % (self.tmpfile_name,tmpfd,e))
+            return False
+        return self.edit_message()
+
+    def edit_message(self):
+        self.buffer.clear()
+        editor=self.plugin.settings.get("editor",os.environ.get("EDITOR","vi"))
+        command="%s %s" % (editor,self.tmpfile_name)
+        ok=True
+        try:
+            self.plugin.cjc.screen.shell_mode()
+            try:
+                ret=os.system(command)
+            finally:
+                self.plugin.cjc.screen.prog_mode()
+        except (OSError,),e:
+            self.error(u"Couldn't start the editor: %s" % (e,))
+            ok=False
+        if ret:
+            es=os.WEXITSTATUS(ret)
+            if not os.WIFEXITED(ret):
+                self.error("Editor exited abnormally")
+            elif es:
+                self.warning("Editor exited with status %i" % (es,))
+            ok=False
+
+        self.plugin.cjc.screen.display_buffer(self.buffer)
+        if not ok:
+            self.buffer.ask_question(u"Try to [E]dit again or [C]ancel?",
+                    "choice",None,self.send_edit_cancel,values=("ec"))
+            return True
+
+        try:
+            tmpfile=open(self.tmpfile_name,"r")
+            try:
+                msg=tmpfile.read()
+            finally:
+                try:
+                    tmpfile.close()
+                except IOError:
+                    pass
+        except IOError:
+            self.plugin.cjc.error("Error reading the edited message!")
+            return
+
+        self.buffer.append(msg)
+        recipient=None
+        subject=None
+        if u"\n\n" in msg:
+            ok=True
+            header,body=msg.split(u"\n\n",1)
+            headers=self.hdr_nocont_re.split(header)
+            for h in headers:
+                if ":" not in h:
+                    self.error(u"Bad header: %r" % (h,))
+                    ok=False
+                    break
+                name,value=h.split(":",1)
+                name=name.strip().lower()
+                value=value.strip()
+                if name==u"subject":
+                    if subject:
+                        self.error(u"More than one subject!")
+                        ok=False
+                        break
+                    subject=value
+                if name==u"to":
+                    if recipient:
+                        self.error(u"More than one recipient!")
+                        ok=False
+                        break
+                    recipient=self.plugin.cjc.get_user(value)
+                    if not recipient:
+                        self.error(u"Bad recipient: %r!" % (recipient,))
+                        ok=False
+                        break
+            if not recipient:
+                self.error(u"No recipient!")
+                ok=False
+        else:
+            self.error("Could not find header or body in the message")
+            ok=False
+            
+        if not ok:
+            self.buffer.ask_question(u"Errors found. [E]dit again or [C]ancel?",
+                    "choice",None,self.send_edit_cancel,values=("ec"))
+            return True
+
+        self.buffer.clear()
+        msg=self.fill_template(recipient,subject,body)
+        self.buffer.append(msg)
+        self.buffer.update()
+        self.recipient=recipient
+        self.subject=subject
+        self.body=body
+        self.buffer.ask_question(u"[S]end, [E]dit or [C]ancel?",
+                "choice",None,self.send_edit_cancel,values=("sec"))
+        return True
+
+    def send_edit_cancel(self,arg,choice):
+        if choice in "sS":
+            self.plugin.send_message(recipient=self.recipient,
+                    subject=self.subject,body=self.body)
+            self.buffer.close()
+            self.buffer=None
+        elif choice in "eE":
+            self.edit_message()
+        else:
+            self.buffer.close()
+            self.buffer=None
+
+    def error(self,msg):
+        self.buffer.append_themed("error",msg)
+        self.buffer.update()
+
+    def warning(self,msg):
+        self.buffer.append_themed("warning",msg)
+        self.buffer.update()
 
 class MessageBuffer:
     def __init__(self,plugin,peer,thread):
@@ -190,6 +376,8 @@ class Plugin(PluginBase):
             "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of message buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             "auto_popup": ("When enabled each new message buffer is automaticaly made active.",bool),
+            "editor": ("Editor for message composition. Default: $EDITOR or 'vi'",str),
+            "editor_encoding": ("Character encoding for edited messages. Default: locale specific",str),
             }
         self.settings={
                 "buffer":"per-user",
@@ -218,25 +406,29 @@ class Plugin(PluginBase):
         else:
             subject=None
             recipient=arg1
-        if not recipient:
-            self.error("/message without arguments")
-            return
-
+        
         if not self.cjc.stream:
             self.error("Connect first!")
             return
 
-        recipient=self.cjc.get_user(recipient)
-        if recipient is None:
+        if not recipient:
+            self.compose_message(subject=subject)
             return
 
+        recipient=self.cjc.get_user(recipient)
+        if not recipient:
+            return
+        
         body=args.all()
         if not body:
-            self.error("Message composition not supported yet"
-                " - you must include message body on the command line")
+            self.compose_message(recipient,subject)
             return
 
         self.send_message(recipient,subject,body)
+
+    def compose_message(self,recipient=None,subject=None,body=None):
+        composer=Composer(self)
+        return composer.start(recipient,subject,body)
 
     def send_message(self,recipient,subject,body,thread=0,buff=None):
         if thread==0:
