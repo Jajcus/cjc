@@ -1,5 +1,6 @@
 import string
 import curses
+import os
 
 import pyxmpp
 from cjc import ui
@@ -73,6 +74,8 @@ class Conversation:
 			self.buffer.append_themed("error","Not connected")
 			self.buffer.update()
 			return 0
+		if self.plugin.settings.get("log_filename"):
+			self.plugin.log_message("out",self.me,self.peer,None,s,self.thread)
 		m=pyxmpp.Message(to=self.peer,type="chat",body=s,thread=self.thread)
 		self.plugin.cjc.stream.send(m)
 		self.add_sent(s)
@@ -112,6 +115,16 @@ class Plugin(PluginBase):
 		self.last_thread=0
 		app.theme_manager.set_default_attrs(theme_attrs)
 		app.theme_manager.set_default_formats(theme_formats)
+		self.available_settings={
+			"log_filename": ("Where messages should be logged to",(str,None)),
+			"log_format_in": ("Format of incoming message log entries",(str,None)),
+			"log_format_out": ("Format of outgoing message log entries",(str,None)),
+			}
+		self.settings={
+				"log_filename": "%($HOME)s/.cjc/logs/chats/%(J:peer:bare)s",
+				"log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
+				"log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
+				}
 		app.register_commands({"chat": (self.cmd_chat,
 					"/chat nick|jid [text]",
 					"Start chat with given user")
@@ -193,8 +206,10 @@ class Plugin(PluginBase):
 		if subject:
 			body=u"%s: %s" % (subject,body)
 
+		if self.settings.get("log_filename"):
+			self.log_message("in",fr,self.cjc.jid,subject,body,thread)
+			
 		key=fr.bare().as_unicode()
-
 		conv=None
 		if self.conversations.has_key(key):
 			convs=self.conversations[key]
@@ -217,6 +232,33 @@ class Plugin(PluginBase):
 			else:
 				self.conversations[key]=[conv]
 			self.cjc.screen.display_buffer(conv.buffer)
-		
 		conv.add_received(body)
 		return 1
+
+	def log_message(self,dir,sender,recipient,subject,body,thread):
+		format=self.settings["log_format_"+dir]
+		filename=self.settings["log_filename"]
+		d={
+			"sender": sender,
+			"recipient": recipient,
+			"subject": subject,
+			"body": body,
+			"thread": thread
+			}
+		if dir=="in":
+			d["peer"]=sender
+		else:
+			d["peer"]=recipient
+		filename=self.cjc.theme_manager.substitute(filename,d)
+		s=self.cjc.theme_manager.substitute(format,d)
+		try:
+			dirname=os.path.split(filename)[0]
+			if dirname and not os.path.exists(dirname):
+				os.makedirs(dirname)
+			f=open(filename,"a")
+			try:
+				f.write(s)
+			finally:
+				f.close()
+		except (IOError,OSError),e:
+			self.cjc.error("Couldn't write chat log: "+str(e))

@@ -1,5 +1,6 @@
 import string
 import curses
+import os
 
 import pyxmpp
 from cjc import ui
@@ -149,8 +150,21 @@ class Plugin(PluginBase):
 		self.available_settings={
 			"buffer": ("How received messages should be put in buffers"
 					" (single|separate|per-user|per-thread)",
-					("single","separate","per-user","per-thread"))}
-		self.settings={"buffer":"per-user"}
+					("single","separate","per-user","per-thread")),
+			"log_filename": ("Where messages should be logged to",(str,None)),
+			"log_format_in": ("Format of incoming message log entries",(str,None)),
+			"log_format_out": ("Format of outgoing message log entries",(str,None)),
+			}
+		self.settings={
+				"buffer":"per-user",
+				"log_filename": "%($HOME)s/.cjc/logs/messages/%(J:peer:bare)s",
+				"log_format_in": "[%(T:now:%c)s] Incoming message\n"
+						"From: %(sender)s\n"
+						"Subject: %(subject)s\n%(body)s\n",
+				"log_format_out": "[%(T:now:%c)s] Outgoing message\n"
+						"To: %(recipient)s\n"
+						"Subject: %(subject)s\n%(body)s\n",
+				}
 		app.register_commands({"message": (self.cmd_message,
 					"/message [-subject subject] nick|jid [text]",
 					"Compose or send message to given user"),
@@ -196,6 +210,8 @@ class Plugin(PluginBase):
 		self.cjc.stream.send(m)
 		if buff is None:
 			buff=self.find_or_make(recipient,thread)
+		if self.settings.get("log_filename"):
+			self.log_message("out",self.cjc.jid,recipient,subject,body,thread)
 		buff.add_sent(recipient,subject,body,thread)
 
 	def ev_presence_changed(self,event,arg):
@@ -282,6 +298,36 @@ class Plugin(PluginBase):
 		if body is None:
 			body=u""
 
+		if self.settings.get("log_filename"):
+			self.log_message("in",fr,self.cjc.jid,subject,body,thread)
 		buff=self.find_or_make(fr,thread)
 		buff.add_received(fr,subject,body,thread)
 		return 1
+
+	def log_message(self,dir,sender,recipient,subject,body,thread):
+		format=self.settings["log_format_"+dir]
+		filename=self.settings["log_filename"]
+		d={
+			"sender": sender,
+			"recipient": recipient,
+			"subject": subject,
+			"body": body,
+			"thread": thread
+			}
+		if dir=="in":
+			d["peer"]=sender
+		else:
+			d["peer"]=recipient
+		filename=self.cjc.theme_manager.substitute(filename,d)
+		s=self.cjc.theme_manager.substitute(format,d)
+		try:
+			dirname=os.path.split(filename)[0]
+			if dirname and not os.path.exists(dirname):
+				os.makedirs(dirname)
+			f=open(filename,"a")
+			try:
+				f.write(s)
+			finally:
+				f.close()
+		except (IOError,OSError),e:
+			self.cjc.error("Couldn't write message log: "+str(e))
