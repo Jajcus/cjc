@@ -275,6 +275,10 @@ class Room(muc.MucRoomHandler):
         self.room_state.set_subject(subj)
         return 1
 
+    def cmd_who(self, args):
+        nicks = ','.join(self.room_state.users.keys())
+        self.buffer.append(nicks)
+        self.buffer.update()
     def cmd_nick(self,args):
         new_nick=args.all()
         if not args:
@@ -315,6 +319,10 @@ ui.CommandTable("muc buffer",51,(
     ui.Command("nick",Room.cmd_nick,
         "/nick text",
         "Changes the nickname used",
+        ("text",)),
+    ui.Command("who",Room.cmd_who,
+        "/who ",
+        "Lists users in this room",
         ("text",)),
     ui.CommandAlias("topic","subject"),
     ui.Command("leave",Room.cmd_leave,
