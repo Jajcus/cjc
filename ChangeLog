@@ -1,5 +1,11 @@
 2004-05-31  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/muc.py:
+	- basic MUC functionality. NFY, but works a bit
+
+	* plugins/presence.py:
+	- cosmetics
+
 	* plugins/presence.py:
 	- fix for new Roster API
 
