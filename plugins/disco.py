@@ -201,7 +201,7 @@ class DiscoBuffer:
                 self.buffer.ask_question("[R]efresh or [C]lose",
                         "choice", None, self.response, values=["r","c"], required=1)
 
-    def response(self, arg, response):
+    def response(self, response):
         if response == "c":
             self.cmd_close(None)
         elif response == "r":

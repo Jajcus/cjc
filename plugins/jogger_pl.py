@@ -218,7 +218,7 @@ Level: %(level)s
                 "choice",None,self.send_edit_cancel,values=("sec"))
         return True
 
-    def send_edit_cancel(self,arg,choice):
+    def send_edit_cancel(self, choice):
         if choice in "sS":
             if self.level in (None,"default"):
                 body=self.body

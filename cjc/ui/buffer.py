@@ -52,7 +52,6 @@ class Buffer:
         self.input_widget=None
         self.question_handler=None
         self.question_abort_handler=None
-        self.question_handler_arg=None
         self.question=None
 
     def get_completion_words(self):
@@ -154,7 +153,7 @@ class Buffer:
             f()
 
     def ask_question(self,question,type,default,handler,abort_handler=None,
-            arg=None,values=None,required=1):
+            values=None,required=1):
         import text_input
         import bool_input
         import choice_input
@@ -180,7 +179,6 @@ class Buffer:
             raise InputError,"Unknown input type: "+type
         self.question_handler=handler
         self.question_abort_handler=abort_handler
-        self.question_handler_arg=arg
         self.question=question
         if self.window and self.window.active:
             self.window.screen.input_handler.current_buffer_changed(self)
@@ -189,7 +187,6 @@ class Buffer:
     def unask_question(self):
         self.question_handler=None
         self.question_abort_handler=None
-        self.question_handler_arg=None
         self.question=None
         self.input_widget=None
         if self.window and self.window.active:

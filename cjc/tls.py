@@ -147,11 +147,13 @@ class TLSMixIn:
         arg.name=self.tls_peer_name
         arg.buf=buf
         arg.verify_state=self.cert_verify_state
+        def callback(response):
+            return self.cert_remember_decision(response, arg)
         buf.ask_question("Always accept?",
-            "boolean",None,self.cert_remember_decision,None,arg,None,1)
+            "boolean",None,self.cert_remember_decision,None,None,1)
         buf.update()
 
-    def cert_remember_decision(self,arg,ans):
+    def cert_remember_decision(self, ans, arg):
         logger=logging.getLogger("cjc.TLSHandler")
         arg.buf.close()
         if not ans:
@@ -232,23 +234,21 @@ class TLSMixIn:
             "chain_data": self.stream.tls.get_peer_cert_chain(),
             }
         buf.append_themed("certificate_error",p)
-        arg=Struct()
-        arg.ok=None
-        arg.cond=threading.Condition()
-        buf.ask_question("Accept?","boolean",None,self.cert_verify_decision,None,arg,None,1)
+        ok=None
+        cond=threading.Condition()
+        def callback(response):
+            cond.acquire()
+            ok=response
+            cond.notify()
+            cond.release()
+        buf.ask_question("Accept?", "boolean", None, self.cert_verify_decision, None, None, 1)
         self.screen.display_buffer(buf)
-        arg.cond.acquire()
-        while arg.ok is None:
-            arg.cond.wait()
-        arg.cond.release()
+        cond.acquire()
+        while ok is None:
+            cond.wait()
+        cond.release()
         buf.close()
-        return arg.ok
-
-    def cert_verify_decision(self,arg,ans):
-        arg.cond.acquire()
-        arg.ok=ans
-        arg.cond.notify()
-        arg.cond.release()
+        return ok
 
     def format_cert_chain(self,attr,params):
         logger=logging.getLogger("cjc.TLSHandler")

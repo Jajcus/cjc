@@ -98,13 +98,14 @@ class InputTest(Test):
         if not self.questions:
             return
         q,t,d,v,r=self.questions.pop(0)
-        self.buffer.ask_question(q,t,d,self.input_handler,self.abort_handler,(t,v),v,r)
+        def callback(answer):
+            return self.input_handler(answer, t, v)
+        self.buffer.ask_question(q, t, d, callback, self.abort_handler, v, r)
 
-    def input_handler(self,arg,answer):
+    def input_handler(self, answer, type, values):
         if answer in (None,[],u""):
             self.buffer.append_line("You didn't answer")
         else:
-            type,values=arg
             if type=="boolean":
                 if answer:
                     ans="yes"
@@ -120,7 +121,7 @@ class InputTest(Test):
         self.buffer.update()
         self.ask_next_question()
 
-    def abort_handler(self,arg):
+    def abort_handler(self):
         self.buffer.append_line("You have aborted the question")
         self.buffer.update()
         self.ask_next_question()

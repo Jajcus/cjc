@@ -432,13 +432,13 @@ class Plugin(PluginBase):
         buf=ui.TextBuffer(self.cjc.theme_manager,{"user":fr},"presence.subscribe_buffer")
         buf.preference=self.settings["buffer_preference"]
         buf.append_themed("presence.subscribe",{"user":fr,"reason":reason})
-        buf.ask_question("Accept?","boolean",None,self.subscribe_decision,None,
-                                    (stanza.copy(),buf),None,1)
+        def callback(response):
+            return self.subscribe_decision(response, stanza.copy(), buf)
+        buf.ask_question("Accept?", "boolean", None, self.subscribe_decision, None, None, 1)
         if self.settings.get("auto_popup"):
             self.cjc.screen.display_buffer(buf)
 
-    def subscribe_decision(self,arg,accept):
-        stanza,buf=arg
+    def subscribe_decision(self, accept, stanza, buf):
         fr=stanza.get_from()
         if accept:
             p=stanza.make_accept_response()

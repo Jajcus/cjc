@@ -234,7 +234,7 @@ Subject: %(subject)s
                 "choice",None,self.send_edit_cancel,values=("sec"))
         return True
 
-    def send_edit_cancel(self,arg,choice):
+    def send_edit_cancel(self, choice):
         if choice in "sS":
             self.plugin.send_message(recipient=self.recipient,
                     subject=self.subject,body=self.body)

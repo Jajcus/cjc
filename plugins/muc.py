@@ -242,7 +242,7 @@ class Room(muc.MucRoomHandler):
         self.buffer.ask_question("[C]onfigure or [A]ccept defaults", "choice", "a",
                 self.initial_configuration_choice, values = ("a", "c"), required = True)
 
-    def initial_configuration_choice(self, arg, response):
+    def initial_configuration_choice(self, response):
         if response == "a":
             self.room_state.request_instant_room()
         else:

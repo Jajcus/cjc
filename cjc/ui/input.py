@@ -43,7 +43,6 @@ class Input(Widget):
         self.input_widget=None
         self.question_handler=None
         self.question_abort_handler=None
-        self.question_handler_arg=None
 
     def set_parent(self,parent):
         Widget.set_parent(self,parent)
@@ -60,9 +59,12 @@ class Input(Widget):
         self.__logger.debug("complete() returned: "+`(head,tails)`)
         if len(tails)>1 and self.current_buffer:
             if again:
+                def callback(response):
+                    return self.complete_answer(response, s, pos, head, tails)
+                def abort_callback():
+                    return
                 self.current_buffer.ask_question(head,"list-single",tails[0],
-                    self.complete_answer,self.complete_abort,
-                    (s,pos,head,tails),tails,1);
+                    self.complete_answer,self.complete_abort,tails,1);
                 return 0
             else:
                 self.screen.beep()
@@ -75,34 +77,28 @@ class Input(Widget):
         self.input_widget.redraw()
         return 0
 
-    def complete_answer(self,arg,answer):
-        s,pos,head,tails=arg
+    def complete_answer(self, answer, s, pos, head, tails):
         self.input_widget.set_content(head+answer+s[pos:])
         self.input_widget.set_pos(len(head)+len(answer))
         self.input_widget.redraw()
-
-    def complete_abort(self,arg):
-        return
 
     def input_handler(self,answer):
         if self.input_widget==self.command_line:
             self.screen.user_input(answer)
             return
         handler=self.question_handler
-        arg=self.question_handler_arg
         self.unask_question()
         if handler:
-            handler(arg,answer)
+            handler(answer)
             handler=None
 
     def abort_handler(self):
         if self.input_widget==self.command_line:
             return
         handler=self.question_abort_handler
-        arg=self.question_handler_arg
         self.unask_question()
         if handler:
-            handler(arg)
+            handler()
             handler=None
 
     def make_windows(self):
@@ -143,13 +139,11 @@ class Input(Widget):
         if buffer and buffer.question:
             self.question_handler=buffer.question_handler
             self.question_abort_handler=buffer.question_abort_handler
-            self.question_handler_arg=buffer.question_handler_arg
             self.prompt=buffer.question
             self.input_widget=buffer.input_widget
         else:
             self.question_handler=None
             self.question_abort_handler=None
-            self.question_handler_arg=None
             self.prompt=None
             self.input_widget=self.command_line
             self.make_windows()
