@@ -1,3 +1,8 @@
+2004-05-07  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/roster.py:
+	- convert user name to JID before comparing it with own jid
+
 2004-05-05  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/chat.py, plugins/message.py, plugins/presence.py, plugins/python.py, plugins/roster.py, plugins/shell.py, plugins/test.py, plugins/vcard.py, plugins/version.py, plugins/xmlconsole.py, cjc/ui/__init__.py, cjc/ui/bool_input.py, cjc/ui/buffer.py, cjc/ui/choice_input.py, cjc/ui/cmdtable.py, cjc/ui/complete.py, cjc/ui/input.py, cjc/ui/input_widget.py, cjc/ui/keytable.py, cjc/ui/list_buffer.py, cjc/ui/list_input.py, cjc/ui/screen.py, cjc/ui/split.py, cjc/ui/status_bar.py, cjc/ui/text_buffer.py, cjc/ui/text_input.py, cjc/ui/widget.py, cjc/ui/window.py, cjc.py, cjc/__init__.py, cjc/common.py, cjc/completions.py, cjc/main.py, cjc/plugin.py, cjc/themes.py, cjc/tls.py:
