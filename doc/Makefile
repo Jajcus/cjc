@@ -2,9 +2,15 @@
 .SUFFIXES: .xml .fo .dvi .ps .pdf .html
 
 XSLTPROC=/usr/bin/xsltproc
+XSL_DIR=/usr/share/sgml/docbook/xsl-stylesheets/
+HTML_STYLESHEET=$(XSL_DIR)/xhtml/docbook.xsl
+FO_STYLESHEET=$(XSL_DIR)/xhtml/docbook.xsl
 
 all: 
-	[ "x$(XSLTPROC)" != "x" ] && [ -x "$(XSLTPROC)" ] && make manual.html || :
+	[ "x$(XSLTPROC)" != "x" ] \
+		&& [ -x "$(XSLTPROC)" ] \
+		&& [ -f "$(HTML_STYLESHEET)" ] \
+		&& make manual.html || :
 
 .fo.pdf:
 	pdfxmltex $<
@@ -15,14 +21,11 @@ all:
 .dvi.ps:
 	dvips -o $@ $<
 
-#.xml.html:
-#	xsltproc -o $@ /usr/share/sgml/docbook/xsl-stylesheets/html/docbook.xsl $<
-
 .xml.html:
-	xsltproc -o $@ /usr/share/sgml/docbook/xsl-stylesheets/xhtml/docbook.xsl $<
+	xsltproc -o $@ $(HTML_STYLESHEET) $<
 
 .xml.fo:
-	xsltproc -o $@ /usr/share/sgml/docbook/xsl-stylesheets/fo/docbook.xsl $<
+	xsltproc -o $@ $(FO_STYLESHEET) $<
 
 validate:
 	xmllint --valid --noout *.xml
