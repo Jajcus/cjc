@@ -375,10 +375,10 @@ class ThemeManager:
         if not u":" in options[0]:
             # yes/no choice
             if value:
-                params[key]=options[0]
+                params[key]=self.substitute(options[0],params)
             else:
                 if len(options)>1:
-                    params[key]=options[1]
+                    params[key]=self.substitute(options[1],params)
                 else:
                     params[key]=u""
             return format
