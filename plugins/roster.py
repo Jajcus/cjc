@@ -281,8 +281,9 @@ class Plugin(PluginBase):
 		if user is None:
 			return
 		name=args.all()
-		item=self.cjc.roster.item_by_jid(user)
-		if not item:
+		try:
+			item=self.cjc.roster.item_by_jid(user)
+		except KeyError:
 			self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
 			return
 		item.set_name(name)
