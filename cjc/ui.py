@@ -4,6 +4,48 @@ import locale
 from types import StringType,UnicodeType
 import curses
 import curses.textpad
+import traceback
+
+def debug(s):
+	print >>sys.stderr,"DEBUG:",s
+		
+def error(s):
+	print >>sys.stderr,"ERROR:",s
+		
+def print_exception():
+	traceback.print_exc(file=sys.stderr)
+	
+class CommandHandler:
+	def __init__(self,d=None,object=None):
+		self.command_handlers={}
+		if d:
+			self.register_commands(d,object)
+
+	def register_commands(self,d,object=None):
+		if object is None:
+			object=self
+		for name,handler in d.items():
+			if type(handler) is StringType:
+				handler=getattr(object,handler)
+			if not callable(handler):
+				raise TypeError,"Bad command handler"
+			self.command_handlers[name]=handler
+
+	def commands(self):
+		return self.commands.keys()
+
+	def command(self,cmd,args):
+		if self.command_handlers.has_key(cmd):
+			try:
+				self.command_handlers[cmd](args)
+			except KeyboardInterrupt:
+				raise
+			except StandardError,e:
+				error("Comand execution failed: "+str(e))
+				print_exception()
+			return 1
+		else:
+			return 0
 
 class Widget:
 	def __init__(self):
@@ -26,6 +68,111 @@ class Widget:
 
 	def redraw(self,now=1):
 		self.update()
+
+class Buffer(CommandHandler):
+	buffer_list=[]
+	def __init__(self,name):
+		CommandHandler.__init__(self)
+		self.name=name
+		self.window=None
+		try:
+			self.buffer_list[self.buffer_list.index(None)]=self
+		except ValueError:
+			self.buffer_list.append(self)
+
+	def get_number(self):
+		return self.buffer_list.index(self)
+		
+	def format(self,width,height):
+		pass
+
+	def update(self,now=1):
+		if self.window:
+			self.window.update(now)
+
+	def redraw(self,now=1):
+		if self.window:
+			self.window.redraw(now)
+
+	def user_input(self,s):
+		return 0
+
+	def keypressed(self,ch,escape):
+		return 0
+			
+def buffer_get_by_number(n):
+	try:
+		return Buffer.buffer_list[n]
+	except IndexError:
+		return None
+
+class TextBuffer(Buffer):
+	def __init__(self,name,length=200):
+		Buffer.__init__(self,name)
+		self.length=length
+		self.lines=[[]]
+		self.pos=0
+		
+	def append(self,s,attr="default"):
+		if self.window:
+			self.window.write(s,attr)
+		newl=0
+		s=s.split(u"\n")
+		for l in s:
+			if newl:
+				self.lines.append([])
+			if l:
+				self.lines[-1].append((attr,l))
+			newl=1
+		self.lines=self.lines[-self.length:]
+	
+	def append_line(self,s,attr="default"):
+		self.append(s,attr)
+		self.lines.append([])
+		if self.window:
+			self.window.write(u"\n",attr)
+
+	def write(self,s):
+		self.append(s)
+		self.update()
+
+	def clear(self):
+		self.lines=[[]]
+
+	def line_length(self,n):
+		ret=0
+		for attr,s in self.lines[n]:
+			ret+=len(s)
+		return ret
+
+	def format(self,width,height):
+		if self.lines[-1]==[]:
+			i=2
+		else:
+			i=1
+		ret=[]
+		while height>0 and i<=len(self.lines):
+			l=self.line_length(-i)
+			h=l/width+1
+			ret.insert(0,self.lines[-i])
+			height-=h
+			i+=1
+			
+		if height<0:
+			cut=(-height)*width
+			i=0
+			n=0
+			for attr,s in ret[0]:
+				l=len(s)
+				i+=l
+				if i==cut:
+					ret[0]=ret[0][n+1:]
+					break
+				elif i>cut:
+					ret[0]=[(attr,s[-(cut-i):])]+ret[0][n+1:]
+					break
+				n+=1
+		return ret
 
 class Split(Widget):
 	def __init__(self,*children):
@@ -139,7 +286,6 @@ class HorizontalSplit(Split):
 		t=0
 		for i in range(0,len(self.children)):
 			b=t+self.heights[i]
-			print >>sys.stderr,"Child: %i offset: %i height: %i\r" % (i,t,self.heights[i])
 			self.children_pos.append(t)
 			t=b
 
@@ -163,12 +309,16 @@ class HorizontalSplit(Split):
 			c.redraw(now)
 			
 class StatusBar(Widget):
-	def __init__(self,items=[]):
+	def __init__(self,format,dict):
 		Widget.__init__(self)
-		self.items=items
+		self.format=format
+		self.dict=dict
 
 	def get_height(self):
 		return 1
+
+	def get_dict(self):
+		return self.dict
 
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
@@ -178,23 +328,67 @@ class StatusBar(Widget):
 	def update(self,now=1):
 		self.win.clear()
 		self.win.move(0,0)
-		for i in self.items:
-			if type(i) is UnicodeType:
-				s=i.encode(self.screen.encoding,"replace")
-			else:
-				s=str(i)
-			self.win.addstr(s)
+		s=(self.format % self.dict).encode(self.screen.encoding,"replace")
+		self.win.addstr(s)
 		if now:
 			self.win.refresh()
 		else:
 			self.win.noutrefresh()
 
 class Window(Widget):
-	def __init__(self,status_bar_items):
+	def __init__(self,title,lock=0):
 		Widget.__init__(self)
 		self.buffer=None
-		self.status_bar=StatusBar(status_bar_items)
+		if lock:
+			l="!"
+		else:
+			l=""
+		self.status_bar=StatusBar(u" %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s)",
+						{"active":"",
+						 "winname":title,
+						 "bufname":"",
+						 "bufnum":"",
+						 "locked":l})
 		self.win=None
+		self.newline=0
+		self.locked=lock
+		self.active=0
+
+	def keypressed(self,ch,escape):
+		if self.buffer and self.buffer.keypressed(ch,escape):
+			return 1
+		if self.locked:
+			return 0
+		if escape and ch in range(ord("0"),ord("9")+1):
+			b=buffer_get_by_number(ch-ord("0"))
+			if b is None:
+				return 1
+			old=b.window
+			if old and old.locked:
+				return 1
+			self.set_buffer(b)
+			self.update()
+			if old:
+				old.update()
+			return 1
+		return 0
+
+	def commands(self):
+		if self.buffer:
+			return self.bufffer.commands()
+		else:
+			return []
+
+	def command(self,cmd,args):
+		if self.buffer:
+			return self.buffer.command(cmd,args)
+		else:
+			return 0
+
+	def user_input(self,s):
+		if self.buffer:
+			return self.buffer.user_input(s)
+		return 0
 
 	def place(self,child):
 		if child is not self.status_bar:
@@ -203,21 +397,44 @@ class Window(Widget):
 
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
-		self.set_buffer(self.buffer)
 		self.status_bar.set_parent(self)
 		self.win=curses.newwin(self.h-1,self.w,self.y,self.x)
 		self.win.scrollok(1)
 		if self.buffer:
 			self.draw_buffer()
+			
+		if self not in self.screen.windows:
+			self.screen.add_window(self)
+
+	def set_active(self,yes):
+		if yes:
+			self.active=1
+			a="*"
+		else:
+			self.active=0
+			a=""
+		d=self.status_bar.get_dict()
+		d["active"]=a
+		self.status_bar.update(0)
 		
 	def set_buffer(self,buf):
 		if self.buffer:
 			self.buffer.window=None
-		self.buffer=buf
 		if buf:
+			if buf.window:
+				buf.window.set_buffer(self.buffer)
 			buf.window=self
+		self.buffer=buf
 		if self.win:
 			self.draw_buffer()
+		self.newline=0
+		d=self.status_bar.get_dict()
+		if buf:
+			d["bufname"]=buf.name
+			d["bufnum"]=buf.get_number()
+		else:
+			d["bufname"]=u""
+		self.status_bar.update(1)
 
 	def update(self,now=1):
 		self.status_bar.update(now)
@@ -227,18 +444,70 @@ class Window(Widget):
 			self.win.noutrefresh()
 
 	def draw_buffer(self):
+		self.win.clear()
 		self.win.move(0,0)
-		for line in self.buffer.format(0,self.w,self.h-2):
+		lines=self.buffer.format(self.w,self.h-2)
+		if not lines:
+			return
+		for line in lines:
 			for attr,s in line:
 				s=s.encode(self.screen.encoding,"replace")
 				attr=self.screen.attrs[attr]
 				self.win.addstr(s,attr)
-			self.win.addstr("\n")
+			try:
+				self.win.addstr("\n")
+			except curses.error:
+				self.newline=1
+				break
 
 	def write(self,s,attr):
-		s=s.encode(self.screen.encoding,"replace")
+		if not s:
+			return
 		attr=self.screen.attrs[attr]
-		self.win.addstr(s,attr)
+		y,x=self.win.getyx()
+		if self.newline:
+			if y==self.h-2:
+				self.win.scroll(1)
+				self.win.move(y,0)
+			else:
+				y+=1
+				self.win.addstr("\n")
+			self.newline=0
+			x=0
+			
+		if s[-1]==u"\n":
+			s=s[:-1]
+			self.newline=1
+			
+		paras=s.split("\n")
+		if len(paras[0])+x>self.w:
+			s=paras[0][:self.w-x]
+			s=s.encode(self.screen.encoding,"replace")
+			self.win.addstr(s,attr)
+			paras[0]=paras[0][self.w-x:]
+		else:
+			s=paras[0][:self.w-x]
+			s=s.encode(self.screen.encoding,"replace")
+			self.win.addstr(s,attr)
+			if len(paras)==1:
+				return
+
+		y+=1
+		lines=[]
+		while len(paras):
+			if len(paras[0])>self.w:
+				lines.append(paras[0][:self.w])
+				paras[0]=paras[0][self.w:]
+			else:
+				lines.append(paras.pop(0))
+		
+		for s in lines:	
+			if y==self.h-2:
+				self.win.scroll(1)
+			else:
+				y+=1
+			s=s.encode(self.screen.encoding,"replace")
+			self.win.addstr(s,attr)
 	
 	def redraw(self,now=1):
 		self.status_bar.redraw(now)
@@ -251,25 +520,26 @@ class Window(Widget):
 			self.win.noutrefresh()
 
 class EditLine(Widget):
-	def __init__(self,input_handler):
+	def __init__(self):
 		Widget.__init__(self)
-		self.input_handler=input_handler
 		self.win=None
+		self.capture_rest=0
 		
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
-		print >>sys.stderr,`(self.h,self.w,self.y,self.x)`
 		self.win=curses.newwin(self.h,self.w,self.y,self.x)
 		self.textpad=curses.textpad.Textbox(self.win)
+		self.screen.set_default_key_handler(self)
 
 	def get_height(self):
 		return 1
 
-	def process(self):
-		c=self.win.getch()
+	def keypressed(self,c,escape):
+		if escape:
+			self.textpad.do_command(27)
 		if c in (curses.KEY_ENTER,ord("\n"),ord("\r")):
 			ret=self.textpad.gather()
-			self.input_handler(unicode(ret,self.screen.encoding,"replace"))
+			self.screen.user_input(unicode(ret,self.screen.encoding,"replace"))
 			self.win.clear()
 			self.textpad=curses.textpad.Textbox(self.win)
 			self.win.refresh()
@@ -284,8 +554,14 @@ class EditLine(Widget):
 		else:
 			self.win.noutrefresh()
 
-class Screen:
+screen_commands={
+	"next": "focus_next",
+	"prev": "focus_prev",
+}
+
+class Screen(CommandHandler):
 	def __init__(self,screen):
+		CommandHandler.__init__(self,screen_commands)
 		self.scr=screen
 		self.screen=self
 		self.children=[]
@@ -293,6 +569,13 @@ class Screen:
 		self.pairs={}
 		self.next_pair=1
 		self.content=None
+		self.active_window=None
+		self.windows=[]
+		self.default_key_handler=None
+		self.default_command_handler=None
+		self.escape=0
+		screen.keypad(1)
+		screen.nodelay(1)
 		lc,self.encoding=locale.getlocale()
 		if self.encoding is None:
 			self.encoding="us-ascii"
@@ -366,13 +649,136 @@ class Screen:
 			self.scr.clear()
 		curses.doupdate()
 
+	def set_default_key_handler(self,h):
+		self.default_key_handler=h
+
+	def set_default_command_handler(self,h):
+		self.default_command_handler=h
+
+	def add_window(self,win):
+		if not self.windows:
+			win.set_active(1)
+			self.active_window=win
+		self.windows.append(win)
+		curses.doupdate()
+
+	def focus_window(self,win):
+		if not win or win is self.active_window:
+			return
+				
+		self.active_window.set_active(0)
+		win.set_active(1)
+		self.active_window=win
+		curses.doupdate()
+				
+	def focus_next(self,args=None):
+		if len(self.windows)<=1:
+			return
+			
+		for i in range(0,len(self.windows)):
+			if self.windows[i] is self.active_window:
+				if i==len(self.windows)-1:
+					win=self.windows[0]
+				else:
+					win=self.windows[i+1]
+				self.focus_window(win)
+				break
+
+	def focus_prev(self,args=None):
+		if len(self.windows)<=1:
+			return
+			
+		for i in range(0,len(self.windows)):
+			if self.windows[i] is self.active_window:
+				if i==0:
+					win=self.windows[-1]
+				else:
+					win=self.windows[i-1]
+				self.focus_window(win)
+				break
+
+	def process_key(self,ch):
+		if self.active_window:
+			if self.active_window.keypressed(ch,self.escape):
+				return
+				
+		if self.escape and ch==ord("\t"):
+			self.focus_next()
+			return
+		
+		if self.default_key_handler:
+			if self.default_key_handler.keypressed(ch,self.escape):
+				return
+
+	def keypressed(self):
+		ch=self.default_key_handler.win.getch()
+		if ch==-1:
+			return 0
+		if ch==27:
+			if self.escape:
+				self.escape=0
+				self.process_key(27)
+				return 1
+			else:
+				self.escape=1
+				return 1
+		self.process_key(ch)
+		self.escape=0
+
+	def commands(self):
+		ret=CommandHandler.commands(self)
+		if self.active_window:
+			ret+=self.active_window.commands()
+		if self.default_command_handler:
+			ret+=self.default_command_handler.commands()
+
+	def user_input(self,s):
+		try:
+			self.do_user_input(s)
+		except KeyboardInterrupt:
+			pass
+		except StandardError:
+			print_exception()
+
+	def do_user_input(self,s):
+		if not s.startswith(u"/"):
+			if self.active_window and self.active_window.user_input(s):
+				return
+			return
+		cmd=s[1:]	
+		if not cmd:
+			return
+		s=cmd.split(None,1)
+		if len(s)>1:
+			cmd,args=s
+		else:
+			cmd,args=s[0],None
+		cmd=cmd.lower()
+		if self.active_window and self.active_window.command(cmd,args):
+			return
+		if self.command(cmd,args):
+			return
+		if self.default_command_handler and self.default_command_handler.command(cmd,args):
+			return
+			
+	def display_buffer(self,buffer):
+		if buffer.window:
+			return buffer.window
+		if self.active_window and not self.active_window.locked:
+			self.active_window.set_buffer(buffer)
+			return self.active_window
+		for w in self.windows:
+			if not w.locked:
+				w.set_buffer(buffer)
+				return w
+		return None
+
 def init():
 	screen=curses.initscr()
 	curses.start_color()
 	curses.cbreak()
 	curses.noecho()
 	curses.nonl()
-	screen.keypad(1)
 	return Screen(screen)
 
 def deinit():
