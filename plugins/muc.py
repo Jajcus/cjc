@@ -234,6 +234,23 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.presence_changed",fparams)
             self.buffer.update()
 
+    def room_created(self, stanza):
+        self.buffer.append_themed("muc.info","New room created. It must be configured before use.")
+        self.buffer.update()
+        self.buffer.ask_question("[C]onfigure or [A]ccept defaults", "choice", "a",
+                self.initial_configuration_choice, values = ("a", "c"), required = True)
+
+    def initial_configuration_choice(self, arg, response):
+        if response == "a":
+            self.room_state.request_instant_room()
+        else:
+            self.buffer.append_themed("error","Not implemented yet")
+            self.buffer.update()
+
+    def room_configured(self):
+        self.buffer.append_themed("muc.info","Room configured")
+        self.buffer.update()
+
     def user_input(self,s):
         if not self.plugin.cjc.stream:
             self.buffer.append_themed("error","Not connected")
