@@ -97,7 +97,7 @@ ktb=keytable.KeyTable("bool-input",50,(
 		KeyFunction("abort-input",
 				BooleanInput.key_abort,
 				"Abort",
-				"\e"),
+				"ESCAPE"),
 		KeyFunction("answer-yes",
 				BooleanInput.answer_yes,
 				"Answer 'yes'",

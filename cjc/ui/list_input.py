@@ -132,7 +132,7 @@ ktb=keytable.KeyTable("list-input",50,(
 		KeyFunction("abort-input",
 				ListInput.key_abort,
 				"Abort",
-				"\e"),
+				"ESCAPE"),
 		KeyFunction("next-option",
 				ListInput.key_down,
 				"Select the next option",

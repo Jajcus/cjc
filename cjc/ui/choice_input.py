@@ -168,7 +168,7 @@ ktb=keytable.KeyTable("choice-input",50,(
 		KeyFunction("abort-input",
 				ChoiceInput.key_abort,
 				"Abort",
-				"\e"),
+				"ESCAPE"),
 		KeyFunction("backward-delete-char",
 				ChoiceInput.key_bs,
 				"Delete previous character",
