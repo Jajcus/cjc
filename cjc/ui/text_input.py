@@ -337,11 +337,11 @@ ktb=keytable.KeyTable("text-input",50,(
 				"Erase whole text",
 				"^K"),
 		KeyFunction("unix-word-rubout",
-				TextInput.key_kill,
+				TextInput.key_wrubout,
 				"Kill the word behind cursor",
 				"^W"),
 		KeyFunction("unix-line-discard",
-				TextInput.key_kill,
+				TextInput.key_uclean,
 				"Kill backward from cursor to the beginning of the line",
 				"^U"),
 		))
