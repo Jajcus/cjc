@@ -396,6 +396,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.set_layout(layout,layout)
 		self.screen.lock.release()
 
+	def stream_created(self,stream):
+		self.send_event("stream created",stream)
+	
 	def session_started(self):
 		for p in self.plugins.values():
 			try:
@@ -405,6 +408,10 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				self.info("Plugin call failed")
 		self.stream.set_message_handler("error",self.message_error)
 
+	
+	def stream_closed(self,stream):
+		self.send_event("stream closed",stream)
+		
 	def disconnected(self):
 		for user,info in self.user_info.items():
 			if info.has_key("presence"):
