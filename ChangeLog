@@ -1,3 +1,8 @@
+2004-09-14  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/presence.py:
+	- typo fixed
+
 2004-09-13  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/chat.py, plugins/jogger_pl.py, plugins/message.py, plugins/presence.py, plugins/vcard.py, plugins/version.py:
