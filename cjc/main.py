@@ -814,8 +814,10 @@ class Application(jabber.Client,tls.TLSHandler):
         for l in f.readlines():
             if not l:
                 continue
-            l=l.split("#",1)[0].strip()
+            l=l.strip()
             if not l:
+                continue
+            if l[0]=='#':
                 continue
             try:
                 args=ui.CommandArgs(unicode(l,"utf-8"))
