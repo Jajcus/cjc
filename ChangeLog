@@ -1,5 +1,11 @@
 2004-06-27  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/themes.py:
+	- allow substitutions in boolean conditionals values
+
+	* plugins/muc.py:
+	- presence changes handling fixes
+
 	* plugins/muc.py:
 	- use proper theme format for presence change notification
 	- do not display presence change notification when user goes offline
