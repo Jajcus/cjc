@@ -6,6 +6,7 @@ import pyxmpp
 
 class UserCompletion(ui.Completion):
     def __init__(self,app):
+        ui.Completion.__init__(self)
         self.app=app
         self.__logger=logging.getLogger("cjc.UserCompletion")
     def complete(self,word):
@@ -51,6 +52,7 @@ class UserCompletion(ui.Completion):
 class SettingCompletion(ui.Completion):
     def __init__(self,app):
         self.app=app
+        ui.Completion.__init__(self)
         self.__logger=logging.getLogger("cjc.SettingCompletion")
     def complete(self,word):
         self.__logger.debug("SettingCompletion.complete(self,%r)" % (word,))
@@ -86,6 +88,7 @@ class SettingCompletion(ui.Completion):
 
 class CommandCompletion(ui.Completion):
     def __init__(self,app):
+        ui.Completion.__init__(self)
         self.app=app
         self.__logger=logging.getLogger("cjc.CommandCompletion")
     def complete(self,word):

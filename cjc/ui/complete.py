@@ -35,16 +35,7 @@ class Completion:
 
 class GenericCompletion(Completion):
     def __init__(self,words=[]):
-        self.words=words
-    def complete(self,word):
-        matches=[]
-        for w in self.words:
-            if w.startswith(word):
-                matches.append([w,1])
-        return self.make_result("",word,matches)
-
-class GenericCompletion(Completion):
-    def __init__(self,words=[]):
+        ui.Completion.__init__(self)
         self.words=words
     def complete(self,word):
         matches=[]
@@ -55,6 +46,7 @@ class GenericCompletion(Completion):
 
 class ActiveBufferDefinedCompletion(Completion):
     def __init__(self,screen):
+        ui.Completion.__init__(self)
         self.__logger=logging.getLogger("cjc.ui.ActiveBufferDefinedCompletion")
         self.screen=screen
     def complete(self,word):
