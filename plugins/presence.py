@@ -5,7 +5,7 @@ import time
 
 theme_formats=(
 	("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is available\n"),
-	("presence.unavailable","%[info][%(T:timestamp)s]  %(J:user)s (%(J:user:rostername)s) is unavailable\n"),
+	("presence.unavailable","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is unavailable\n"),
 )
 
 commands={
