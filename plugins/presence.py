@@ -40,18 +40,35 @@ class Plugin(PluginBase):
         app.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "priority": ("Priority of current resource",int),
-            "chat_priority": ("Priority of current resource in ready-for-chat mode",(int,None)),
-            "dnd_priority": ("Priority of current resource in dnd mode",(int,None)),
-            "away_priority": ("Priority of current resource in away mode",(int,None)),
-            "xa_priority": ("Priority of current resource in xa mode",(int,None)),
-            "auto_away": ("Time in minutes after set presence should be set to 'away' (unset or 0 to disable)",(int,None)),
-            "auto_xa": ("Time in minutes after set presence should be set to 'xa' (unset or 0 to disable)",(int,None)),
-            "auto_away_msg": ("Auto-away status description",(unicode,None)),
-            "auto_xa_msg": ("Auto-away status description",(unicode,None)),
+            "chat_priority": ("Priority of current resource in ready-for-chat" 
+                    " mode",(int,None)),
+            "dnd_priority": ("Priority of current resource in dnd mode",
+                    (int,None)),
+            "away_priority": ("Priority of current resource in away mode",
+                    (int,None)),
+            "xa_priority": ("Priority of current resource in xa mode",
+                    (int,None)),
+            "auto_away": ("Time in minutes after set presence should be set"
+                    " to 'away' (unset or 0 to disable)",(int,None)),
+            "auto_xa": ("Time in minutes after set presence should be set"
+                    " to 'xa' (unset or 0 to disable)",(int,None)),
+            "auto_away_msg": ("Auto-away status description (if empty and"
+                    " presence.keep_description is set then status description"
+                    " is not changed",(unicode,None)),
+            "auto_xa_msg": ("Auto-away status description (if empty and "
+                    "presence.keep_description is set then status description"
+                    " is not changed)",(unicode,None)),
             "show_changes": ("Auto-away status description",(int,None)),
             "show_errors": ("Auto-away status description",(int,None)),
-            "buffer_preference": ("Preference of presence subscription buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
-            "auto_popup": ("When enabled each new presence subscription buffer is automaticaly made active.",bool),
+            "buffer_preference": ("Preference of presence subscription buffers"
+                    " when switching to the next active buffer. If 0 then"
+                    " the buffer is not even shown in active buffer list.",int),
+            "auto_popup": ("When enabled each new presence subscription buffer"
+                    " is automaticaly made active.",bool),
+            "keep_description": ("When changing status (online,away,etc.) keep"
+                    " status description (reason).",bool),
+            "no_auto_away_when": ("Modes in which now auto-away or auto-xa"
+                    " should happen.",list),
             }
         self.settings={
             "priority": 1,
@@ -63,6 +80,8 @@ class Plugin(PluginBase):
             "show_errors": 1,
             "buffer_preference": 50,
             "auto_popup": False,
+            "keep_description": False,
+            "no_auto_away_when": ["away","xa","dnd"]
             }
         app.add_info_handler("resources",self.info_resources)
         app.add_info_handler("presence",self.info_presence)
@@ -145,7 +164,8 @@ class Plugin(PluginBase):
             return
         p=self.cjc.get_user_info(self.cjc.jid,"presence")
         if (not p or p.get_type()=="unavailable"
-            or (p.get_show() in ("xa","away") and not self.away_saved_presence)):
+            or (p.get_show() in self.settings["no_auto_away_when"] 
+                    and not self.away_saved_presence)):
             return
 
         if not self.away_saved_presence:
@@ -159,12 +179,16 @@ class Plugin(PluginBase):
                     self.settings.get("away_priority",
                             self.settings.get("priority",0)))
             status=self.settings.get("auto_xa_msg","")
+            if not status and self.settings.get("keep_description"):
+                status=p.get_status()
         elif auto_away and idle>=auto_away:
             if p.get_show()=="away":
                 return
             show="away"
             prio=self.settings.get("away_priority",self.settings.get("priority",0))
             status=self.settings.get("auto_away_msg","")
+            if not status and self.settings.get("keep_description"):
+                status=p.get_status()
         else:
             return
 
@@ -182,66 +206,72 @@ class Plugin(PluginBase):
                 self.set_presence(self.away_saved_presence)
             self.away_saved_presence=None
 
-    def cmd_online(self,args):
+    def change_status(self,mode,args,default_priority=None):
         if self.away_saved_presence:
             self.away_saved_presence=None
             self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
         if not self.cjc.stream:
             self.error("Connect first!")
             return
+        to=None
+        priority=default_priority
+        keep=self.settings.get("keep_description")
+        while 1:
+            opt=args.get()
+            if opt=="-keep":
+                keep=True
+                args.shift()
+                continue
+            elif opt=="-clear":
+                keep=False
+                args.shift()
+                continue
+            elif opt=="-to":
+                args.shift()
+                to=args.shift()
+                if not to:
+                    self.error("'/%s -to' without any argument",mode)
+                    return
+                try:
+                    to=pyxmpp.JID(to)
+                except ValueError:
+                    return
+                continue
+            break
+                
         reason=args.all()
-        prio=self.settings.get("priority",0)
-        p=pyxmpp.Presence(status=reason,priority=prio)
+        
+        current=self.cjc.get_user_info(self.cjc.jid,"presence")
+        if priority is None:
+            priority=self.settings.get("priority",1)
+        if mode=="online":
+            show=None
+        elif mode=="chatready":
+            show="chat"
+        else:
+            show=mode
+        if keep:
+            reason=current.get_status()
+        p=pyxmpp.Presence(show=show,status=reason,to=to,priority=priority)
         self.set_presence(p)
+
+    def cmd_online(self,args):
+        self.change_status("online",args)
 
     def cmd_away(self,args):
-        if self.away_saved_presence:
-            self.away_saved_presence=None
-            self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
-        if not self.cjc.stream:
-            self.error("Connect first!")
-            return
-        reason=args.all()
-        prio=self.settings.get("away_priority",self.settings.get("priority",0))
-        p=pyxmpp.Presence(show="away",status=reason,priority=prio)
-        self.set_presence(p)
+        self.change_status("away",args,self.settings.get("away_priority"))
 
     def cmd_xa(self,args):
-        if self.away_saved_presence:
-            self.away_saved_presence=None
-            self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
-        if not self.cjc.stream:
-            self.error("Connect first!")
-            return
-        reason=args.all()
-        prio=self.settings.get("xa_priority",self.settings.get("away_priority",
-                self.settings.get("priority",0)))
-        p=pyxmpp.Presence(show="xa",status=reason,priority=prio)
-        self.set_presence(p)
+        priority=self.settings.get("xa_priority")
+        if not priority:
+            priority=self.settings.get("away_priority")
+        self.change_status("xa",args,priority)
 
     def cmd_dnd(self,args):
-        if self.away_saved_presence:
-            self.away_saved_presence=None
-            self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
-        if not self.cjc.stream:
-            self.error("Connect first!")
-            return
-        reason=args.all()
-        prio=self.settings.get("dnd_priority",self.settings.get("priority",0))
-        p=pyxmpp.Presence(show="dnd",status=reason,priority=prio)
-        self.set_presence(p)
+        self.change_status("dnd",args,self.settings.get("dnd_priority"))
 
     def cmd_chatready(self,args):
-        if self.away_saved_presence:
-            self.away_saved_presence=None
-            self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
-        if not self.cjc.stream:
-            self.error("Connect first!")
-            return
-        reason=args.all()
-        prio=self.settings.get("chat_priority",self.settings.get("priority",0))
-        p=pyxmpp.Presence(show="chat",status=reason,priority=prio)
-        self.set_presence(p)
+        self.change_status("chatready",args,self.settings.get("chat_priority"))
 
     def cmd_subscribe(self,args):
         user=args.shift()
@@ -439,27 +469,47 @@ class Plugin(PluginBase):
 
 ui.CommandTable("presence",50,(
     ui.Command("online",Plugin.cmd_online,
-        "/online [reason]",
-        "Set availability to 'online' with optional reason",
-        ("text",)),
+        "/online [-to jid] [-keep | -clear] [-priority n] [description]",
+        "Set availability to 'online' with optional description."
+        " '-to' option directs the presence to given user,"
+        " '-keep' forces keeping current status description,"
+        " '-clear' clears it, '-priority' allows setting the priority"
+        " to an integer in range -128 to 127.",
+        ("-to jid","-keep","-clear","-priority opaque","text")),
     ui.CommandAlias("back","online"),
     ui.Command("away",Plugin.cmd_away,
-        "/away [reason]",
-        "Set availability to 'away' with optional reason",
-        ("text",)),
+        "/away [-to jid] [-keep | -clear] [-priority n] [description]",
+        "Set availability to 'away' with optional description."
+        " '-to' option directs the presence to given user,"
+        " '-keep' forces keeping current status description,"
+        " '-clear' clears it, '-priority' allows setting the priority"
+        " to an integer in range -128 to 127.",
+        ("-to jid","-keep","-clear","-priority opaque","text")),
     ui.Command("xa",Plugin.cmd_xa,
-        "/xa [reason]",
-        "Set availability to 'extended away' with optional reason",
-        ("text",)),
+        "/xa [-to jid] [-keep | -clear] [-priority n] [description]",
+        "Set availability to 'extended away' with optional description."
+        " '-to' option directs the presence to given user,"
+        " '-keep' forces keeping current status description,"
+        " '-clear' clears it, '-priority' allows setting the priority"
+        " to an integer in range -128 to 127.",
+        ("-to jid","-keep","-clear","-priority opaque","text")),
     ui.Command("dnd",Plugin.cmd_dnd,
-        "/dnd [reason]",
-        "Set availability to 'do not disturb' with optional reason",
-        ("text",)),
+        "/dnd [-to jid] [-keep | -clear] [-priority n] [description]",
+        "Set availability to 'do not disturb' with optional description."
+        " '-to' option directs the presence to given user,"
+        " '-keep' forces keeping current status description,"
+        " '-clear' clears it, '-priority' allows setting the priority"
+        " to an integer in range -128 to 127.",
+        ("-to jid","-keep","-clear","-priority opaque","text")),
     ui.CommandAlias("busy","dnd"),
     ui.Command("chatready",Plugin.cmd_chatready,
-        "/chatready [reason]",
-        "Set availability to 'ready for a chat' with optional reason",
-        ("text",)),
+        "/chatready [-to jid] [-keep | -clear] [-priority n] [description]",
+        "Set availability to 'ready for a chat' with optional description."
+        " '-to' option directs the presence to given user,"
+        " '-keep' forces keeping current status description,"
+        " '-clear' clears it, '-priority' allows setting the priority"
+        " to an integer in range -128 to 127.",
+        ("-to jid","-keep","-clear","-priority opaque","text")),
     ui.Command("subscribe",Plugin.cmd_subscribe,
         "/subscribe user",
         "Subscribe to user's presence",
