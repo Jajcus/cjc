@@ -300,7 +300,7 @@ class ThemeManager:
                 val=params[name]
             else:
                 val=self.find_format_param(name,params)
-            if val:
+            if val is not None:
                 ret=[]
                 if before:
                     ret+=self.do_format_string(before,attr,params)
