@@ -12,7 +12,7 @@ Requirements:
 1. Python interpreter
 
 	PyXMPP and CJC were tested with Python 2.3.3, but probably it will also
-	work with some older Python versions (but not older than 2.2).
+	work with some older Python versions (but not older than 2.3).
 
 2. PyXMPP - http://jabberstudio.org/projects/pyxmpp
 
@@ -31,10 +31,7 @@ Requirements:
 
 	This is rather pyxmpp requirement and the libxml2 module should match
 	libxml2 library version used to compile PyXMPP. CJC was tested with
-	libxml2-2.6.7.
-
-When Psyco (a kind of just-in-time (JIT) compiler) is available it will be used
-to improve CJC speed.
+	libxml2-2.6.7. Versions older than 2.6.0 will probably not work well.
 
 
 Installation:
@@ -60,6 +57,9 @@ The best place to send those is the CJC page on JabberStudio:
 
 But you can write to me directly via e-mail: jajcus@bnet.pl 
 or jabber: jajcus@jabber.bnet.pl
+
+There is also a mailing list for CJC: cjc@lists.bnet.pl. To subscribe -- send
+an empty message to cjc-subscribe@lists.bnet.pl.
 
 But if you don't describe your problem or wish on JabberStudio I may forget
 about it.
