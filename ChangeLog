@@ -1,5 +1,8 @@
 2004-09-10  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/jogger_pl.py:
+	- jogger.pl plugin
+
 	* plugins/message.py:
 	- missing 'message.composer_descr' theme format added
 
