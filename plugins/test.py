@@ -81,22 +81,21 @@ class InputTest(Test):
 		if not self.questions:
 			return
 		q,t,d,v,r=self.questions.pop(0)
-		self.plugin.cjc.command_line.ask_question(q,t,d,self.input_handler,
-								self.abort_handler,(t,v),v,r)
+		self.buffer.ask_question(q,t,d,self.input_handler,self.abort_handler,(t,v),v,r)
 	
 	def input_handler(self,arg,answer):
 		if answer in (None,[],u""):
 			self.buffer.append_line("You didn't answer")
 		else:
 			type,values=arg
-			if type is "boolean":
+			if type=="boolean":
 				if answer:
 					answer="yes"
 				else:
 					answer="no"
-			elif type is "list-single":
+			elif type=="list-single":
 				answer=values[answer]
-			elif type is "list-multi":
+			elif type=="list-multi":
 				answer=[values[a] for a in answer]
 			self.buffer.append_line("Your answer is %r" % (answer,))
 		self.buffer.update()

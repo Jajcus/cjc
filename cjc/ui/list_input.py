@@ -3,16 +3,12 @@ import curses
 import curses.textpad
 import string
 
-from widget import Widget
 from cjc import common
+from input_widget import InputWidget
 
-
-class ListInput:
-	def __init__(self,parent,abortable,required,default,values,multi=0):
-		self.parent=parent
-		self.abortable=abortable
-		self.required=required
-		self.win=None
+class ListInput(InputWidget):
+	def __init__(self,abortable,required,default,values,multi=0):
+		InputWidget.__init__(self,abortable,required)
 		self.capture_rest=0
 		self.multi=multi
 		self.keys=values.keys()
@@ -33,19 +29,7 @@ class ListInput:
 					except ValueError:
 						continue
 					self.selected[i]=1
-		self.theme_manager=parent.theme_manager
 		
-	def set_window(self,win):
-		if win:
-			self.win=win
-			self.h,self.w=win.getmaxyx()
-			self.screen=self.parent.screen
-			self.win.keypad(1)
-			self.win.leaveok(0)
-			self.redraw()
-		else:
-			self.win=None
-
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
 		try:
@@ -143,20 +127,6 @@ class ListInput:
 				self.win.insch(0,self.w-1,curses.ACS_DARROW,
 						self.theme_manager.attrs["scroll_mark"])
 			self.win.move(0,1)
-			if now:
-				self.win.refresh()
-			else:
-				self.win.noutrefresh()
-		finally:
-			self.screen.lock.release()
-
-	def redraw(self,now=1):
-		self.update(now,1)
-
-	def cursync(self,now=1):
-		self.screen.lock.acquire()
-		try:
-			self.win.cursyncup()
 			if now:
 				self.win.refresh()
 			else:

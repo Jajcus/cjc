@@ -26,6 +26,11 @@ class Buffer(CommandHandler):
 		self.active=0
 		for f in activity_handlers:
 			f()
+		self.input_widget=None
+		self.question_handler=None
+		self.question_abort_handler=None
+		self.question_handler_arg=None
+		self.question=None
 
 	def set_window(self,win):
 		self.window=win
@@ -92,7 +97,48 @@ class Buffer(CommandHandler):
 			return
 		for f in activity_handlers:
 			f()
-		
+			
+	def ask_question(self,question,type,default,handler,abort_handler,arg,
+								values=None,required=1):
+		import text_input
+		import bool_input
+		import choice_input
+		import list_input
+
+		if abort_handler:
+			abortable=1
+		else:
+			abortable=0
+		if type=="text-single":
+			self.input_widget=text_input.TextInput(abortable,required,default,0)
+		elif type=="boolean":
+			self.input_widget=bool_input.BooleanInput(abortable,required,default)
+		elif type=="choice":
+			if not values:
+				raise InputError,"Values required for 'choice' input."
+			self.input_widget=choice_input.ChoiceInput(abortable,required,default,values)
+		elif type=="list-single":
+			self.input_widget=list_input.ListInput(abortable,required,default,values)
+		elif type=="list-multi":
+			self.input_widget=list_input.ListInput(abortable,required,default,values,1)
+		else:
+			raise InputError,"Unknown input type: "+type
+		self.question_handler=handler
+		self.question_abort_handler=abort_handler
+		self.question_handler_arg=arg
+		self.question=question
+		if self.window and self.window.active:
+			self.window.screen.input_handler.current_buffer_changed(self)
+		self.activity(2)
+
+	def unask_question(self):
+		self.question_handler=None
+		self.question_abort_handler=None
+		self.question_handler_arg=None
+		self.question=None
+		self.input_widget=None
+		if self.window and self.window.active:
+			self.window.screen.input_handler.current_buffer_changed(self)
 		
 def get_by_number(n):
 	if n==0:

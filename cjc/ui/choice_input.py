@@ -4,12 +4,12 @@ import curses.textpad
 import string
 from types import StringType,UnicodeType,IntType,XRangeType
 
-from widget import Widget
 from cjc import common
+from input_widget import InputWidget
 
-
-class ChoiceInput:
-	def __init__(self,parent,abortable,required,default,choice):
+class ChoiceInput(InputWidget):
+	def __init__(self,abortable,required,default,choice):
+		InputWidget.__init__(self,abortable,required)
 		from input import InputError
 		self.single_choice=[]
 		self.string_choice=[]
@@ -37,29 +37,10 @@ class ChoiceInput:
 			else:
 				raise InputError,"Bad choice value: %r" % (c,)
 		self.prompt=u"[%s]: " % (string.join(prompt,"/"))
-		self.parent=parent
-		self.abortable=abortable
-		self.required=required
-		self.win=None
 		self.content=u""
 		self.default=default
 		self.pos=0
-		self.theme_manager=parent.theme_manager
 		
-	def set_window(self,win):
-		if win:
-			self.win=win
-			self.h,self.w=win.getmaxyx()
-			self.screen=self.parent.screen
-			self.printable=string.digits+string.letters+string.punctuation+" "
-			self.win.keypad(1)
-			self.win.leaveok(0)
-			self.win.move(0,0)
-			s=self.prompt.encode(self.screen.encoding,"replace")
-			self.win.addstr(s)
-		else:
-			self.win=None
-
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
 		try:
@@ -170,20 +151,6 @@ class ChoiceInput:
 				s=self.content.encode(self.screen.encoding,"replace")
 				self.win.addstr(s)
 			self.win.move(0,self.pos+len(self.prompt))
-			if now:
-				self.win.refresh()
-			else:
-				self.win.noutrefresh()
-		finally:
-			self.screen.lock.release()
-
-	def redraw(self,now=1):
-		self.update(now,1)
-
-	def cursync(self,now=1):
-		self.screen.lock.acquire()
-		try:
-			self.win.cursyncup()
 			if now:
 				self.win.refresh()
 			else:

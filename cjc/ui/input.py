@@ -31,6 +31,7 @@ class Input(Widget):
 		self.command_line=text_input.TextInput(self,0,u"",100)
 		self.input_widget=self.command_line
 		self.make_windows()
+		self.screen.set_input_handler(self)
 
 	def input_handler(self,answer):
 		if self.input_widget==self.command_line:
@@ -73,44 +74,31 @@ class Input(Widget):
 			else:
 				self.prompt_win=None
 				self.input_win=curses.newwin(self.h,self.w,self.y,self.x)
+			self.input_win.timeout(100)
 			if self.input_widget:
-				self.input_widget.set_window(self.input_win)
-				self.screen.set_default_key_handler(self.input_widget)
+				self.input_widget.set_parent(self)
 		finally:
 			self.screen.lock.release()
 
-	def ask_question(self,question,type,default,handler,abort_handler,arg,values=None,required=1):
-		if abort_handler:
-			abortable=1
-		else:
-			abortable=0
-		if type=="text-single":
-			self.input_widget=text_input.TextInput(self,abortable,required,default,0)
-		elif type=="boolean":
-			self.input_widget=bool_input.BooleanInput(self,abortable,required,default)
-		elif type=="choice":
-			if not values:
-				raise InputError,"Values required for 'choice' input."
-			self.input_widget=choice_input.ChoiceInput(self,abortable,required,default,values)
-		elif type=="list-single":
-			self.input_widget=list_input.ListInput(self,abortable,required,default,values)
-		elif type=="list-multi":
-			self.input_widget=list_input.ListInput(self,abortable,required,default,values,1)
-		else:
-			raise InputError,"Unknown input type: "+type
-		self.question_handler=handler
-		self.question_abort_handler=abort_handler
-		self.question_handler_arg=arg
-		self.prompt=question
-		self.make_windows()
-		self.update()
-
 	def unask_question(self):
-		self.question_handler=None
-		self.question_abort_handler=None
-		self.question_handler_arg=None
-		self.prompt=None
-		self.input_widget=self.command_line
+		if self.current_buffer:
+			self.current_buffer.unask_question()
+
+	def current_buffer_changed(self,buffer):
+		if buffer and buffer.question:
+			self.question_handler=buffer.question_handler
+			self.question_abort_handler=buffer.question_abort_handler
+			self.question_handler_arg=buffer.question_handler_arg
+			self.prompt=buffer.question
+			self.input_widget=buffer.input_widget
+		else:
+			self.question_handler=None
+			self.question_abort_handler=None
+			self.question_handler_arg=None
+			self.prompt=None
+			self.input_widget=self.command_line
+			self.make_windows()
+		self.current_buffer=buffer
 		self.make_windows()
 		self.update(1,1)
 
@@ -124,3 +112,15 @@ class Input(Widget):
 			self.input_widget.update(0,redraw)
 		if now:
 			curses.doupdate()
+
+	def cursync(self):
+		if self.input_widget:
+			return self.input_widget.cursync()
+
+	def getch(self):
+		if self.input_widget:
+			return self.input_widget.win.getch()
+
+	def keypressed(self,ch,escape):
+		if self.input_widget:
+			return self.input_widget.keypressed(ch,escape)

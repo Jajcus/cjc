@@ -3,16 +3,12 @@ import curses
 import curses.textpad
 import string
 
-from widget import Widget
 from cjc import common
+from input_widget import InputWidget
 
-
-class BooleanInput:
-	def __init__(self,parent,abortable,required,default=None):
-		self.parent=parent
-		self.abortable=abortable
-		self.required=required
-		self.win=None
+class BooleanInput(InputWidget):
+	def __init__(self,abortable,required,default=None):
+		InputWidget.__init__(self,abortable,required)
 		self.content=u""
 		if default==1:
 			self.prompt="[Y/n]: "
@@ -23,17 +19,6 @@ class BooleanInput:
 			default=None
 		self.default=default
 		
-	def set_window(self,win):
-		if win:
-			self.win=win
-			self.h,self.w=win.getmaxyx()
-			self.screen=self.parent.screen
-			self.win.keypad(1)
-			self.win.leaveok(0)
-			self.win.addstr(0,0,self.prompt)
-		else:
-			self.win=None
-
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
 		try:
@@ -90,20 +75,6 @@ class BooleanInput:
 				self.win.addstr(s)
 			else:
 				self.win.move(0,len(self.prompt)+len(self.content))
-			if now:
-				self.win.refresh()
-			else:
-				self.win.noutrefresh()
-		finally:
-			self.screen.lock.release()
-
-	def redraw(self,now=1):
-		self.update(now,1)
-
-	def cursync(self,now=1):
-		self.screen.lock.acquire()
-		try:
-			self.win.cursyncup()
 			if now:
 				self.win.refresh()
 			else:

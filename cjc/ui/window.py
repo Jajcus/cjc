@@ -115,6 +115,8 @@ class Window(Widget):
 		d["active"]=a
 		if self.screen:
 			self.status_bar.update(0)
+			if yes and self.screen.input_handler:
+				self.screen.input_handler.current_buffer_changed(self.buffer)
 		
 	def set_buffer(self,buf):
 		if self.buffer:
@@ -130,6 +132,8 @@ class Window(Widget):
 			self.draw_buffer()
 		if self.screen:
 			self.status_bar.update(1)
+		if self.active and self.screen.input_handler:
+			self.screen.input_handler.current_buffer_changed(self.buffer)
 
 	def update_status(self,d,now=1):
 		self.status_bar.get_dict().update(d)

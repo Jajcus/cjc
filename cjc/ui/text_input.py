@@ -3,37 +3,21 @@ import curses
 import curses.textpad
 import string
 
-from widget import Widget
 from cjc import common
+from input_widget import InputWidget
 
-
-class TextInput:
-	def __init__(self,parent,abortable,required,default=u"",history_len=0):
-		self.parent=parent
-		self.abortable=abortable
-		self.required=required
-		self.win=None
+class TextInput(InputWidget):
+	def __init__(self,abortable,required,default=u"",history_len=0):
+		InputWidget.__init__(self,abortable,required)
 		self.capture_rest=0
 		self.content=u""
 		self.pos=0
 		self.offset=0
-		self.theme_manager=parent.theme_manager
 		self.history_len=history_len
 		self.history=[]
 		self.history_pos=0
 		self.saved_content=None
 		
-	def set_window(self,win):
-		if win:
-			self.win=win
-			self.h,self.w=win.getmaxyx()
-			self.screen=self.parent.screen
-			self.printable=string.digits+string.letters+string.punctuation+" "
-			self.win.keypad(1)
-			self.win.leaveok(0)
-		else:
-			self.win=None
-
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
 		try:
@@ -259,6 +243,8 @@ class TextInput:
 			self.redraw()
 
 	def update(self,now=1,refresh=0):
+		if not self.screen:
+			return
 		if self.pos>len(self.content):
 			self.pos=len(self.content)
 		self.screen.lock.acquire()
@@ -281,20 +267,6 @@ class TextInput:
 				self.win.clrtoeol()
 				self.right_scroll_mark()
 			self.win.move(0,self.pos-self.offset)
-			if now:
-				self.win.refresh()
-			else:
-				self.win.noutrefresh()
-		finally:
-			self.screen.lock.release()
-
-	def redraw(self,now=1):
-		self.update(now,1)
-
-	def cursync(self,now=1):
-		self.screen.lock.acquire()
-		try:
-			self.win.cursyncup()
 			if now:
 				self.win.refresh()
 			else:

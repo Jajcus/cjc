@@ -27,7 +27,7 @@ class Screen(commands.CommandHandler):
 		self.content=None
 		self.active_window=None
 		self.windows=[]
-		self.default_key_handler=None
+		self.input_handler=None
 		self.default_command_handler=None
 		self.escape=0
 		self.lock=threading.RLock()
@@ -85,9 +85,8 @@ class Screen(commands.CommandHandler):
 	def redraw(self):
 		self.update(1,1)
 
-	def set_default_key_handler(self,h):
-		self.default_key_handler=h
-		h.win.timeout(100)
+	def set_input_handler(self,h):
+		self.input_handler=h
 
 	def set_default_command_handler(self,h):
 		self.default_command_handler=h
@@ -143,8 +142,8 @@ class Screen(commands.CommandHandler):
 				break
 	
 	def cursync(self):
-		if self.default_key_handler:
-			self.default_key_handler.cursync()
+		if self.input_handler:
+			self.input_handler.cursync()
 
 	def process_key(self,ch):
 		if self.active_window:
@@ -155,12 +154,12 @@ class Screen(commands.CommandHandler):
 			self.focus_next()
 			return
 		
-		if self.default_key_handler:
-			if self.default_key_handler.keypressed(ch,self.escape):
+		if self.input_handler:
+			if self.input_handler.keypressed(ch,self.escape):
 				return
 
 	def keypressed(self):
-		ch=self.default_key_handler.win.getch()
+		ch=self.input_handler.getch()
 		if ch==-1:
 			return 0
 		if ch==27:
