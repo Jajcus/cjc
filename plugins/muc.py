@@ -210,9 +210,10 @@ class Room(muc.MucRoomHandler):
         subj=args.all()
         if not subj:
             if self.room_state.subject:
-                self.buffer.append_themed("info",u"The room subject is: %s" % (self.room_stat.subject,))
+                self.buffer.append_themed("info",u"The room subject is: %s" % (self.room_state.subject,))
             else:
                 self.buffer.append_themed("info",u"The room has no subject")
+            self.buffer.update()
             return 1
         self.room_state.set_subject(subj)
         return 1
