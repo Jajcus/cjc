@@ -1,3 +1,11 @@
+2004-02-09  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/chat.py:
+	- trace peer changes in chat window (bug #3178)
+
+	* cjc/main.py:
+	- change the default disco_identity instead of creating new one
+
 2004-02-08  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/main.py:
