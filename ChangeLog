@@ -1,3 +1,8 @@
+2004-07-19  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- TLS error handling improvements
+
 2004-07-02  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/chat.py, plugins/message.py, plugins/muc.py, plugins/xmlconsole.py, cjc/main.py:
