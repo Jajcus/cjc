@@ -51,7 +51,7 @@ class MessageBuffer:
 			self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{"peer":self.peer},
 					"message.descr-per-user","message buffer",self)
 		else:
-			self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},"message.descr"
+			self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},"message.descr",
 					"messaage buffer",self)
 		self.buffer.update()
 		self.last_sender=None
