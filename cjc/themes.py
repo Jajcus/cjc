@@ -5,6 +5,7 @@ import time
 from types import UnicodeType,StringType
 import version
 import os
+import locale
 
 import pyxmpp
 
@@ -61,6 +62,9 @@ class ThemeManager:
 		self.pairs={}
 		self.next_pair=1
 		self.app=app
+		lc,self.encoding=locale.getlocale()
+		if self.encoding is None:
+			self.encoding="us-ascii"
 	def load(self,filename=None):
 		if not filename:
 			filename=self.app.theme_file
@@ -328,11 +332,12 @@ class ThemeManager:
 
 		if typ=="T":
 			if form:
-				params[key]=time.strftime(form,time.localtime(val))
-				return format
+				form=form.encode(self.encoding,"replace")
+				formatted=time.strftime(form,time.localtime(val))
 			else:
-				params[key]=time.strftime("%H:%M",time.localtime(val))
-				return format
+				formatted=time.strftime("%H:%M",time.localtime(val))
+			params[key]=unicode(formatted,self.encoding,"replace")
+			return format
 		elif typ=="J":
 			if not isinstance(val,pyxmpp.JID):
 				try:
