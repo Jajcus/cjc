@@ -49,9 +49,13 @@ def attr2name(attr):
 	return string.join(names,"+")
 
 def name2color(name):
+	if (name == "default" and hasattr(curses, "use_default_colors")):
+		return -1
 	return colors_by_name[name.lower()]
 
 def color2name(color):
+	if (color == -1 and hasattr(curses, "use_default_colors")):
+		return "default"
 	return colors_by_val[color]
 
 class ThemeManager:
@@ -65,6 +69,8 @@ class ThemeManager:
 		lc,self.encoding=locale.getlocale()
 		if self.encoding is None:
 			self.encoding="us-ascii"
+		if hasattr(curses, "use_default_colors"):
+			curses.use_default_colors()
 	def load(self,filename=None):
 		if not filename:
 			filename=self.app.theme_file
