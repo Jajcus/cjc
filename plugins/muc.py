@@ -16,9 +16,9 @@ theme_attrs=(
 
 theme_formats=(
     ("muc.joining","[%(T:timestamp)s] %[muc.info]* Joining MUC room %(room)s...\n"),
-    ("muc.me","[%(T:timestamp)s] %[muc.me]<%(J:me:nick)s>%[] %(msg)s\n"),
-    ("muc.other","[%(T:timestamp)s] %[muc.other]<%(J:jid:nick)s>%[] %(msg)s\n"),
-    ("muc.action","[%(T:timestamp)s] %[muc.info]* %(J:jid:nick)s %(msg)s\n"),
+    ("muc.me","[%(T:timestamp)s] %[muc.me]<%(role?moderator:@,visitor:-,)s%(nick)s>%[] %(msg)s\n"),
+    ("muc.other","[%(T:timestamp)s] %[muc.other]<%(role?moderator:@,visitor:+, )s%(nick)s>%[] %(msg)s\n"),
+    ("muc.action","[%(T:timestamp)s] %[muc.info]* %(nick)s %(msg)s\n"),
     ("muc.info","[%(T:timestamp)s] %[muc.info]* %(msg)s\n"),
     ("muc.descr","Conference on %(J:room:bare)s"),
 )
@@ -39,37 +39,64 @@ class Room(muc.MucRoomHandler):
         self.buffer.append_themed("muc.joining",self.fparams)
         self.buffer.update()
 
-    def add_msg(self,s,format,nick,room_jid):
-        self.fparams["jid"]=room_jid
-        self.fparams["nick"]=nick
-        user=self.room_state.get_user(nick)
-        if user:
-            self.fparams["real_jid"]=user.real_jid
-        else:
-            self.fparams["real_jid"]=None
+    def user_format_params(self,user):
+        fparams=dict(self.fparams)
+        fparams.update({"nick": user.nick,"jid": user.room_jid,"real_jid": user.real_jid,
+                "role": user.role, "affiliation": user.affiliation})
+        return fparams
+
+    def add_msg(self,s,format,user):
+        fparams=self.user_format_params(user)
         if s.startswith(u"/me "):
-            self.fparams["msg"]=s[4:]
-            self.buffer.append_themed("muc.action",self.fparams)
+            fparams["msg"]=s[4:]
+            self.buffer.append_themed("muc.action",fparams)
             self.buffer.update()
             return
-        self.fparams["msg"]=s
-        self.buffer.append_themed(format,self.fparams)
+        fparams["msg"]=s
+        self.buffer.append_themed(format,fparams)
         self.buffer.update()
 
-    def message_received(self,nick,stanza):
+    def message_received(self,user,stanza):
         body=stanza.get_body()
         if not body:
             return
         fr=stanza.get_from()
-        if not nick:
-            self.fparams["msg"]=body
-            self.buffer.append_themed("muc.info",self.fparams)
+        if user is None:
+            fparams=dict(self.fparams)
+            fparams["msg"]=body
+            self.buffer.append_themed("muc.info",fparams)
             self.buffer.update()
             return
         elif fr==self.room_state.room_jid:
-            self.add_msg(body,"muc.me",nick,fr)
+            self.add_msg(body,"muc.me",user)
         else:
-            self.add_msg(body,"muc.other",nick,fr)
+            self.add_msg(body,"muc.other",user)
+
+    def subject_changed(self,user,stanza):
+        fparams=dict(self.fparams)
+        if user:
+            fparams["msg"]=(u"%s has changed the subject to: %s" 
+                    % (user.nick,self.room_state.subject))
+        else:
+            fparams["msg"]=(u"The subject has been changed to: %s" 
+                    % (self.room_state.subject,))
+        self.buffer.append_themed("muc.info",fparams)
+        self.buffer.update()
+        return
+
+    def other_joined(self,user):
+        fparams=dict(self.fparams)
+        fparams["msg"]=(u"%s has entered the room." % (user.nick,))
+        self.buffer.append_themed("muc.info",fparams)
+        self.buffer.update()
+        return
+ 
+    def other_left(self,user):
+        fparams=dict(self.fparams)
+        fparams["msg"]=(u"%s has left the room." % (user.nick,))
+        self.buffer.append_themed("muc.info",fparams)
+        self.buffer.update()
+        return
             
     def user_input(self,s):
         if not self.plugin.cjc.stream:
