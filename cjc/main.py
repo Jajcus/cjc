@@ -222,7 +222,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
 
 		sp=ui.VerticalSplit(status_window,roster_window)
-		sp=ui.HorizontalSplit(top_bar,sp,status_window,bottom_bar,command_line)
+		sp=ui.HorizontalSplit(top_bar,sp,main_window,bottom_bar,command_line)
 		self.screen.set_content(sp)
 		status_window.set_buffer(self.status_buf)
 		main_window.set_buffer(self.message_buf)
