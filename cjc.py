@@ -4,6 +4,7 @@
 
 try:
 	import psyco
+	psyco.profile()
 except ImportError:
 	pass
 

@@ -4,6 +4,7 @@ base_dir='BASE_DIR'
 
 try:
 	import psyco
+	psyco.profile()
 except ImportError:
 	pass
 
