@@ -1,3 +1,11 @@
+2004-06-26  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/muc.py:
+	- fixes for /subject without arguments
+
+	* plugins/muc.py:
+	- /subject without arguments should display the current room subject
+
 2004-06-24  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/main.py:
