@@ -132,7 +132,7 @@ class Buffer(CommandHandler):
 	def activity(self,val):
 		if self.window and self.active>0:
 			self.active=0
-		elif val>self.active:
+		elif val>self.active and not self.window:
 			self.active=val
 		else:
 			return
@@ -434,6 +434,7 @@ class VerticalSplit(Split):
 			r=l+self.widths[i]
 			if i>0:
 				div=curses.newwin(self.h,1,self.y,l-1)
+				div.leaveok(1)
 				div.bkgdset(ord("|"),curses.A_STANDOUT)
 				div.clear()
 				self.divs.append(div)
@@ -452,20 +453,29 @@ class VerticalSplit(Split):
 		raise "%r is not a child of mine" % (child,)
 
 	def update(self,now=1):
-		for div in self.divs:
-			div.noutrefresh()
-		for c in self.children:
-			c.update(0)
-		if now:
-			curses.doupdate()
+		self.screen.lock.acquire()
+		try:
+			for div in self.divs:
+				div.noutrefresh()
+			for c in self.children:
+				c.update(0)
+			if now:
+				curses.doupdate()
+			self.screen.cursync()
+		finally:
+			self.screen.lock.release()
 
 	def redraw(self,now=1):
-		for div in self.divs:
-			div.noutrefresh()
-		for c in self.children:
-			c.redraw(0)
-		if now:
-			curses.doupdate()
+		self.screen.lock.acquire()
+		try:
+			for div in self.divs:
+				div.noutrefresh()
+			for c in self.children:
+				c.redraw(0)
+			if now:
+				curses.doupdate()
+		finally:
+			self.screen.lock.release()
 
 class HorizontalSplit(Split):
 	def __init__(self,*children):
@@ -519,10 +529,12 @@ class HorizontalSplit(Split):
 	def update(self,now=1):
 		for c in self.children:
 			c.update(now)
+		self.screen.cursync()
 			
 	def redraw(self,now=1):
 		for c in self.children:
 			c.redraw(now)
+		self.screen.cursync()
 			
 class StatusBar(Widget):
 	def __init__(self,theme_manager,format,dict):
@@ -542,6 +554,7 @@ class StatusBar(Widget):
 		self.screen.lock.acquire()
 		try:
 			self.win=curses.newwin(self.h,self.w,self.y,self.x)
+			self.win.leaveok(1)
 			self.win.bkgdset(ord(" "),self.theme_manager.attrs["bar"])
 		finally:
 			self.screen.lock.release()
@@ -563,6 +576,7 @@ class StatusBar(Widget):
 				self.win.refresh()
 			else:
 				self.win.noutrefresh()
+			self.screen.cursync()
 		finally:
 			self.screen.lock.release()
 
@@ -644,6 +658,7 @@ class Window(Widget):
 		try:
 			self.win=curses.newwin(self.h-1,self.w,self.y,self.x)
 			self.win.scrollok(1)
+			self.win.leaveok(1)
 		finally:
 			self.screen.lock.release()
 		if self.buffer:
@@ -661,7 +676,8 @@ class Window(Widget):
 			a=""
 		d=self.status_bar.get_dict()
 		d["active"]=a
-		self.status_bar.update(0)
+		if self.screen:
+			self.status_bar.update(0)
 		
 	def set_buffer(self,buf):
 		if self.buffer:
@@ -680,7 +696,8 @@ class Window(Widget):
 			d["bufnum"]=buf.get_number()
 		else:
 			d["bufname"]=u""
-		self.status_bar.update(1)
+		if self.screen:
+			self.status_bar.update(1)
 
 	def update(self,now=1):
 		self.status_bar.update(now)
@@ -690,6 +707,7 @@ class Window(Widget):
 				self.win.refresh()
 			else:
 				self.win.noutrefresh()
+			self.screen.cursync()
 		finally:
 			self.screen.lock.release()
 
@@ -698,6 +716,8 @@ class Window(Widget):
 		try:
 			self.win.clear()
 			self.win.move(0,0)
+			if not self.buffer:
+				return
 			lines=self.buffer.format(self.w,self.h-1)
 			if not lines:
 				return
@@ -838,6 +858,14 @@ class EditLine(Widget):
 		finally:
 			self.screen.lock.release()
 
+	def cursync(self):
+		self.screen.lock.acquire()
+		try:
+			self.win.cursyncup()
+			self.win.refresh()
+		finally:
+			self.screen.lock.release()
+
 screen_commands={
 	"next": ("focus_next",
 		"/next",
@@ -852,7 +880,6 @@ class Screen(CommandHandler):
 		CommandHandler.__init__(self,screen_commands)
 		self.scr=screen
 		self.screen=self
-		self.children=[]
 		self.attrs={}
 		self.pairs={}
 		self.next_pair=1
@@ -887,6 +914,7 @@ class Screen(CommandHandler):
 	def set_content(self,widget):
 		self.content=widget
 		widget.set_parent(self)
+		self.windows=[]
 		
 	def place(self,child):
 		w,h=self.size()
@@ -902,6 +930,7 @@ class Screen(CommandHandler):
 			else:
 				self.scr.clear()
 			curses.doupdate()
+			self.screen.cursync()
 		finally:
 			self.lock.release()
 
@@ -971,6 +1000,10 @@ class Screen(CommandHandler):
 					win=self.windows[i-1]
 				self.focus_window(win)
 				break
+	
+	def cursync(self):
+		if self.default_key_handler:
+			self.default_key_handler.cursync()
 
 	def process_key(self,ch):
 		if self.active_window:
