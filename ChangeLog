@@ -1,5 +1,7 @@
 2004-07-21  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* Makefile: *** Version: 0.5 ***
+
 	* plugins/muc.py, plugins/roster.py, plugins/xmlconsole.py:
 	- cosmetics
 
