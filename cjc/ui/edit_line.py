@@ -8,13 +8,14 @@ from cjc import common
 
 
 class EditLine(Widget):
-	def __init__(self):
+	def __init__(self,theme_manager):
 		Widget.__init__(self)
 		self.win=None
 		self.capture_rest=0
 		self.content=u""
 		self.pos=0
 		self.offset=0
+		self.theme_manager=theme_manager
 		
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
@@ -39,9 +40,7 @@ class EditLine(Widget):
 		
 	def _keypressed(self,c,escape):
 		if escape:
-			common.debug("Key: 27 %i" % (c,))
 			return
-		common.debug("Key: %i" % (c,))
 		if c==curses.KEY_ENTER:
 			return self.key_enter()
 		elif c==curses.KEY_LEFT:
@@ -62,11 +61,44 @@ class EditLine(Widget):
 			self.key_bs()
 		elif c=="\x7f":
 			self.key_del()
-		if c in self.printable:
+		elif c in self.printable:
 			self.key_char(c)
 		else:
 			curses.beep()
+
+	def left_scroll_mark(self):
+		if self.offset>0:
+			self.win.addstr(0,0,"<",self.theme_manager.attrs["scroll_mark"])
 		
+	def right_scroll_mark(self):
+		if len(self.content)-self.offset>=self.w:
+			self.win.insstr(0,self.w-1,">",self.theme_manager.attrs["scroll_mark"])
+
+	def scroll_right(self):
+		while self.pos>self.offset+self.w-2:
+			self.offset+=self.w/4
+		if self.offset>len(self.content)-2:
+			self.offset=len(self.content)-2
+		self.redraw()
+
+	def scroll_left(self):
+		while self.pos<self.offset+1:
+			self.offset-=self.w/4
+		if self.offset<0:
+			self.offset=0
+		self.redraw()
+		
+	def after_del(self):
+		if len(self.content)-self.offset<self.w-1:
+			self.win.move(0,self.pos-self.offset)
+			return
+		self.win.addstr(0,self.w-2,self.content[self.offset+self.w-2])
+		if len(self.content)-self.offset==self.w-1:
+			self.win.clrtoeol()
+		else:
+			self.right_scroll_mark()
+		self.win.move(0,self.pos-self.offset)
+
 	def key_enter(self):
 		self.screen.user_input(self.content)
 		self.content=u""
@@ -80,16 +112,22 @@ class EditLine(Widget):
 			curses.beep()
 			return
 		self.pos-=1
-		self.win.move(0,self.pos-self.offset)
-		self.win.refresh()
+		if self.pos and self.pos<self.offset+1:
+			self.scroll_left()
+		else:
+			self.win.move(0,self.pos-self.offset)
+			self.win.refresh()
 
 	def key_right(self):
 		if self.pos>=len(self.content):
 			curses.beep()
 			return
 		self.pos+=1
-		self.win.move(0,self.pos-self.offset)
-		self.win.refresh()
+		if self.pos>self.offset+self.w-2:
+			self.scroll_right()
+		else:
+			self.win.move(0,self.pos-self.offset)
+			self.win.refresh()
 
 	def key_bs(self):
 		if self.pos<=0:
@@ -97,9 +135,12 @@ class EditLine(Widget):
 			return
 		self.content=self.content[:self.pos-1]+self.content[self.pos:]
 		self.pos-=1
-		self.win.move(0,self.pos-self.offset)
-		self.win.delch()
-		self.win.refresh()
+		if self.pos and self.pos<self.offset+1:
+			self.scroll_left()
+		else:
+			self.win.delch()
+			self.after_del()
+			self.win.refresh()
 
 	def key_del(self):
 		if self.pos>=len(self.content):
@@ -107,23 +148,51 @@ class EditLine(Widget):
 			return
 		self.content=self.content[:self.pos]+self.content[self.pos+1:]
 		self.win.delch()
+		self.after_del()
 		self.win.refresh()
 
 	def key_char(self,c):
 		c=unicode(c,self.screen.encoding,"replace")
 		if self.pos==len(self.content):
 			self.content+=c
-			self.win.addstr(c.encode(self.screen.encoding))
+			self.pos+=1
+			if self.pos>self.offset+self.w-2:
+				self.scroll_right()
+			else:
+				self.win.addstr(c.encode(self.screen.encoding))
 		else:
 			self.content=self.content[:self.pos]+c+self.content[self.pos:]
-			self.win.insstr(c.encode(self.screen.encoding))
-			self.win.move(0,self.pos-self.offset+1)
-		self.pos+=1
+			self.pos+=1
+			if self.pos>self.offset+self.w-2:
+				self.scroll_right()
+			else:
+				self.win.insstr(c.encode(self.screen.encoding))
+				self.right_scroll_mark()
+				self.win.move(0,self.pos-self.offset)
 		self.win.refresh()
 
 	def update(self,now=1):
 		self.screen.lock.acquire()
 		try:
+			self.win.cursyncup()
+			if now:
+				self.win.refresh()
+			else:
+				self.win.noutrefresh()
+		finally:
+			self.screen.lock.release()
+
+	def redraw(self,now=1):
+		self.screen.lock.acquire()
+		try:
+			if self.offset>0:
+				self.left_scroll_mark()
+				self.win.addstr(self.content[self.offset+1:self.offset+self.w-1])
+			else:
+				self.win.addstr(0,0,self.content[:self.w-1])
+			self.win.clrtoeol()
+			self.right_scroll_mark()
+			self.win.move(0,self.pos-self.offset)
 			self.win.cursyncup()
 			if now:
 				self.win.refresh()

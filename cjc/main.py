@@ -85,6 +85,7 @@ global_theme_attrs=(
 	("info", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
 	("debug", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_DIM),
 	("bar", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_STANDOUT, curses.A_STANDOUT),
+	("scroll_mark", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
 )
 
 global_theme_formats=(
@@ -175,7 +176,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(top_bar.update)
 		main_window=ui.Window(self.theme_manager,"Main")
-		command_line=ui.EditLine()
+		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
 		sp=ui.HorizontalSplit(top_bar,main_window,bottom_bar,command_line)
@@ -194,7 +195,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		ui.buffer.activity_handlers.append(top_bar.update)
 		status_window=ui.Window(self.theme_manager,"Status",1)
 		main_window=ui.Window(self.theme_manager,"Main")
-		command_line=ui.EditLine()
+		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
@@ -218,7 +219,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		ui.buffer.activity_handlers.append(top_bar.update)
 		status_window=ui.Window(self.theme_manager,"Status",1)
 		main_window=ui.Window(self.theme_manager,"Main")
-		command_line=ui.EditLine()
+		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
@@ -241,7 +242,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(top_bar.update)
 		main_window=ui.Window(self.theme_manager,"Main")
-		command_line=ui.EditLine()
+		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
@@ -263,7 +264,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(top_bar.update)
 		main_window=ui.Window(self.theme_manager,"Main")
-		command_line=ui.EditLine()
+		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
@@ -795,6 +796,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.send_event("idle")
 			
 	def print_exception(self):
+		if logfile:
+			traceback.print_exc(file=logfile)
 		traceback.print_exc(file=self.status_buf)
 			
 	def error(self,s):
