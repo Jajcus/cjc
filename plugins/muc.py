@@ -26,6 +26,12 @@ theme_formats=(
     ("muc.me_joined","[%(T:timestamp)s] %[muc.info]* You%{@muc.userinfo} have entered the room\n"),
     ("muc.left","[%(T:timestamp)s] %[muc.info]* %{@muc.nickinfo} has left the room\n"),
     ("muc.me_left","[%(T:timestamp)s] %[muc.info]* You%{@muc.userinfo} have left the room\n"),
+    ("muc.role_changed","[%(T:timestamp)s] %[muc.info]* %(nick)s's role is now: %(role)s\n"),
+    ("muc.my_role_changed","[%(T:timestamp)s] %[muc.info]* Your role is now: %(role)s\n"),
+    ("muc.affiliation_changed","[%(T:timestamp)s] %[muc.info]* %(nick)s's affiliation is now: %(affiliation)s\n"),
+    ("muc.my_affiliation_changed","[%(T:timestamp)s] %[muc.info]* Your affiliation is now: %(affiliation)s\n"),
+    ("muc.nick_changed","[%(T:timestamp)s] %[muc.info]* %(old_nick)s is now known as: %(nick)s\n"),
+    ("muc.my_nick_changed","[%(T:timestamp)s] %[muc.info]* Your are now known as: %(nick)s\n"),
     ("muc.info","[%(T:timestamp)s] %[muc.info]* %(msg)s\n"),
     ("muc.descr","Conference on %(J:room:bare)s"),
 )
@@ -124,6 +130,47 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.left",fparams)
         self.buffer.update()
         return
+ 
+    def role_changed(self,user,old_role,new_role,stanza):
+        fparams=self.user_format_params(user)
+        d=delay.get_delay(stanza)
+        if d:
+            fparams["timestamp"]=d.datetime_local()
+        if user.same_as(self.room_state.me):
+            self.buffer.append_themed("muc.my_role_changed",fparams)
+        else:
+            self.buffer.append_themed("muc.role_changed",fparams)
+        self.buffer.update()
+        return
+ 
+    def affiliation_changed(self,user,old_affiliation,new_affiliation,stanza):
+        fparams=self.user_format_params(user)
+        d=delay.get_delay(stanza)
+        if d:
+            fparams["timestamp"]=d.datetime_local()
+        if user.same_as(self.room_state.me):
+            self.buffer.append_themed("muc.my_affiliation_changed",fparams)
+        else:
+            self.buffer.append_themed("muc.affiliation_changed",fparams)
+        self.buffer.update()
+        return
+ 
+    def nick_change(self,user,new_nick,stanza):
+        self.buffer.append_themed("debug","Nick change started: %r -> %r" % (user.nick,new_nick))
+        return True
+        
+    def nick_changed(self,user,old_nick,stanza):
+        fparams=self.user_format_params(user)
+        fparams["old_nick"]=old_nick
+        d=delay.get_delay(stanza)
+        if d:
+            fparams["timestamp"]=d.datetime_local()
+        if user.same_as(self.room_state.me):
+            self.buffer.append_themed("muc.my_nick_changed",fparams)
+        else:
+            self.buffer.append_themed("muc.nick_changed",fparams)
+        self.buffer.update()
+        return
             
     def user_input(self,s):
         if not self.plugin.cjc.stream:
@@ -161,6 +208,17 @@ class Room(muc.MucRoomHandler):
         self.room_state.set_subject(subj)
         return 1
 
+    def cmd_nick(self,args):
+        new_nick=args.all()
+        if not args:
+            raise CommandError,"No nickname given"
+        if not self.room_state.joined:
+            self.buffer.append_themed("error","You are not in the room")
+            self.buffer.update()
+            return 1
+        self.room_state.change_nick(new_nick)
+        return 1
+
     def cmd_leave(self,args):
         a=args.get()
         if a:
@@ -183,6 +241,10 @@ ui.CommandTable("muc buffer",51,(
     ui.Command("subject",Room.cmd_subject,
         "/subject text",
         "Sets the subject of the room",
+        ("text",)),
+    ui.Command("nick",Room.cmd_nick,
+        "/nick text",
+        "Changes the nickname used",
         ("text",)),
     ui.CommandAlias("topic","subject"),
     ui.Command("leave",Room.cmd_leave,
