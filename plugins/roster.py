@@ -6,6 +6,7 @@ import pyxmpp.roster
 
 from cjc.plugin import PluginBase
 from cjc.ui import ListBuffer
+from cjc import common
 
 theme_attrs=(
 	("roster.available_online", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
@@ -24,6 +25,21 @@ theme_formats=(
 	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)-20s [%(J:jid:show)s] %(J:jid:status)s"),
 	("roster.available", "%[roster.available_%(J:jid:show)s] %(aflag)s%(sflag)s%(name)-20s [%(J:jid:show)s] %(J:jid:status)s"),
 )
+
+commands={
+	"add": ("cmd_add",
+		"/add [-group group]... jid [name]",
+		"Add a user to the roster (this doesn't automaticaly subscribe to his presence)."),
+	"remove": ("cmd_remove",
+		"/remove user",
+		"Remove user from the roster."),
+	"rename": ("cmd_rename",
+		"/rename user name",
+		"Change visible name of a user in the roster."),
+	"group": ("cmd_group",
+		"/group user [+|-]group...",
+		"Change groups a user from roster belongs to."),
+	}
 
 # virtual groups
 VG_ME=1
@@ -46,6 +62,7 @@ class Plugin(PluginBase):
 		app.theme_manager.set_default_formats(theme_formats)
 		self.buffer=ListBuffer(app.theme_manager,"Roster")
 		self.extra_items=[]
+		app.register_commands(commands,self)
 
 	def info_rostername(self,k,v):
 		if not v:
@@ -84,6 +101,7 @@ class Plugin(PluginBase):
 			self.cjc.roster_window.set_buffer(self.buffer)
 
 	def update_item(self,item):
+		common.debug("Roster.update_item(%r): %r" % (item,str(item)))
 		if isinstance(item,pyxmpp.JID):
 			if self.cjc.roster:
 				try:
@@ -94,8 +112,16 @@ class Plugin(PluginBase):
 					except KeyError:
 						pass
 		if isinstance(item,pyxmpp.roster.RosterItem):
-			for group in item.groups():
-				self.write_item(group,item)
+			jid=item.jid()
+			groups=item.groups()
+			for g,j in self.buffer.get_keys():
+				if j==jid and g not in groups:
+					self.buffer.remove_item((g,j))
+			if groups:
+				for group in groups:
+					self.write_item(group,item)
+			else:
+				self.write_item(None,item)
 		elif isinstance(item,pyxmpp.JID):
 			if item.bare()==self.cjc.jid.bare():
 				group=VG_ME
@@ -110,6 +136,13 @@ class Plugin(PluginBase):
 		self.buffer.update()
 	
 	def write_item(self,group,item):
+		common.debug("Roster.write_item(%r): %r" % (item,str(item)))
+		if not self.buffer.has_key((group,None)):
+			if group:
+				p={"group":group}
+				self.buffer.insert_themed((group,None),"roster.group",p)
+			else:
+				self.buffer.insert_themed((group,None),"roster.group_none",{})
 		if isinstance(item,pyxmpp.JID):
 			jid=item
 			name=None
@@ -157,6 +190,7 @@ class Plugin(PluginBase):
 
 		if not show_it:
 			if self.buffer.has_key((group,jid)):
+				common.debug("Roster.write_item: removing item")
 				self.buffer.remove_item((group,jid))
 			return
 			
@@ -177,6 +211,7 @@ class Plugin(PluginBase):
 		else:
 			p["sflag"]="-"
 			
+		common.debug("Roster.write_item: updating item")
 		if available:
 			self.buffer.insert_themed((group,jid),"roster.available",p)
 		else:
@@ -198,14 +233,102 @@ class Plugin(PluginBase):
 		groups=self.cjc.roster.groups()
 		groups.sort()
 		for group in groups:
-			if group:
-				p={"group":group}
-				self.buffer.insert_themed((group,None),"roster.group",p)
-			else:
-				self.buffer.insert_themed((group,None),"roster.group_none",{})
 			for item in self.cjc.roster.items_by_group(group):
 				self.write_item(group,item)
 		self.buffer.update()
 
 	def session_started(self,stream):
 		self.cjc.request_roster()
+
+	def cmd_add(self,args):
+		groups=[]
+		while 1:
+			arg=args.shift()
+			if arg=="-group":
+				groups.append(args.shift())
+			else:
+				break
+
+		try:
+			user=pyxmpp.JID(arg)
+		except pyxmpp.JIDError:
+			self.error("Bad JID!")
+			return
+
+		name=args.all()
+		if not name:
+			name=None
+
+		item=self.cjc.roster.add_item(user,name=name)
+		for group in groups:
+			item.add_group(group)
+		iq=item.make_roster_push()
+		self.cjc.stream.send(iq)
+
+	def cmd_remove(self,args):
+		user=args.shift()
+		args.finish()
+		user=self.cjc.get_user(user)
+		if user is None:
+			return
+		item=self.cjc.roster.rm_item(user)
+		iq=item.make_roster_push()
+		self.cjc.stream.send(iq)
+
+	def cmd_rename(self,args):
+		user=args.shift()
+		user=self.cjc.get_user(user)
+		if user is None:
+			return
+		name=args.all()
+		item=self.cjc.roster.item_by_jid(user)
+		if not item:
+			self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
+			return
+		item.set_name(name)
+		iq=item.make_roster_push()
+		self.cjc.stream.send(iq)
+
+	def cmd_group(self,args):
+		user=args.shift()
+		user=self.cjc.get_user(user)
+		if user is None:
+			return
+		item=self.cjc.roster.item_by_jid(user)
+		if not item:
+			self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
+			return
+		groups=[]
+		groups_add=[]
+		groups_remove=[]
+		while 1:
+			group=args.shift()
+			if not group:
+				break
+			if group.startswith("+"):
+				groups_add.append(group[1:])
+			elif group.startswith("-"):
+				groups_remove.append(group[1:])
+			else:
+				groups.append(group)
+
+		if not groups and not groups_add and not groups_remove:
+			self.info(u"User %s belongs to the following groups: %s"
+				% (user.as_unicode(), string.join(item.groups(),",")))
+			return
+
+		if groups:
+			if groups_add or groups_remove:
+				self.error("You cannot use groups with +/- sign and"
+						" without it in one /group command")
+				return
+			item.clear_groups()
+			for group in groups:
+				item.add_group(group)
+		else:
+			for group in groups_add:
+				item.add_group(group)
+			for group in groups_remove:
+				item.rm_group(group)
+		iq=item.make_roster_push()
+		self.cjc.stream.send(iq)

@@ -19,6 +19,9 @@ class ListBuffer(Buffer):
 	def set_window(self,win):
 		Buffer.set_window(self,win)
 
+	def get_keys(self):
+		return self.keys
+
 	def has_key(self,key):
 		return key in self.keys;
 

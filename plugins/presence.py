@@ -10,6 +10,9 @@ theme_formats=(
 	("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is available\n"),
 	("presence.unavailable","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is unavailable\n"),
 	("presence.subscribe","%[info][%(T:timestamp)s] %(J:user)s sent you a presence subscription request\n"),
+	("presence.subscribe_buffer","Subscription request from %(J:user)s"),
+	("presence.subscribe_accepted","%[info][%(T:timestamp)s] You have accepted presence subscription request from %(J:user)s\n"),
+	("presence.subscribe_denied","%[info][%(T:timestamp)s] You have denied presence subscription request from %(J:user)s\n"),
 	("presence.unsubscribe","%[info][%(T:timestamp)s] %(J:user)s unsubscribed from your presence\n"),
 	("presence.subscribed","%[info][%(T:timestamp)s] %(J:user)s accepted your presence subscription request\n"),
 	("presence.unsubscribed","%[info][%(T:timestamp)s] %(J:user)s denied your presence subscription\n"),
@@ -33,6 +36,15 @@ commands={
 	"chatready": ("cmd_chatready",
 		"/chatready [reason]",
 		"Set availability to 'ready for a chat' with optional reason"),
+	"subscribe": ("cmd_subscribe",
+		"/subscribe user",
+		"Subscribe to user's presence"),
+	"unsubscribe": ("cmd_unsubscribe",
+		"/unsubscribe user",
+		"Unsubscribe from user's presence (this doesn't remove user from roster)"),
+	"cancel": ("cmd_cancel",
+		"/cancel user",
+		"Cancel user's subscription to your presence"),
 	}
 
 class Plugin(PluginBase):
@@ -108,7 +120,9 @@ class Plugin(PluginBase):
 		self.cjc.stream.set_presence_handler(None,self.presence_available)
 		self.cjc.stream.set_presence_handler("unavailable",self.presence_unavailable)
 		self.cjc.stream.set_presence_handler("subscribe",self.presence_subscribe)
-		self.cjc.stream.set_presence_handler("unsubscribe",self.presence_unsubscribe)
+		self.cjc.stream.set_presence_handler("unsubscribe",self.presence_subscription_change)
+		self.cjc.stream.set_presence_handler("subscribed",self.presence_subscription_change)
+		self.cjc.stream.set_presence_handler("unsubscribed",self.presence_subscription_change)
 		self.set_presence(pyxmpp.Presence(priority=self.settings["priority"]))
 
 	def ev_disconnect_request(self,event,arg):
@@ -222,6 +236,51 @@ class Plugin(PluginBase):
 		prio=self.settings.get("priority",0)
 		p=pyxmpp.Presence(show="chat",status=reason,priority=prio)
 		self.set_presence(p)
+
+	def cmd_subscribe(self,args):
+		user=args.shift()
+		if not user:
+			self.error("/subscribe without an argument")
+			return
+
+		args.finish()
+
+		user=self.cjc.get_user(user)
+		if user is None:
+			return
+		
+		p=pyxmpp.Presence(type="subscribe",to=user)
+		self.cjc.stream.send(p)
+	
+	def cmd_unsubscribe(self,args):
+		user=args.shift()
+		if not user:
+			self.error("/unsubscribe without an argument")
+			return
+
+		args.finish()
+
+		user=self.cjc.get_user(user)
+		if user is None:
+			return
+		
+		p=pyxmpp.Presence(type="unsubscribe",to=user)
+		self.cjc.stream.send(p)
+	
+	def cmd_cancel(self,args):
+		user=args.shift()
+		if not user:
+			self.error("/cancel without an argument")
+			return
+
+		args.finish()
+
+		user=self.cjc.get_user(user)
+		if user is None:
+			return
+		
+		p=pyxmpp.Presence(type="unsubscribed",to=user)
+		self.cjc.stream.send(p)
 		
 	def set_presence(self,p):
 		self.cjc.stream.send(p)
@@ -313,29 +372,21 @@ class Plugin(PluginBase):
 
 	def subscribe_decision(self,arg,accept):
 		stanza,buf=arg
+		fr=stanza.get_from()
 		if accept:
 			p=stanza.make_accept_response()
+			self.cjc.status_buf.append_themed("presence.subscribe_accepted",{"user":fr})
 		else:
 			p=stanza.make_deny_response()
+			self.cjc.status_buf.append_themed("presence.subscribe_denied",{"user":fr})
 		self.cjc.stream.send(p)
 		stanza.free()
 		buf.close()
 										
-	def presence_unsubscribe(self,stanza):
+	def presence_subscription_change(self,stanza):
 		fr=stanza.get_from()
-		self.cjc.status_buf.append_themed("presence.unsubscribe",{"user":fr})
-		p=stanza.make_accept_response()
-		self.cjc.stream.send(p)
-	
-	def presence_subscribed(self,stanza):
-		fr=stanza.get_from()
-		self.cjc.status_buf.append_themed("presence.subscribed",{"user":fr})
-		p=stanza.make_accept_response()
-		self.cjc.stream.send(p)
-	
-	def presence_unsubscribed(self,stanza):
-		fr=stanza.get_from()
-		self.cjc.status_buf.append_themed("presence.unsubscribed",{"user":fr})
+		typ=stanza.get_type()
+		self.cjc.status_buf.append_themed("presence.%s" % (typ,),{"user":fr})
 		p=stanza.make_accept_response()
 		self.cjc.stream.send(p)
 	
