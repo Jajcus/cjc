@@ -30,7 +30,6 @@ class Screen(commands.CommandHandler):
 		self.default_command_handler=None
 		self.escape=0
 		self.lock=threading.RLock()
-		screen.keypad(1)
 		screen.nodelay(1)
 		lc,self.encoding=locale.getlocale()
 		if self.encoding is None:
