@@ -183,6 +183,7 @@ class Screen(commands.CommandHandler):
 		except common.standard_errors,e:
 			common.print_exception()
 		self.escape=0
+		return 1
 
 	def user_input(self,s):
 		try:
