@@ -107,6 +107,7 @@ class MessageBuffer:
 			if self in l:
 				l.remove(self)
 		self.buffer.close()
+		return 1
 
 	def cmd_reply(self,args):
 		if not self.last_sender:

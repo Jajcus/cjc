@@ -107,6 +107,7 @@ class Conversation:
 			if self in l:
 				l.remove(self)
 		self.buffer.close()
+		return 1
 
 class Plugin(PluginBase):
 	def __init__(self,app):
