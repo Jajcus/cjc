@@ -1079,7 +1079,8 @@ class Screen(CommandHandler):
 
 def init():
 	screen=curses.initscr()
-	curses.start_color()
+	if curses.has_colors():
+		curses.start_color()
 	curses.cbreak()
 	curses.meta(1)
 	curses.noecho()
