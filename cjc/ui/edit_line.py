@@ -103,7 +103,8 @@ class EditLine(Widget):
 		if len(self.content)-self.offset<self.w-1:
 			self.win.move(0,self.pos-self.offset)
 			return
-		self.win.addstr(0,self.w-2,self.content[self.offset+self.w-2])
+		s=self.content[self.offset+self.w-2]
+		self.win.addstr(0,self.w-2,s.encode(self.screen.encoding,"replace"))
 		if len(self.content)-self.offset==self.w-1:
 			self.win.clrtoeol()
 		else:
@@ -221,7 +222,11 @@ class EditLine(Widget):
 		self.history_pos+=1
 		self.content=self.history[-self.history_pos]
 		self.pos=len(self.content)
-		self.redraw()
+		self.offset=0
+		if self.pos>self.offset+self.w-2:
+			self.scroll_right()
+		else:
+			self.redraw()
 
 	def key_down(self):
 		if self.history_pos<=0:
@@ -237,17 +242,30 @@ class EditLine(Widget):
 			self.content=self.history[-self.history_pos]
 			self.pos=len(self.content)
 		self.pos=len(self.content)
-		self.redraw()
+		self.offset=0
+		if self.pos>self.offset+self.w-2:
+			self.scroll_right()
+		else:
+			self.redraw()
 
 	def update(self,now=1,refresh=0):
 		self.screen.lock.acquire()
 		try:
+			if self.pos<0 or (self.offset and self.pos<=self.offset):
+				if self.offset:
+					self.pos=self.offset+1
+				else:
+					self.pos=0
+			elif self.pos>=self.offset+self.w-1:
+				self.pos=self.offset+self.w-2
 			if refresh:
 				if self.offset>0:
 					self.left_scroll_mark()
-					self.win.addstr(self.content[self.offset+1:self.offset+self.w-1])
+					s=self.content[self.offset+1:self.offset+self.w-1]
+					self.win.addstr(s.encode(self.screen.encoding,"replace"))
 				else:
-					self.win.addstr(0,0,self.content[:self.w-1])
+					s=self.content[:self.w-1]
+					self.win.addstr(0,0,s.encode(self.screen.encoding,"replace"))
 				self.win.clrtoeol()
 				self.right_scroll_mark()
 			self.win.move(0,self.pos-self.offset)
