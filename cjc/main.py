@@ -481,7 +481,8 @@ class Application(jabber.Client,tls.TLSHandler):
 		else:
 			self.disco_identity=jabber.DiscoIdentity(self.disco_info,
 								"Jabber client",
-								"client","console")
+								"client","console",
+								replace=1)
 	
 	def cmd_disconnect(self,args):
 		if not self.stream:
