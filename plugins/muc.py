@@ -262,9 +262,10 @@ class Plugin(PluginBase):
         app.theme_manager.set_default_attrs(theme_attrs)
         app.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
-            "log_filename": ("Where messages should be logged to",(str,None)),
-            "log_format_in": ("Format of incoming message log entries",(str,None)),
-            "log_format_out": ("Format of outgoing message log entries",(str,None)),
+            "log_filename": ("Where messages should be logged to",(unicode,None)),
+            "log_format_in": ("Format of incoming message log entries",(unicode,None)),
+            "log_format_out": ("Format of outgoing message log entries",(unicode,None)),
+            "default_nick": ("Default nickname. If not give then node part of JID will be used",(unicode,None)),
             "buffer_preference": ("Preference of groupchat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             }
         self.settings={
@@ -272,30 +273,40 @@ class Plugin(PluginBase):
                 "log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "buffer_preference": 10,
+                "default_nick": None,
                 }
         ui.activate_cmdtable("muc",self)
         self.room_manager=None
 
     def cmd_join(self,args):
-        room_jid=args.shift()
-        if not room_jid:
+        arg1=args.shift()
+        if not arg1:
             self.error("/join without arguments")
+            return
+        if arg1=="-nick":
+            nick=args.shift()
+            room_jid=args.shift()
+        else:
+            nick=self.settings.get("default_nick")
+            if not nick:
+                nick=self.cjc.stream.jid.node
+            room_jid=arg1
+        if not room_jid:
+            self.error("Room name not given")
             return
         room_jid=pyxmpp.JID(room_jid)
         if room_jid.resource or not room_jid.node:
             self.error("Bad room JID")
             return
-
         if not self.cjc.stream:
             self.error("Connect first!")
             return
-
         rs=self.room_manager.get_room_state(room_jid)
         if rs and rs.joined:
             room_handler=rs.handler
         else:
             room_handler=Room(self,room_jid,self.cjc.stream.jid)
-            self.room_manager.join(room_jid,self.cjc.stream.jid.node,room_handler)
+            self.room_manager.join(room_jid,nick,room_handler)
         self.cjc.screen.display_buffer(room_handler.buffer)
 
     def cmd_leave(self,args):
