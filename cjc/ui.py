@@ -87,20 +87,28 @@ class Widget:
 	def redraw(self,now=1):
 		self.update()
 
+buffer_list=[]
 class Buffer(CommandHandler):
-	buffer_list=[]
 	def __init__(self,name):
 		CommandHandler.__init__(self)
 		self.name=name
 		self.window=None
 		self.lock=threading.RLock()
 		try:
-			self.buffer_list[self.buffer_list.index(None)]=self
+			buffer_list[buffer_list.index(None)]=self
 		except ValueError:
-			self.buffer_list.append(self)
+			buffer_list.append(self)
+		self.active=0
+		for f in buffer_activity_handlers:
+			f()
+
+	def set_window(self,win):
+		self.window=win
+		if win:
+			self.activity(0)
 
 	def get_number(self):
-		return self.buffer_list.index(self)
+		return buffer_list.index(self)+1
 		
 	def format(self,width,height):
 		pass
@@ -120,10 +128,24 @@ class Buffer(CommandHandler):
 
 	def keypressed(self,ch,escape):
 		return 0
-			
+
+	def activity(self,val):
+		if self.window and self.active>0:
+			self.active=0
+		elif val>self.active:
+			self.active=val
+		else:
+			return
+		for f in buffer_activity_handlers:
+			f()
+		
+buffer_activity_handlers=[]
+		
 def buffer_get_by_number(n):
+	if n==0:
+		n=10
 	try:
-		return Buffer.buffer_list[n]
+		return buffer_list[n-1]
 	except IndexError:
 		return None
 
@@ -161,7 +183,8 @@ class TextBuffer(Buffer):
 				self.lines[-1].append((attr,l))
 			newl=1
 		self.lines=self.lines[-self.length:]
-	
+		self.activity(1)
+		
 	def append_line(self,s,attr="default"):
 		self.lock.acquire()
 		try:
@@ -191,8 +214,10 @@ class TextBuffer(Buffer):
 
 	def clear(self):
 		self.lock.acquire()
-		self.lines=[[]]
-		self.lock.release()
+		try:
+			self.lines=[[]]
+		finally:
+			self.lock.release()
 
 	def line_length(self,line):
 		ret=0
@@ -214,7 +239,6 @@ class TextBuffer(Buffer):
 			ln=self.line_length(line)
 			h=ln/width+1
 			back-=h
-
 		if back>0:
 			return 0,0
 		if back==0:
@@ -286,7 +310,6 @@ class TextBuffer(Buffer):
 			l,c=self.offset_back(width,height)
 		else:
 			l,c=self.pos
-
 		if c:
 			x,line=self.cut_line(self.lines[l],c)
 			ret=[line]
@@ -348,7 +371,6 @@ class TextBuffer(Buffer):
 				
 			l1,c1=self.offset_forward(self.window.w,self.window.h-2,l,c)
 			self.pos=l1,c1
-
 			formatted=self.format(self.window.w,self.window.h-1)
 			if len(formatted)<=self.window.h-1:
 				self.pos=None
@@ -643,11 +665,11 @@ class Window(Widget):
 		
 	def set_buffer(self,buf):
 		if self.buffer:
-			self.buffer.window=None
+			self.buffer.set_window(None)
 		if buf:
 			if buf.window:
 				buf.window.set_buffer(self.buffer)
-			buf.window=self
+			buf.set_window(self)
 		self.buffer=buf
 		self.newline=0
 		if self.win:

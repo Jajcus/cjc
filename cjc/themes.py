@@ -7,8 +7,11 @@ from types import UnicodeType,StringType
 import pyxmpp
 
 from command_args import CommandError,CommandArgs
+import ui
 
-attr_sel_re=re.compile(r"(?P<before>(([^\%])|(%%)|(%\())*)\%\[(?P<attr>[^]]*)\](?P<after>.*)",
+attr_sel_re=re.compile(r"(?P<before>(^|(.*[^%])))\%\[(?P<attr>[^]]*)\](?P<after>.*)",
+			re.UNICODE|re.DOTALL)
+preparsed_re=re.compile(r"(?P<before>(^|(.*[^%])))\%\{(?P<name>[^]]*)\}(?P<after>.*)",
 			re.UNICODE|re.DOTALL)
 
 attributes_by_name={}
@@ -127,11 +130,41 @@ class ThemeManager:
 		for name,format in formats:
 			if not self.formats.has_key(name):
 				self.formats[name]=format
+	def format_buffers(self,attr,params):
+		ret=[]
+		for num in range(0,len(ui.buffer_list)):
+			buf=ui.buffer_list[num]
+			if buf is None:
+				continue
+			p=params.copy()
+			p["name"]=buf.name
+			p["num"]=num+1
+			if buf.window:
+				format="buffer_visible"
+			elif buf.active==1:
+				format="buffer_active1"
+			elif buf.active==2:
+				format="buffer_active2"
+			elif buf.active>2:
+				format="buffer_active3"
+			else:
+				format="buffer_inactive"
+			format=self.formats.get(format)
+			if not format:
+				continue
+			f_buf=self.do_format_string(format,attr,p)
+			if ret:
+				ret.append((self.attrs.get(attr,self.attrs["default"]),","))
+			ret+=f_buf
+		return ret
+		
 	def format_string(self,fname,params):
+		ui.debug("format_string%r" % ((fname,params),))
 		format=self.formats[fname]
 		return self.do_format_string(format,"default",params)
 		
 	def do_format_string(self,format,attr,params):
+		ui.debug("do_format_string%r" % ((format,attr,params),))
 		m=attr_sel_re.match(format)
 		if m:
 			format=m.group("before")
@@ -141,6 +174,22 @@ class ThemeManager:
 			next=m.group("after")
 		else: 
 			next=None
+
+		m=preparsed_re.match(format)
+		if m:
+			name=m.group("name")
+			if name=="buffers":
+				before=m.group("before")
+				after=m.group("after")
+				ret=[]
+				if before:
+					ret+=self.do_format_string(before,attr,params)
+				ret+=self.format_buffers(attr,params)
+				if after:
+					ret+=self.do_format_string(after,attr,params)
+				if next:
+					ret+=self.do_format_string(next,next_attr,params)
+				return ret
 
 		if type(params) in (UnicodeType,StringType):
 			params={"msg":params}
@@ -157,9 +206,11 @@ class ThemeManager:
 			ret.append((attr,s))
 		if next:
 			ret+=self.do_format_string(next,next_attr,params)
+		ui.debug("do_format_string -> %r" % (ret,))
 		return ret
 
 	def substitute(self,format,params):
+		ui.debug("substitute%r" % ((format,params),))
 		while 1:
 			try:
 				s=format % params
@@ -178,9 +229,11 @@ class ThemeManager:
 		return s
 					
 	def quote_format_param(self,format,key):
+		ui.debug("quote_format_param%r" % ((format,key),))
 		return format.replace("%%(%s)" % key,"%%%%(%s)" % key)
 
 	def find_format_param(self,key,params):
+		ui.debug("find_format_param%r" % ((key,params),))
 		if key in ("now","timestamp"):
 			val=time.time()
 		else:
@@ -189,6 +242,7 @@ class ThemeManager:
 		return val
 	
 	def process_format_param(self,format,key,params):
+		ui.debug("process_format_param%r" % ((format,key,params),))
 		sp=key.split(":",2)
 		if len(sp)==2:
 			typ,param=sp
