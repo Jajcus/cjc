@@ -75,6 +75,8 @@ class TextInput(InputWidget):
 			self.key_down()
 		elif c=="\x10": # ^P
 			self.key_up()
+		elif c=="\x17": # ^W
+			self.key_wrubout()
 		elif c=="\x7f":
 			self.key_del()
 		elif c in self.printable:
@@ -213,6 +215,23 @@ class TextInput(InputWidget):
 		self.win.delch()
 		self.after_del()
 		self.win.refresh()
+
+	def key_wrubout(self):
+		if self.pos==0:
+			curses.beep()
+			return
+		s=self.content[:self.pos].rstrip()
+		if self.pos>len(s):
+			self.content=s+self.content[self.pos:]
+			self.pos=len(s)
+		
+		p=self.content.rfind(" ",0,self.pos)
+		if p<=0:
+			self.content=self.content[self.pos:]
+		else:
+			self.content=self.content[:p+1]+self.content[self.pos:]
+			self.pos=p+1
+		self.redraw()
 
 	def key_char(self,c):
 		c=unicode(c,self.screen.encoding,"replace")
