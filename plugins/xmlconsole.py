@@ -99,8 +99,15 @@ class Plugin(PluginBase):
 		self.cjc.screen.display_buffer(self.buffer)
 		
 	def cmd_close(self,args):
-		self.setup_stream_callbacks(None)
+		if self.cjc.stream:
+			if self.saved_data_in_cb:
+				self.cjc.stream.data_in=self.saved_data_in_cb
+			if self.saved_data_out_cb:
+				self.cjc.stream.data_out=self.saved_data_out_cb
+		self.saved_data_in_cb=None
+		self.saved_data_out_cb=None
 		self.buffer.close()
+		self.buffer=None
 
 	def show_data(self,data,dir):
 		if self.settings.get("pretty_print") and data:
