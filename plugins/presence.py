@@ -66,11 +66,16 @@ class Plugin(PluginBase):
 		return name,value
 		
 	def session_started(self,stream):
-		p=pyxmpp.Presence(priotity=self.settings["priority"])
-		self.cjc.stream.send(p)
 		self.cjc.stream.set_presence_handler("error",self.presence_error)
 		self.cjc.stream.set_presence_handler(None,self.presence_available)
 		self.cjc.stream.set_presence_handler("unavailable",self.presence_unavailable)
+		self.set_presence(pyxmpp.Presence(priotity=self.settings["priority"]))
+
+	def set_presence(self,p):
+		self.cjc.stream.send(p)
+		self.cjc.set_user_info(self.cjc.jid,"presence",p)
+		self.compute_current_resource(self.cjc.jid.bare())
+		self.cjc.send_event("presence changed",self.cjc.jid)
 
 	def presence_error(self,stanza):
 		fr=stanza.get_from()
