@@ -77,6 +77,19 @@ class Screen:
 	def redraw(self):
 		self.update(1,1)
 
+	def _beep(self):
+		try:
+			curses.beep()
+		except curses.error:
+			pass
+
+	def beep(self):
+		self.lock.acquire()
+		try:
+			self._beep()
+		finally:
+			self.lock.release()
+
 	def set_input_handler(self,h):
 		self.input_handler=h
 
@@ -137,7 +150,7 @@ class Screen:
 		if args:
 			args.finish()
 		if not self.active_window:
-			curses.beep()
+			self.beep()
 			return
 		buf=self.active_window.buffer
 		next=None
@@ -160,7 +173,7 @@ class Screen:
 			self.active_window.set_buffer(next)
 			self.active_window.update()
 		else:
-			curses.beep()
+			self.beep()
 
 	def cmd_prevbuf(self,args=None):
 		if args:
@@ -168,7 +181,7 @@ class Screen:
 		if args:
 			args.finish()
 		if not self.active_window:
-			curses.beep()
+			self.beep()
 			return
 		buf=self.active_window.buffer
 		next=None
@@ -193,19 +206,19 @@ class Screen:
 			self.active_window.set_buffer(next)
 			self.active_window.update()
 		else:
-			curses.beep()
+			self.beep()
 
 	def cmd_move(self,args):
 		num1=args.shift()
 		if not num1:
-			curses.beep()
+			self.beep()
 			return
 		num2=args.shift()
 		if num2:
 			oldnum,newnum=int(num1),int(num2)
 		else:
 			if not self.active_window or not self.active_window.buffer:
-				curses.beep()
+				self.self()
 				return
 			newnum=int(num1)
 			oldnum=self.active_window.buffer.get_number()
