@@ -58,6 +58,8 @@ class Plugin(PluginBase):
 			"auto_xa": ("Time in minutes after set presence should be set to 'xa' (unset or 0 to disable)",(int,None)),
 			"auto_away_msg": ("Auto-away status description",(unicode,None)),
 			"auto_xa_msg": ("Auto-away status description",(unicode,None)),
+			"show_changes": ("Auto-away status description",(int,None)),
+			"show_errors": ("Auto-away status description",(int,None)),
 			}
 		self.settings={
 			"priority": 1,
@@ -65,6 +67,8 @@ class Plugin(PluginBase):
 			"auto_xa": 15,
 			"auto_away_msg": u"Automaticaly away after %i minutes of inactivity",
 			"auto_xa_msg": u"Automaticaly xa after %i minutes of inactivity",
+			"show_changes": 1,
+			"show_errors": 1,
 			}
 		app.add_info_handler("resources",self.info_resources)
 		app.add_info_handler("presence",self.info_presence)
@@ -301,7 +305,7 @@ class Plugin(PluginBase):
 			msg+=" ('%s')" % etxt
 		self.debug(stanza.get_error().serialize())
 		
-		if self.cjc.get_user_info(fr):
+		if self.cjc.get_user_info(fr) and self.settings.get("show_errors"):
 			self.warning(msg)
 		else:
 			self.debug(msg)
@@ -316,7 +320,7 @@ class Plugin(PluginBase):
 	def presence_available(self,stanza):
 		fr=stanza.get_from()
 		p=self.cjc.get_user_info(fr,"presence")
-		if not p or p!=stanza:
+		if (not p or p!=stanza) and self.settings.get("show_changes"):
 			self.cjc.status_buf.append_themed("presence.available",{"user":fr})
 			self.cjc.status_buf.update()
 		else:
@@ -328,7 +332,7 @@ class Plugin(PluginBase):
 		
 	def presence_unavailable(self,stanza):
 		fr=stanza.get_from()
-		if self.cjc.get_user_info(fr):
+		if self.cjc.get_user_info(fr) and self.settings.get("show_changes"):
 			self.cjc.status_buf.append_themed("presence.unavailable",{"user":fr})
 			self.cjc.status_buf.update()
 		else:
