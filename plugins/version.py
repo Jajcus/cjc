@@ -26,6 +26,7 @@ class Plugin(PluginBase):
 	
 	def session_started(self,stream):
 		self.cjc.stream.set_iq_get_handler("query","jabber:iq:version",self.version_get)
+		self.cjc.disco_info.add_feature("jabber:iq:version")
 
 	def version_string(self):
 		d=self.defaults.copy()

@@ -230,7 +230,6 @@ class Plugin(PluginBase):
 	def session_started(self,stream):
 		self.cjc.stream.set_message_handler("normal",self.message_normal)
 		self.cjc.stream.set_message_handler("error",self.message_error,None,90)
-		self.cjc.disco_info.add_feature("message")
 
 	def find_buffer(self,user,thread):
 		buff=None

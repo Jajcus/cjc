@@ -102,7 +102,6 @@ class Plugin(PluginBase):
 		self.cjc.stream.set_presence_handler("subscribed",self.presence_subscription_change)
 		self.cjc.stream.set_presence_handler("unsubscribed",self.presence_subscription_change)
 		self.set_presence(pyxmpp.Presence(priority=self.settings["priority"]))
-		self.cjc.disco_info.add_feature("presence")
 
 	def ev_disconnect_request(self,event,arg):
 		p=pyxmpp.Presence(type="unavailable",status=arg)
