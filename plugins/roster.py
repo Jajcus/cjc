@@ -243,6 +243,14 @@ class Plugin(PluginBase):
 			self.error("Bad JID!")
 			return
 
+		try:
+			item=self.cjc.roster.item_by_jid(user)
+			if item:
+				self.error("User '%s' already in roster." % (user,))
+				return
+		except KeyError:
+			pass
+
 		name=args.all()
 		if not name:
 			name=None
