@@ -61,27 +61,36 @@ class WrapTest(Test):
 class InputTest(Test): 
 	def __init__(self,plugin):
 		Test.__init__(self,plugin,"Input")
+		self.questions=[
+			("What is your name?","text-single",u"",None,
+				u"Your name is %s.",u"You don't seem to know your own name"),
+			("Do you like me?","boolean",1,None,
+				u"Your answer is %s.",u"Are you afraid to answer?"),
+			("How old are you?","choice",1,[xrange(1,100)],
+				u"Your answer is %s.",u"Are you afraid to answer?"),
+			("Male or Female?","choice",1,["m","f"],
+				u"Your answer is %s.",u"Are you afraid to answer?"),
+			]
 		
 	def run(self):
-		self.plugin.cjc.info("Test thread started")
-		self.plugin.cjc.command_line.ask_question(
-					"What is your name?",
-					"text-single",
-					u"",
-					self.input_handler,
-					self.abort_handler,
-					(u"Your name is %s.",
-						u"You don't seem to know your own name")
-					)
-		self.plugin.cjc.info("Test thread finished")
+		self.ask_next_question()
+
+	def ask_next_question(self):
+		if not self.questions:
+			return
+		q,t,d,v,m1,m2=self.questions.pop(0)
+		self.plugin.cjc.command_line.ask_question(q,t,d,self.input_handler,
+								self.abort_handler,(m1,m2),v)
 	
 	def input_handler(self,arg,answer):
-		self.buffer.append(arg[0] % answer)
+		self.buffer.append_line(arg[0] % answer)
 		self.buffer.update()
+		self.ask_next_question()
 
 	def abort_handler(self,arg):
-		self.buffer.append(arg[1])
+		self.buffer.append_line(arg[1])
 		self.buffer.update()
+		self.ask_next_question()
 		
 class Plugin(PluginBase):
 	tests={

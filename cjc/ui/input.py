@@ -6,7 +6,11 @@ import string
 from widget import Widget
 from cjc import common
 import text_input
+import bool_input
+import choice_input
 
+class InputError(StandardError):
+	pass
 
 class Input(Widget):
 	def __init__(self,theme_manager):
@@ -27,30 +31,32 @@ class Input(Widget):
 		self.input_widget=self.command_line
 		self.make_windows()
 
-	def input_handler(self,content):
+	def input_handler(self,answer):
 		if self.input_widget==self.command_line:
-			self.screen.user_input(content)
+			self.screen.user_input(answer)
 			return
-		if self.question_handler:
-			self.question_handler(self.question_handler_arg,content)
-
+		handler=self.question_handler
+		arg=self.question_handler_arg
 		self.unask_question()
+		if handler:
+			handler(arg,answer)
+			handler=None
 	
 	def abort_handler(self):
 		if self.input_widget==self.command_line:
 			return
-		if self.question_abort_handler:
-			self.question_abort_handler(self.question_handler_arg)
-			self.question_abort_handler=None
+		handler=self.question_abort_handler
+		arg=self.question_handler_arg
 		self.unask_question()
+		if handler:
+			handler(arg)
+			handler=None
 
 	def make_windows(self):
 		self.prompt_win=None
 		self.input_win=None
 		self.screen.lock.acquire()
 		try:
-			if self.input_win:
-				self.input_win.leaveok(1)
 			if self.prompt:
 				l=len(self.prompt)
 				if l<self.w/2:
@@ -71,9 +77,15 @@ class Input(Widget):
 		finally:
 			self.screen.lock.release()
 
-	def ask_question(self,question,type,default,handler,abort_handler,arg):
+	def ask_question(self,question,type,default,handler,abort_handler,arg,values=None):
 		if type=="text-single":
 			self.input_widget=text_input.TextInput(self,1,default,0)
+		elif type=="boolean":
+			self.input_widget=bool_input.BooleanInput(self,1,default)
+		elif type=="choice":
+			if not values:
+				raise InputError,"Values required for 'choice' input."
+			self.input_widget=choice_input.ChoiceInput(self,1,default,values)
 		else:
 			raise InputError,"Unknown input type: "+type
 		self.question_handler=handler
