@@ -92,7 +92,7 @@ global_theme_attrs=(
 )
 
 global_theme_formats=(
-	("window_status",u"%[bar] %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s)"),
+	("window_status",u"%[bar] %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s) [%(bufcol)s,%(bufrow)s]"),
 	("title_bar",u"%[bar]%(name)s ver. %(version)s by %(author)s"),
 	("status_bar",u"%[bar]%(name)-40s Active buffers: [%{buffers}]"),
 	("error",u"%[error][%(T:now)s] %(msg)s\n"),
@@ -361,6 +361,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.exit_request(reason)
 
 	def cmd_connect(self,args):
+		if self.stream:
+			self.error(u"Already connected")
+			return
 		jid=self.settings.get("jid")
 		if not jid:
 			self.error(u"Can't connect - jid not given")
