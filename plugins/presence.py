@@ -179,7 +179,8 @@ class Plugin(PluginBase):
 	def ev_keypressed(self,event,arg):
 		self.cjc.remove_event_handler(event,self.ev_keypressed)
 		if self.away_saved_presence:
-			self.set_presence(self.away_saved_presence)
+			if self.cjc.stream:
+				self.set_presence(self.away_saved_presence)
 			self.away_saved_presence=None
 
 	def cmd_online(self,args):
@@ -288,6 +289,9 @@ class Plugin(PluginBase):
 		self.cjc.stream.send(p)
 		
 	def set_presence(self,p):
+		if not self.cjc.stream:
+			self.error("Cannot change presence: Disconnected.")
+			return
 		self.cjc.stream.send(p)
 		self.cjc.set_user_info(self.cjc.jid,"presence",p)
 		self.compute_current_resource(self.cjc.jid.bare())
