@@ -297,7 +297,7 @@ class Plugin(PluginBase):
         if not name:
             name=None
 
-        item=self.cjc.roster.get_add_item(user,name=name)
+        item=self.cjc.roster.add_item(user,name=name)
         item.groups=groups
         iq=item.make_roster_push()
         self.cjc.stream.send(iq)
