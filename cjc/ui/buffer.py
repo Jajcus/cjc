@@ -1,5 +1,6 @@
 
 import threading
+import logging
 from types import StringType,UnicodeType
 
 from cjc import common
@@ -12,6 +13,7 @@ activity_handlers=[]
 class Buffer:
     def __init__(self,info,descr_format="default_buffer_descr",
             command_table=None,command_table_object=None):
+        self.__logger=logging.getLogger("cjc.ui.Buffer")
         self.preference=10
         self.command_table=command_table
         self.command_table_object=command_table_object
@@ -69,7 +71,7 @@ class Buffer:
         if self.window:
             window=self.window
             self.window=None
-            common.debug("Buffer has window")
+            self.__logger.debug("Buffer has window")
             if n:
                 i=n
             else:
@@ -77,7 +79,7 @@ class Buffer:
             while i>0:
                 i-=1
                 if buffer_list[i] and not buffer_list[i].window:
-                    common.debug("Setting window's buffer to "+`buffer_list[i]`)
+                    self.__logger.debug("Setting window's buffer to "+`buffer_list[i]`)
                     window.set_buffer(buffer_list[i])
                     window.update()
                     window=None

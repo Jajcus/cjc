@@ -2,6 +2,7 @@
 import curses
 import curses.textpad
 import string
+import logging
 
 from widget import Widget
 from cjc import common
@@ -16,6 +17,7 @@ class InputError(StandardError):
 
 class Input(Widget):
     def __init__(self,theme_manager):
+        self.__logger=logging.getLogger("cjc.ui.Input")
         Widget.__init__(self)
         self.prompt_win=None
         self.input_win=None
@@ -39,7 +41,7 @@ class Input(Widget):
             self.screen.beep()
             return 0
         head,tails=complete.complete(s[:pos])
-        common.debug("complete() returned: "+`(head,tails)`)
+        self.__logger.debug("complete() returned: "+`(head,tails)`)
         if len(tails)>1 and self.current_buffer:
             if again:
                 self.current_buffer.ask_question(head,"list-single",tails[0],
@@ -98,7 +100,7 @@ class Input(Widget):
                     prompt=self.prompt
                 else:
                     prompt=self.prompt[:self.w/4-3]+"(...)"+self.prompt[-self.w/4+4:]
-                common.debug("prompt="+`prompt`)
+                self.__logger.debug("prompt="+`prompt`)
                 l=len(prompt)
                 self.prompt_win=curses.newwin(self.h,l+1,self.y,self.x)
                 self.prompt_win.addstr(prompt)

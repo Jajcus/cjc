@@ -1,4 +1,5 @@
 import re
+import logging
 
 import cmdtable
 from cjc import common
@@ -7,7 +8,7 @@ completions={}
 
 class Completion:
     def __init__(self):
-        pass
+        self.__logger=logging.getLogger("cjc.ui.Completion")
     def register(self,*args):
         for name in args:
             completions[name]=self
@@ -24,7 +25,7 @@ class Completion:
             return head,matches
         longest_match=matches[0][0][:longest]
         for m in matches[1:]:
-            common.debug("longest=%r longest_match=%r" % (longest,longest_match))
+            self.__logger.debug("longest=%r longest_match=%r" % (longest,longest_match))
             while longest>l and m[0][:longest]!=longest_match:
                 longest_match=longest_match[:-1]
                 longest-=1
@@ -54,18 +55,19 @@ class GenericCompletion(Completion):
 
 class ActiveBufferDefinedCompletion(Completion):
     def __init__(self,screen):
+        self.__logger=logging.getLogger("cjc.ui.ActiveBufferDefinedCompletion")
         self.screen=screen
     def complete(self,word):
         aw=self.screen.active_window
-        common.debug("Active window: "+`aw`)
+        self.__logger.debug("Active window: "+`aw`)
         if not aw:
             return "",[]
         ab=aw.buffer
-        common.debug("Active buffer: "+`ab`)
+        self.__logger.debug("Active buffer: "+`ab`)
         if not ab:
             return "",[]
         words=ab.get_completion_words()
-        common.debug("Words: "+`words`)
+        self.__logger.debug("Words: "+`words`)
         matches=[]
         for w in words:
             if w.startswith(word):
@@ -73,6 +75,8 @@ class ActiveBufferDefinedCompletion(Completion):
         return self.make_result("",word,matches)
 
 GenericCompletion().register("text")
+
+__logger=logging.getLogger("cjc.ui.complete")
 
 unfinished_quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)',re.UNICODE)
 
@@ -82,15 +86,15 @@ def complete_command_args(s):
         cmd,args=sp
     else:
         cmd,args=sp[0],""
-    common.debug("Command args completion: "+`(cmd,args)`)
+    __logger.debug("Command args completion: "+`(cmd,args)`)
     cmd=cmd[1:]
     try:
         cmd=cmdtable.lookup_command(cmd,1)
     except KeyError:
-        common.debug("Command not found: "+`cmd`)
+        __logger.debug("Command not found: "+`cmd`)
         return None,None,None,0
     if not cmd.hints:
-        common.debug("No completion hints for command: "+`cmd`)
+        __logger.debug("No completion hints for command: "+`cmd`)
         return None,None,None,0
     hi=0
     if not args or args[-1].isspace():
@@ -104,13 +108,13 @@ def complete_command_args(s):
         while args.args and len(args.args)>len(lastarg):
             arg=args.shift()
             if arg is None:
-                common.debug("Last argument reached")
+                __logger.debug("Last argument reached")
                 return None,None,None,0
             if option:
-                common.debug("option=%r, option_arg=%r arg=%r" % (option,option_arg,arg))
+                __logger.debug("option=%r, option_arg=%r arg=%r" % (option,option_arg,arg))
                 option_arg+=1
                 if option_arg<len(option):
-                    common.debug("complete: %r is %r"
+                    __logger.debug("complete: %r is %r"
                             % (arg, option[option_arg]))
                     continue
                 option=None
@@ -123,21 +127,21 @@ def complete_command_args(s):
                         option_arg=0
                         break
                 if option:
-                    common.debug("complete: %r is %r"
+                    __logger.debug("complete: %r is %r"
                             % (arg,option[option_arg]))
                     continue
             elif hi<len(cmd.hints) and cmd.hints[hi].startswith("-"):
                 while (hi<len(cmd.hints) and cmd.hints[hi].startswith("-")):
                     hi+=1
             if hi<len(cmd.hints):
-                common.debug("complete: %r is %r" % (arg,cmd.hints[hi]))
+                __logger.debug("complete: %r is %r" % (arg,cmd.hints[hi]))
             hi+=1
     except cmdtable.CommandError:
         if not unfinished_quoted_arg_re.match(args.args):
-            common.debug("Argument parse error not on open quotes")
+            __logger.debug("Argument parse error not on open quotes")
             return None,None,None,0
     if hi>=len(cmd.hints):
-        common.debug("More args than hints")
+        __logger.debug("More args than hints")
         return None,None,None,0
     if args.args:
         head=s[:-len(args.args)]
@@ -174,12 +178,12 @@ def complete_command_args(s):
             if hi<len(cmd.hints):
                 hint=cmd.hints[hi]
             else:
-                common.debug("More args than hints")
+                __logger.debug("More args than hints")
                 return None,None,None,0
     if hint=="opaque":
         return None,None,None,0
     elif not completions.has_key(hint):
-        common.debug("Completion not found: "+`hint`)
+        __logger.debug("Completion not found: "+`hint`)
         return None,None,None,0
     compl=completions[hint]
     if hint!="text":
@@ -198,7 +202,7 @@ def complete(s):
             quote=0
         else:
             head,word,compl,quote=complete_command_args(s)
-            common.debug("head=%r word=%r compl=%r" % (head,word,compl))
+            __logger.debug("head=%r word=%r compl=%r" % (head,word,compl))
             if head is None:
                 return s,[]
     else:
@@ -218,7 +222,7 @@ def complete(s):
 
     chead,cret=compl.complete(word)
 
-    common.debug("head=%r chead=%r cret=%r quote=%r" % (head,chead,cret,quote))
+    __logger.debug("head=%r chead=%r cret=%r quote=%r" % (head,chead,cret,quote))
 
     if quote:
         if chead:
@@ -253,4 +257,5 @@ def complete(s):
         else:
             ret.append(r[0])
     return head+chead,ret
+
 # vi: sts=4 et sw=4

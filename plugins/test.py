@@ -115,8 +115,8 @@ class Plugin(PluginBase):
         "wrap": WrapTest,
         "input": InputTest
         }
-    def __init__(self,app):
-        PluginBase.__init__(self,app)
+    def __init__(self,app,name):
+        PluginBase.__init__(self,app,name)
         ui.activate_cmdtable("test",self)
 
     def cmd_test(self,args):

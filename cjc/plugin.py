@@ -1,16 +1,21 @@
+import logging
 
 class PluginBase:
-    def __init__(self,cjc):
+    def __init__(self,cjc,name):
         """
         Initialize the plugin.
         """
         self.settings={}
         self.available_settings={}
         self.cjc=cjc
-        self.info=cjc.info
-        self.debug=cjc.debug
-        self.warning=cjc.warning
-        self.error=cjc.error
+        self.name=name
+        self.module=None
+        self.sys_path=None
+        self.logger=logging.getLogger("cjc.plugin."+name)
+        self.debug=self.logger.debug
+        self.info=self.logger.info
+        self.warning=self.logger.warning
+        self.error=self.logger.error
 
     def unload(self):
         """
@@ -30,4 +35,5 @@ class PluginBase:
         Called when a session is closed (the stream has been disconnected).
         """
         pass
+
 # vi: sts=4 et sw=4

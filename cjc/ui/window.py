@@ -1,5 +1,6 @@
 import curses
 import re
+import logging
 
 import buffer
 import keytable
@@ -12,6 +13,7 @@ control_re=re.compile("[\x00-\x1f\x7f]",re.UNICODE)
 
 class Window(Widget):
     def __init__(self,theme_manager,title,lock=0):
+        self.__logger=logging.getLogger("cjc.ui.Window")
         Widget.__init__(self)
         self.buffer=None
         self.title=title
@@ -154,7 +156,7 @@ class Window(Widget):
             if not lines:
                 return
             eol=0
-            common.debug("lines: "+`lines`)
+            self.__logger.debug("lines: "+`lines`)
             for line in lines:
                 if eol:
                     self.win.addstr("\n")

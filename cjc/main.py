@@ -13,10 +13,12 @@ import socket
 import signal
 import getopt
 import datetime
+import logging
 
 import pyxmpp
 from pyxmpp import jabber
 
+import cjclogging
 import ui
 import ui.buffer
 import ui.keytable
@@ -26,8 +28,6 @@ import themes
 import common
 import tls
 import completions
-
-logfile=None
 
 class Exit(Exception):
     pass
@@ -52,7 +52,7 @@ global_settings={
     "keepalive": ("Keep-alive interval in seconds (0 to disable).",bool),
     "case_sensitive": ("Should roster name matches be case sensitive?",bool),
     "backup_config": ("Save backup of previous config file when saving.",bool),
-    "debug": ("Display some debuging information in status window.",bool),
+    "debug": ("Display some debuging information in status window.",bool,"set_debug"),
 }
 
 global_theme_attrs=(
@@ -109,6 +109,7 @@ class Application(jabber.Client,tls.TLSHandler):
     def __init__(self,base_dir,config_file="default",theme_file="theme",home_dir=None,profile=False):
         self.profile=profile
         jabber.Client.__init__(self)
+        self.__logger=logging.getLogger("cjc.Application")
         self.settings={
             "jid":self.jid,
             "password":self.password,
@@ -166,14 +167,14 @@ class Application(jabber.Client,tls.TLSHandler):
                 mod=reload(mod)
             else:
                 mod=__import__(name)
-            plugin=mod.Plugin(self)
+            plugin=mod.Plugin(self,name)
             plugin.module=mod
             plugin.sys_path=sys.path
             self.plugins[name]=plugin
             self.plugin_modules[name]=mod
         except:
-            self.print_exception()
-            self.info("Plugin load failed")
+            self.__logger.exception("Exception:")
+            self.__logger.info("Plugin load failed")
 
     def load_plugin(self,name):
         sys_path=sys.path
@@ -184,12 +185,12 @@ class Application(jabber.Client,tls.TLSHandler):
                 if not os.path.exists(f):
                     continue
                 if self.plugins.has_key(name):
-                    self.error("Plugin %s already loaded!" % (name,))
+                    self.__logger.error("Plugin %s already loaded!" % (name,))
                     return
-                self.info("Loading plugin %s..." % (name,))
+                self.__logger.info("Loading plugin %s..." % (name,))
                 self._load_plugin(name)
                 return
-            self.error("Couldn't find plugin %s" % (name,))
+            self.__logger.error("Couldn't find plugin %s" % (name,))
         finally:
             sys.path=sys_path
 
@@ -197,16 +198,16 @@ class Application(jabber.Client,tls.TLSHandler):
         try:
             plugin=self.plugins[name]
         except KeyError:
-            self.error("Plugin %s is not loaded" % (name,))
+            self.__logger.error("Plugin %s is not loaded" % (name,))
             return False
-        self.info("Unloading plugin %s..." % (name,))
+        self.__logger.info("Unloading plugin %s..." % (name,))
         try:
             r=plugin.unload()
         except:
-            self.print_exception()
+            self.__logger.exception("Exception:")
             r=None
         if not r:
-            self.error("Plugin %s cannot be unloaded" % (name,))
+            self.__logger.error("Plugin %s cannot be unloaded" % (name,))
             return False
         del self.plugins[name]
         return True
@@ -215,15 +216,15 @@ class Application(jabber.Client,tls.TLSHandler):
         try:
             plugin=self.plugins[name]
         except KeyError:
-            self.error("Plugin %s is not loaded" % (name,))
+            self.__logger.error("Plugin %s is not loaded" % (name,))
             return False
-        self.info("Reloading plugin %s..." % (name,))
+        self.__logger.info("Reloading plugin %s..." % (name,))
         try:
             r=plugin.unload()
         except:
-            self.print_exception()
+            self.__logger.exception("Exception:")
         if not r:
-            self.error("Plugin %s cannot be reloaded" % (name,))
+            self.__logger.error("Plugin %s cannot be reloaded" % (name,))
             return False
         sys_path=sys.path
         sys.path=plugin.sys_path
@@ -233,8 +234,8 @@ class Application(jabber.Client,tls.TLSHandler):
             plugin.module=mod
             self.plugins[name]=plugin
         except:
-            self.print_exception()
-            self.info("Plugin load failed")
+            self.__logger.exception("Exception:")
+            self.__logger.info("Plugin load failed")
             del self.plugins[name]
         sys.path=sys_path
 
@@ -246,16 +247,16 @@ class Application(jabber.Client,tls.TLSHandler):
                 try:
                     d=os.listdir(path)
                 except (OSError,IOError),e:
-                    self.debug("Couldn't get plugin list: %s" % (e,))
-                    self.info("Skipping plugin directory %s" % (path,))
+                    self.__logger.debug("Couldn't get plugin list: %s" % (e,))
+                    self.__logger.info("Skipping plugin directory %s" % (path,))
                     continue
-                self.info("Loading plugins from %s:" % (path,))
+                self.__logger.info("Loading plugins from %s:" % (path,))
                 for f in d:
                     if f[0]=="." or not f.endswith(".py"):
                         continue
                     name=os.path.join(f[:-3])
                     if not self.plugins.has_key(name):
-                        self.info("  %s" % (name,))
+                        self.__logger.info("  %s" % (name,))
                         self._load_plugin(name)
         finally:
             sys.path=sys_path
@@ -294,16 +295,16 @@ class Application(jabber.Client,tls.TLSHandler):
                 try:
                     h(event,arg)
                 except:
-                    self.print_exception()
-                    self.info("Event handler failed")
+                    self.__logger.exception("Exception:")
+                    self.__logger.info("Event handler failed")
         if not self.event_handlers.has_key("*"):
             return
         for h in self.event_handlers["*"]:
             try:
                 h(event,arg)
             except:
-                self.print_exception()
-                self.info("Event handler failed")
+                self.__logger.exception("Exception:")
+                self.__logger.info("Event handler failed")
 
     def add_info_handler(self,var,handler):
         self.info_handlers[var]=handler
@@ -437,44 +438,47 @@ class Application(jabber.Client,tls.TLSHandler):
 
         self.screen.update()
 
-        common.error=self.error
-        common.debug=self.debug
-        common.print_exception=self.print_exception
-
         if not os.path.exists(self.home_dir):
             try:
                 os.makedirs(self.home_dir)
             except (OSError,IOError),e:
-                self.info(e)
+                self.__logger.info(e)
 
+        logger=logging.getLogger()
+        self.log_hdlr=cjclogging.ScreenHandler(self)
+        if self.settings.get("debug"):
+            self.log_hdlr.setLevel(logging.DEBUG)
+        else:
+            self.log_hdlr.setLevel(logging.INFO)
+        logger.addHandler(self.log_hdlr)
         libxml2.registerErrorHandler(self.xml_error_handler,None)
 
         self.load_plugins()
         self.load()
         if not self.settings["jid"]:
-            self.info("")
-            self.info("Quickstart:")
-            self.info("/set jid your_username@your.domain/your_resource")
-            self.info("/set password your_password")
-            self.info("/save")
-            self.info("/connect")
-            self.info("/chat jajcus@jabber.bnet.pl CJC Rulez!")
-            self.info("")
-            self.info("If you don't have your JID yet then register on some Jabber server first.")
-            self.info("CJC doesn't support registration yet.")
-            self.info("")
-            self.info("press Alt-Tab (or Escape Tab) to change active window")
-            self.info("PgUp/PgDown to scroll window content")
+            self.__logger.info("")
+            self.__logger.info("Quickstart:")
+            self.__logger.info("/set jid your_username@your.domain/your_resource")
+            self.__logger.info("/set password your_password")
+            self.__logger.info("/save")
+            self.__logger.info("/connect")
+            self.__logger.info("/chat jajcus@jabber.bnet.pl CJC Rulez!")
+            self.__logger.info("")
+            self.__logger.info("If you don't have your JID yet then register on some Jabber server first.")
+            self.__logger.info("CJC doesn't support registration yet.")
+            self.__logger.info("")
+            self.__logger.info("press Alt-Tab (or Escape Tab) to change active window")
+            self.__logger.info("PgUp/PgDown to scroll window content")
 
         self.update_status_bars()
         if self.profile:
-            self.info("Running UI thread under profiler")
+            self.__logger.info("Running UI thread under profiler")
             self.ui_thread=threading.Thread(None,self.ui_loop_prof,"UI")
         else:
             self.ui_thread=threading.Thread(None,self.ui_loop,"UI")
         self.ui_thread.setDaemon(1)
         if self.profile:
-            self.info("Running Stream thread under profiler")
+            self.__logger.info("Running Stream thread under profiler")
             self.stream_thread=threading.Thread(None,self.stream_loop_prof,"Stream")
         else:
             self.stream_thread=threading.Thread(None,self.stream_loop,"Stream")
@@ -486,6 +490,8 @@ class Application(jabber.Client,tls.TLSHandler):
         if self.settings["autoconnect"]:
             self.cmd_connect()
         self.main_loop()
+
+        logger.removeHandler(self.log_hdlr)
 
         for th in threading.enumerate():
             if th is threading.currentThread():
@@ -511,8 +517,8 @@ class Application(jabber.Client,tls.TLSHandler):
             try:
                 p.session_started(self.stream)
             except:
-                self.print_exception()
-                self.info("Plugin call failed")
+                self.__logger.exception("Exception:")
+                self.__logger.info("Plugin call failed")
         self.stream.set_message_handler("error",self.message_error)
 
 
@@ -527,18 +533,18 @@ class Application(jabber.Client,tls.TLSHandler):
         etxt=err.get_text()
         if etxt:
             msg+=" ('%s')" % etxt
-        self.error(msg)
+        self.__logger.error(msg)
 
     def connected(self):
         tls=self.stream.get_tls_connection()
         if tls:
             self.tls_connected(tls)
         elif self.settings.get("tls_require"):
-            self.error("Couldn't start encryption."
+            self.__logger.error("Couldn't start encryption."
                     " Are you sure your server supports it?")
             self.disconnect()
         else:
-            self.info("Unencrypted connection to %s established."
+            self.__logger.info("Unencrypted connection to %s established."
                 % (self.stream.peer,))
 
     def disconnected(self):
@@ -548,10 +554,10 @@ class Application(jabber.Client,tls.TLSHandler):
                 del info["presence"]
             if info.has_key("resources"):
                 del info["resources"]
-        self.warning("Disconnected")
+        self.__logger.warning("Disconnected")
 
     def message_error(self,stanza):
-        self.warning(u"Message error from: "+stanza.get_from().as_unicode())
+        self.__logger.warning(u"Message error from: "+stanza.get_from().as_unicode())
         return 1
 
     def cmd_quit(self,args):
@@ -561,22 +567,22 @@ class Application(jabber.Client,tls.TLSHandler):
 
     def cmd_connect(self,args=None):
         if self.stream:
-            self.error(u"Already connected")
+            self.__logger.error(u"Already connected")
             return
         jid=self.settings.get("jid")
         if not jid:
-            self.error(u"Can't connect - jid not given")
+            self.__logger.error(u"Can't connect - jid not given")
             return
         if None in (jid.node,jid.resource):
-            self.error(u"Can't connect - jid is not full")
+            self.__logger.error(u"Can't connect - jid is not full")
             return
         password=self.settings.get("password")
         if not password:
-            self.error(u"Can't connect - password not given")
+            self.__logger.error(u"Can't connect - password not given")
             return
         auth_methods=self.settings.get("auth_methods")
         if not auth_methods:
-            self.error(u"Can't connect - auth_methods not given")
+            self.__logger.error(u"Can't connect - auth_methods not given")
             return
         self.jid=jid
         self.password=password
@@ -587,13 +593,13 @@ class Application(jabber.Client,tls.TLSHandler):
         self.keepalive=self.settings.get("keepalive",0)
         self.auth_methods=auth_methods
         self.tls_init()
-        self.info(u"Connecting:")
+        self.__logger.info(u"Connecting:")
         try:
             self.connect()
         except pyxmpp.StreamError,e:
-            self.error("Connection failed: "+str(e))
+            self.__logger.error("Connection failed: "+str(e))
         except (socket.error),e:
-            self.error("Connection failed: "+e.args[1])
+            self.__logger.error("Connection failed: "+e.args[1])
         else:
             self.disco_identity.set_name("CJC Jabber client")
             self.disco_identity.set_category("client")
@@ -601,7 +607,7 @@ class Application(jabber.Client,tls.TLSHandler):
 
     def cmd_disconnect(self,args):
         if not self.stream:
-            self.error(u"Not connected")
+            self.__logger.error(u"Not connected")
             return
         reason=args.all()
         args.finish()
@@ -610,15 +616,15 @@ class Application(jabber.Client,tls.TLSHandler):
         else:
             self.disconnecting=1
             if reason:
-                self.info(u"Disconnecting (%s)..." % (reason,))
+                self.__logger.info(u"Disconnecting (%s)..." % (reason,))
             else:
-                self.info(u"Disconnecting...")
+                self.__logger.info(u"Disconnecting...")
             self.send_event("disconnect request",reason)
             time.sleep(self.settings["disconnect_delay"])
             self.disconnect()
 
     def force_disconnect(self):
-        self.info(u"Forcing disconnect...")
+        self.__logger.info(u"Forcing disconnect...")
         self.lock.acquire()
         self.stream.close()
         self.stream=None
@@ -626,9 +632,9 @@ class Application(jabber.Client,tls.TLSHandler):
         self.disconnected()
 
     def cmd_set(self,args):
-        self.debug("args: "+`args.args`)
+        self.__logger.debug("args: "+`args.args`)
         fvar=args.shift()
-        self.debug("fvar: "+`fvar`+" args:"+`args.args`)
+        self.__logger.debug("fvar: "+`fvar`+" args:"+`args.args`)
         if not fvar:
             for plugin in [None]+self.plugins.keys():
                 if plugin is None:
@@ -648,20 +654,20 @@ class Application(jabber.Client,tls.TLSHandler):
                     if plugin is not None:
                         var="%s.%s" % (plugin,var)
                     if val is None:
-                        self.info("%s is not set" % (var,))
+                        self.__logger.info("%s is not set" % (var,))
                         continue
                     if type(typ) is TupleType:
                         typ=typ[0]
                     if typ is list:
-                        self.info(u"%s = %s" % (var,string.join(val,",")))
+                        self.__logger.info(u"%s = %s" % (var,string.join(val,",")))
                     elif typ is pyxmpp.JID:
-                        self.info(u"%s = %s" % (var,val.as_unicode()))
+                        self.__logger.info(u"%s = %s" % (var,val.as_unicode()))
                     else:
-                        self.info(u"%s = %s" % (var,val))
+                        self.__logger.info(u"%s = %s" % (var,val))
             return
 
         val=args.shift()
-        self.debug("val: "+`val`)
+        self.__logger.debug("val: "+`val`)
         args.finish()
 
         if fvar.find(".")>0:
@@ -669,7 +675,7 @@ class Application(jabber.Client,tls.TLSHandler):
             try:
                 obj=self.plugins[plugin]
             except KeyError:
-                self.error("Unknown category: "+plugin)
+                self.__logger.error("Unknown category: "+plugin)
                 return
         elif fvar[0]==".":
             obj=self
@@ -686,25 +692,25 @@ class Application(jabber.Client,tls.TLSHandler):
                 sdef=nsdef
             descr,typ,handler=sdef
         except KeyError:
-            self.error("Unknown setting: "+fvar)
+            self.__logger.error("Unknown setting: "+fvar)
             return
 
         if val is None:
-            self.info(u"%s - %s" % (fvar,descr))
+            self.__logger.info(u"%s - %s" % (fvar,descr))
             val=obj.settings.get(var)
             if val is None:
-                self.info("%s is not set" % (fvar,))
+                self.__logger.info("%s is not set" % (fvar,))
                 return
-            common.debug("Type: "+`typ`)
+            self.__logger.debug("Type: "+`typ`)
             if type(typ) in (TupleType,ListType):
                 if type(typ[0]) is TypeType:
                     typ=typ[0]
             if typ is list:
-                self.info(u"%s = %s" % (fvar,string.join(val,",")))
+                self.__logger.info(u"%s = %s" % (fvar,string.join(val,",")))
             elif typ is pyxmpp.JID:
-                self.info(u"%s = %s" % (fvar,val.as_unicode()))
+                self.__logger.info(u"%s = %s" % (fvar,val.as_unicode()))
             else:
-                self.info(u"%s = %s" % (fvar,val))
+                self.__logger.info(u"%s = %s" % (fvar,val))
             return
 
         if type(typ) is not tuple:
@@ -748,7 +754,7 @@ class Application(jabber.Client,tls.TLSHandler):
                 continue
 
         if not valid:
-            self.error("Bad value: "+str(e))
+            self.__logger.error("Bad value: "+str(e))
             return
 
         if handler:
@@ -771,7 +777,7 @@ class Application(jabber.Client,tls.TLSHandler):
             try:
                 obj=self.plugins[plugin]
             except KeyError:
-                self.error("Unknown category: "+plugin)
+                self.__logger.error("Unknown category: "+plugin)
                 return
         else:
             obj=self
@@ -780,7 +786,7 @@ class Application(jabber.Client,tls.TLSHandler):
         try:
             descr,typ=obj.available_settings[var][:2]
         except KeyError:
-            self.error("Unknown setting: "+fvar)
+            self.__logger.error("Unknown setting: "+fvar)
             return
 
         if typ is None:
@@ -788,9 +794,15 @@ class Application(jabber.Client,tls.TLSHandler):
         elif type(typ) is tuple and None in typ:
             pass
         else:
-            self.error("%s cannot be unset %r" % (fvar,typ))
+            self.__logger.error("%s cannot be unset %r" % (fvar,typ))
             return
         del obj.settings[var]
+
+    def set_debug(self,oldval,newval):
+        if newval:
+            self.log_hdlr.setLevel(logging.DEBUG)
+        else:
+            self.log_hdlr.setLevel(logging.INFO)
 
     def set_layout(self,oldval,newval):
         if newval not in ("plain","icr","irc","vertical","horizontal"):
@@ -820,43 +832,43 @@ class Application(jabber.Client,tls.TLSHandler):
     def cmd_alias(self,args):
         name=args.shift()
         if not name:
-            self.info("Aliases:")
+            self.__logger.info("Aliases:")
             for alias,value in self.aliases.items():
-                self.info(u"  /%s %s" % (alias,value))
+                self.__logger.info(u"  /%s %s" % (alias,value))
             return
         value=args.all()
         if not value:
             if self.aliases.has_key(name):
-                self.info("%s is an alias for: %s" % (name,self.aliases[name]))
+                self.__logger.info("%s is an alias for: %s" % (name,self.aliases[name]))
             else:
-                self.info("There is no such alias")
+                self.__logger.info("There is no such alias")
             return
         self.aliases[name]=value
 
     def cmd_unalias(self,args):
         name=args.shift()
         if not name:
-            self.info("Aliases:")
+            self.__logger.info("Aliases:")
             for alias,value in self.aliases.items():
-                self.info(u"  /%s %s" % (alias,value))
+                self.__logger.info(u"  /%s %s" % (alias,value))
             return
         args.finish()
         if self.aliases.has_key(name):
             del self.aliases[name]
         else:
-            self.info("There is no such alias")
+            self.__logger.info("There is no such alias")
 
     def save(self,filename=None):
         if filename is None:
             filename=self.config_file
         if not os.path.split(filename)[0]:
             filename=os.path.join(self.home_dir,filename+".conf")
-        self.info(u"Saving settings to "+filename)
+        self.__logger.info(u"Saving settings to "+filename)
         tmpfilename=filename+".tmp"
         try:
             f=file(tmpfilename,"w")
         except IOError,e:
-            self.error(u"Couldn't open config file: "+str(e))
+            self.__logger.error(u"Couldn't open config file: "+str(e))
             return 0
 
         for plugin in [None]+self.plugins.keys():
@@ -920,16 +932,16 @@ class Application(jabber.Client,tls.TLSHandler):
             filename=os.path.join(self.home_dir,filename+".conf")
 
         if not os.path.exists(filename) and os.path.exists(legacy_filename):
-            self.warning("Renaming %r to %r" % (legacy_filename,filename) )
+            self.__logger.warning("Renaming %r to %r" % (legacy_filename,filename) )
             try:
                 os.rename(legacy_filename,filename)
             except OSError,e:
-                self.warning("Operation failed: "+str(e))
+                self.__logger.warning("Operation failed: "+str(e))
                 return 0
         try:
             f=file(filename,"r")
         except IOError,e:
-            self.warning("Couldn't open config file: "+str(e))
+            self.__logger.warning("Couldn't open config file: "+str(e))
             return 0
 
         for l in f.readlines():
@@ -942,30 +954,30 @@ class Application(jabber.Client,tls.TLSHandler):
                 continue
             try:
                 args=ui.CommandArgs(unicode(l,"utf-8"))
-                self.debug("args: "+`args.args`)
+                self.__logger.debug("args: "+`args.args`)
                 cmd=args.get()
-                self.debug("cmd: %r args: %r" % (cmd,args.args))
+                self.__logger.debug("cmd: %r args: %r" % (cmd,args.args))
                 if cmd=="alias":
                     args.shift()
-                    self.debug("alias %r" % (args.args,))
+                    self.__logger.debug("alias %r" % (args.args,))
                     self.cmd_alias(args)
                 elif cmd=="set":
                     args.shift()
-                    self.debug("set %r" % (args.args,))
+                    self.__logger.debug("set %r" % (args.args,))
                     self.cmd_set(args)
                 elif cmd=="bind":
                     args.shift()
-                    self.debug("bind %r" % (args.args,))
+                    self.__logger.debug("bind %r" % (args.args,))
                     self.cmd_bind(args)
                 elif cmd=="unbind":
                     args.shift()
-                    self.debug("unbind %r" % (args.args,))
+                    self.__logger.debug("unbind %r" % (args.args,))
                     self.cmd_unbind(args)
                 else:
-                    self.debug("set %r" % (args.args,))
+                    self.__logger.debug("set %r" % (args.args,))
                     self.cmd_set(args)
             except (ValueError,UnicodeError):
-                self.warning(
+                self.__logger.warning(
                     "Invalid config directive %r ignored" % (l,))
         f.close()
         return 1
@@ -976,39 +988,39 @@ class Application(jabber.Client,tls.TLSHandler):
     def cmd_info(self,args):
         jid=args.shift()
         if not jid:
-            self.error("JID missing")
+            self.__logger.error("JID missing")
             return
         args.finish()
         jid=self.get_user(jid)
         if jid is None:
-            self.error("Invalid jabber id")
+            self.__logger.error("Invalid jabber id")
             return
         uinf=self.get_user_info(jid)
         if uinf is None:
-            self.info(u"I know nothing about "+jid.as_unicode())
+            self.__logger.info(u"I know nothing about "+jid.as_unicode())
             return
-        self.info(u"Information known about %s:" % (jid.as_unicode(),))
+        self.__logger.info(u"Information known about %s:" % (jid.as_unicode(),))
         for k,v in uinf.items():
             if not self.info_handlers.has_key(k):
                 continue
             r=self.info_handlers[k](k,v)
             if not r:
                 continue
-            self.info(u"  %s: %s" % r)
+            self.__logger.info(u"  %s: %s" % r)
 
     def cmd_help(self,args):
         cmd=args.shift()
         if not cmd:
-            self.info("Available commands:")
+            self.__logger.info("Available commands:")
             for tb in ui.cmdtable.command_tables:
                 tname=tb.name[0].upper()+tb.name[1:]
                 if tb.active:
                     active="active"
                 else:
                     active="inactive"
-                self.info("  %s commands (%s):" % (tname,active))
+                self.__logger.info("  %s commands (%s):" % (tname,active))
                 for cmd in tb.get_commands():
-                    self.info(u"    /"+cmd.name)
+                    self.__logger.info(u"    /"+cmd.name)
             return
 
         if cmd[0]=="/":
@@ -1020,16 +1032,16 @@ class Application(jabber.Client,tls.TLSHandler):
             try:
                 cmd=ui.cmdtable.lookup_command(cmd,0)
             except KeyError:
-                self.error(u"Unknown command: "+`cmd`)
+                self.__logger.error(u"Unknown command: "+`cmd`)
                 return
 
-        self.info(u"Command /%s:" % (cmd.name,))
+        self.__logger.info(u"Command /%s:" % (cmd.name,))
         if type(cmd.usage) in (ListType,TupleType):
             for u in cmd.usage:
-                self.info(u"  "+u)
+                self.__logger.info(u"  "+u)
         else:
-            self.info(u"  "+cmd.usage)
-        self.info(u"  "+cmd.descr)
+            self.__logger.info(u"  "+cmd.usage)
+        self.__logger.info(u"  "+cmd.descr)
 
     def cmd_theme(self,args):
         self.theme_manager.command(args)
@@ -1053,7 +1065,7 @@ class Application(jabber.Client,tls.TLSHandler):
             keyname=None
         args.finish()
         if not keyname:
-            self.error("Not implemented yet (you must give keyname argument).")
+            self.__logger.error("Not implemented yet (you must give keyname argument).")
             return
         ui.bind(keyname,function,table)
 
@@ -1087,7 +1099,7 @@ class Application(jabber.Client,tls.TLSHandler):
         name=args.shift()
         args.finish()
         if not name:
-            self.error("Plugin name missing.")
+            self.__logger.error("Plugin name missing.")
             return
         self.load_plugin(name)
 
@@ -1095,7 +1107,7 @@ class Application(jabber.Client,tls.TLSHandler):
         name=args.shift()
         args.finish()
         if not name:
-            self.error("Plugin name missing.")
+            self.__logger.error("Plugin name missing.")
             return
         self.unload_plugin(name)
 
@@ -1103,7 +1115,7 @@ class Application(jabber.Client,tls.TLSHandler):
         name=args.shift()
         args.finish()
         if not name:
-            self.error("Plugin name missing.")
+            self.__logger.error("Plugin name missing.")
             return
         self.reload_plugin(name)
 
@@ -1143,9 +1155,9 @@ class Application(jabber.Client,tls.TLSHandler):
             else:
                 self.disconnecting=1
                 if reason:
-                    self.info(u"Disconnecting (%s)..." % (reason,))
+                    self.__logger.info(u"Disconnecting (%s)..." % (reason,))
                 else:
-                    self.info(u"Disconnecting...")
+                    self.__logger.info(u"Disconnecting...")
                 self.send_event("disconnect request",reason)
                 time.sleep(self.settings["disconnect_delay"])
                 self.disconnect()
@@ -1179,12 +1191,12 @@ class Application(jabber.Client,tls.TLSHandler):
                 act=ui.keypressed()
             except (KeyboardInterrupt,SystemExit),e:
                 self.exit_request(str(e))
-                self.print_exception()
+                self.__logger.exception("Exception:")
                 act=1
             except common.non_errors:
                 raise
             except:
-                self.print_exception()
+                self.__logger.exception("Exception:")
                 act=0
             now=datetime.datetime.now()
             if now.day!=last_time.day:
@@ -1199,8 +1211,7 @@ class Application(jabber.Client,tls.TLSHandler):
                     idle=dif.seconds+24L*60*60*dif.days
                     self.send_event("idle",idle)
             last_time=now
-        if logfile:
-            print >>logfile,"UI loop exiting"
+        self.__logger.debug("UI loop exiting")
 
     def stream_loop_prof(self):
         import profile
@@ -1224,7 +1235,7 @@ class Application(jabber.Client,tls.TLSHandler):
             except (pyxmpp.FatalStreamError,pyxmpp.StreamEncryptionRequired),e:
                 self.state_changed.acquire()
                 try:
-                    self.error(str(e))
+                    self.__logger.error(str(e))
                     try:
                         self.stream.close()
                     except:
@@ -1234,17 +1245,16 @@ class Application(jabber.Client,tls.TLSHandler):
                 finally:
                     self.state_changed.release()
             except pyxmpp.StreamError,e:
-                self.error(str(e))
+                self.__logger.error(str(e))
             except (KeyboardInterrupt,SystemExit),e:
                 self.exit_request(unicode(str(e)))
-                self.print_exception()
+                self.__logger.exception("Exception:")
             except common.non_errors:
                 raise
             except:
-                self.error("Other error cought")
-                self.print_exception()
-        if logfile:
-            print >>logfile,"Stream loop exiting"
+                self.__logger.error("Other error cought")
+                self.__logger.exception("Exception:")
+        self.__logger.debug("Stream loop exiting")
 
     def main_loop(self):
         while not self.exit_time():
@@ -1254,9 +1264,8 @@ class Application(jabber.Client,tls.TLSHandler):
                 self.state_changed.release()
             except (KeyboardInterrupt,SystemExit),e:
                 self.exit_request(unicode(str(e)))
-                self.print_exception()
-        if logfile:
-            print >>logfile,"Main loop exiting"
+                self.__logger.exception("Exception:")
+        self.__logger.debug("Main loop exiting")
 
     def get_user(self,name):
         if name.find("@")>=0:
@@ -1271,11 +1280,11 @@ class Application(jabber.Client,tls.TLSHandler):
             try:
                 return pyxmpp.JID(name)
             except pyxmpp.JIDError:
-                self.error(u"Invalid JID: %s" % (name,))
+                self.__logger.error(u"Invalid JID: %s" % (name,))
                 return None
 
         if not self.roster:
-            self.error(u"%s not found in roster" % (name,))
+            self.__logger.error(u"%s not found in roster" % (name,))
             return None
 
         try:
@@ -1286,16 +1295,16 @@ class Application(jabber.Client,tls.TLSHandler):
                 return self.roster.item_by_jid(jid).jid()
             except (ValueError,pyxmpp.JIDError,KeyError):
                 pass
-            self.error(u"%s not found in roster" % (name,))
+            self.__logger.error(u"%s not found in roster" % (name,))
             return None
 
         if ritems:
             if len(ritems)>1:
-                self.error("ambiguous user name")
+                self.__logger.error("ambiguous user name")
                 return None
             else:
                 return ritems[0].jid
-        self.error(u"%s not found in roster" % (name,))
+        self.__logger.error(u"%s not found in roster" % (name,))
         return None
 
     def get_bare_user_info(self,jid,var=None):
@@ -1346,62 +1355,47 @@ class Application(jabber.Client,tls.TLSHandler):
 
     def roster_updated(self,jid=None):
         if jid is None:
-            self.info("Got roster")
+            self.__logger.info("Got roster")
         else:
-            self.debug("Roster updated")
+            self.__logger.debug("Roster updated")
         self.send_event("roster updated",jid)
 
     def stream_state_changed(self,state,arg):
         if state=="resolving":
-            self.info("Resolving %r..." % (arg,))
+            self.__logger.info("Resolving %r..." % (arg,))
         if state=="resolving srv":
-            self.info("Resolving SRV for %r on %r..." % (arg[1],arg[0]))
+            self.__logger.info("Resolving SRV for %r on %r..." % (arg[1],arg[0]))
         elif state=="connecting":
-            self.info("Connecting to %s:%i..." % (arg[0],arg[1]))
+            self.__logger.info("Connecting to %s:%i..." % (arg[0],arg[1]))
         elif state=="connected":
-            self.info("Connected to %s:%i." % (arg[0],arg[1]))
+            self.__logger.info("Connected to %s:%i." % (arg[0],arg[1]))
         elif state=="authenticating":
-            self.info("Authenticating as %s..." % (arg,))
+            self.__logger.info("Authenticating as %s..." % (arg,))
         elif state=="binding":
-            self.info("Binding to resource %s..." % (arg,))
+            self.__logger.info("Binding to resource %s..." % (arg,))
         elif state=="authorized":
-            self.info("Authorized as %s." % (arg,))
+            self.__logger.info("Authorized as %s." % (arg,))
         elif state=="tls connecting":
-            self.info("Doing TLS handhake with %s." % (arg,))
+            self.__logger.info("Doing TLS handhake with %s." % (arg,))
 
-
-    def print_exception(self):
-        if logfile:
-            traceback.print_exc(file=logfile,limit=1000)
-        traceback.print_exc(file=self.status_buf,limit=1000)
-
-    def error(self,s):
-        if logfile:
-            print >>logfile,time.asctime(),"ERROR",s.encode("utf-8","replace")
+    def show_error(self,s):
         self.status_buf.append_themed("error",s)
         self.status_buf.update(1)
 
-    def warning(self,s):
-        if logfile:
-            print >>logfile,time.asctime(),"WARNING",s.encode("utf-8","replace")
+    def show_warning(self,s):
         self.status_buf.append_themed("warning",s)
         self.status_buf.update(1)
 
-    def info(self,s):
-        if logfile:
-            print >>logfile,time.asctime(),"INFO",s.encode("utf-8","replace")
+    def show_info(self,s):
         self.status_buf.append_themed("info",s)
         self.status_buf.update(1)
 
-    def debug(self,s):
-        if logfile:
-            print >>logfile,time.asctime(),"DEBUG",s.encode("utf-8","replace")
-        if self.settings["debug"]:
-            self.status_buf.append_themed("debug",s)
-            self.status_buf.update(1)
+    def show_debug(self,s):
+        self.status_buf.append_themed("debug",s)
+        self.status_buf.update(1)
 
     def xml_error_handler(self,ctx,error):
-        self.debug(u"XML error: "+unicode(error,"utf-8","strict"))
+        self.__logger.debug(u"XML error: "+unicode(error,"utf-8","strict"))
 
 ui.KeyTable("default",0,(
     ui.KeyFunction("command()",
@@ -1524,7 +1518,6 @@ def usage():
     print "  --profile                Write profiling statistics"
 
 def main(base_dir,profile=False):
-    global logfile
     libxml2.debugMemory(1)
     locale.setlocale(locale.LC_ALL,"")
     try:
@@ -1548,16 +1541,20 @@ def main(base_dir,profile=False):
             config_dir=a
         elif o in ("-t","--theme-file"):
             theme_file=a
-        elif o in ("-l","--log-file"):
-            if a=="-":
-                logfile=sys.stderr
+        elif o in ("-l","--log-file","-L","--append-log-file"):
+            if o in ("-L","--append-log-file"):
+                mode="a"
             else:
-                logfile=open(a,"w",1)
-        elif o in ("-L","--append-log-file"):
+                mode="w"
+            logger=logging.getLogger()
             if a=="-":
-                logfile=sys.stderr
+                hdlr=logging.StreamHandler(sys.stderr)
             else:
-                logfile=open(a,"a",1)
+                hdlr=logging.FileHandler(a,mode)
+            formatter=cjclogging.UnicodeFormatter("utf-8",u'%(asctime)s %(levelname)s %(message)s')
+            hdlr.setFormatter(formatter)
+            logger.addHandler(hdlr)
+            logger.setLevel(logging.DEBUG)
         else:
             usage()
             sys.exit(0)
@@ -1567,10 +1564,8 @@ def main(base_dir,profile=False):
         screen=ui.init()
         app.run(screen)
     finally:
-        if logfile:
-            print >>logfile,"Cleaning up"
+        logging.debug("Cleaning up")
         ui.deinit()
-        if logfile:
-            print >>logfile,"Cleaned up"
+        logging.debug("Cleaned up")
 
 # vi: sts=4 et sw=4

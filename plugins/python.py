@@ -4,8 +4,8 @@ from cjc.plugin import PluginBase
 from cjc import ui
 
 class Plugin(PluginBase):
-    def __init__(self,app):
-        PluginBase.__init__(self,app)
+    def __init__(self,app,name):
+        PluginBase.__init__(self,app,name)
         ui.activate_cmdtable("python",self)
 
     def cmd_python(self,args):

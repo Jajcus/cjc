@@ -37,8 +37,8 @@ VG_ME=1
 VG_UNKNOWN=2
 
 class Plugin(PluginBase):
-    def __init__(self,app):
-        PluginBase.__init__(self,app)
+    def __init__(self,app,name):
+        PluginBase.__init__(self,app,name)
         self.available_settings={
             "show": ("Which items show - list of 'available','unavailable','chat',"
                     "'online','away','xa' or 'all'",list,self.set_show),
@@ -94,7 +94,7 @@ class Plugin(PluginBase):
             self.cjc.roster_window.set_buffer(self.buffer)
 
     def update_item(self,item):
-        common.debug("Roster.update_item(%r): %r" % (item,str(item)))
+        self.debug("Roster.update_item(%r): %r" % (item,str(item)))
         if isinstance(item,pyxmpp.JID):
             if self.cjc.roster:
                 try:
@@ -198,7 +198,7 @@ class Plugin(PluginBase):
         return p
 
     def write_item(self,group,item):
-        common.debug("Roster.write_item(%r): %r" % (item,str(item)))
+        self.debug("Roster.write_item(%r): %r" % (item,str(item)))
         if not self.buffer.has_key((group,None)):
             if group:
                 p={"group":group}
@@ -209,7 +209,7 @@ class Plugin(PluginBase):
         params=self.get_item_format_params(group,item,self.settings["show"])
 
         if params is None:
-            common.debug("Roster.write_item: removing item")
+            self.debug("Roster.write_item: removing item")
             if isinstance(item,pyxmpp.JID):
                 jid=item
             else:
@@ -220,7 +220,7 @@ class Plugin(PluginBase):
                 pass
             return
 
-        common.debug("Roster.write_item: updating item")
+        self.debug("Roster.write_item: updating item")
         if params["available"]:
             self.buffer.insert_themed((group,params["jid"]),"roster.available",params)
         else:
@@ -442,7 +442,7 @@ class Plugin(PluginBase):
                 if not ok:
                     continue
             formatted_group=[]
-            items=[(item.name,item.jid.as_unicode(),item) for item 
+            items=[(item.name,item.jid.as_unicode(),item) for item
                     in self.cjc.roster.items_by_group(group)]
             items.sort()
             for name,jid,item in items:

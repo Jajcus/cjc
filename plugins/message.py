@@ -159,8 +159,8 @@ ui.CommandTable("message buffer",50,(
     )).install()
 
 class Plugin(PluginBase):
-    def __init__(self,app):
-        PluginBase.__init__(self,app)
+    def __init__(self,app,name):
+        PluginBase.__init__(self,app,name)
         self.buffers={}
         self.last_thread=0
         app.theme_manager.set_default_attrs(theme_attrs)

@@ -22,8 +22,8 @@ theme_formats=(
 )
 
 class Plugin(PluginBase):
-    def __init__(self,app):
-        PluginBase.__init__(self,app)
+    def __init__(self,app,name):
+        PluginBase.__init__(self,app,name)
         app.theme_manager.set_default_formats(theme_formats)
         app.theme_manager.set_default_attrs(theme_attrs)
         self.available_settings={

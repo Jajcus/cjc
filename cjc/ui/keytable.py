@@ -1,9 +1,12 @@
 
 import re
 import curses
+import logging
+
 from cjc import common
 from types import StringType,UnicodeType
 
+__logger=logging.getLogger("cjc.ui.keytable")
 
 class KeytableError(StandardError):
     pass
@@ -102,7 +105,6 @@ class KeyTable:
         return self.keytable[(c,meta)]
 
     def process_key(self,c,meta):
-        #common.debug("%r.process_key(%r,%r); table=%r" % (self,c,meta,self.keytable))
         object=None
         fun,arg=self.keytable[(c,meta)]
         if not isinstance(fun,KeyFunction):
@@ -312,7 +314,7 @@ def process_key(code):
         return default_handler(code,meta)
     else:
         try:
-            common.debug("Unhandled key: "+keycode_to_name(code,meta))
+            logging.getLogger("cjc.ui.keytable").debug("Unhandled key: "+keycode_to_name(code,meta))
             curses.beep()
         except curses.error:
             pass
@@ -333,7 +335,7 @@ def keypressed():
             except common.non_errors:
                 raise
             except:
-                common.print_exception()
+                __logger.exception("Exception during keybinding execution")
             return 1
         else:
             meta=1
@@ -343,7 +345,7 @@ def keypressed():
     except common.non_errors:
         raise
     except:
-        common.print_exception()
+        __logger.exception("Exception during keybinding execution")
     meta=0
     return 1
 
@@ -362,4 +364,5 @@ def unbind(keyname,table=None):
         return table.unbind(keyname)
     for t in keytables:
         t.unbind(keyname)
+
 # vi: sts=4 et sw=4

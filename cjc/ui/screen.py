@@ -2,6 +2,7 @@
 import threading
 import locale
 import curses
+import logging
 
 from cjc import common
 import buffer
@@ -11,6 +12,7 @@ import complete
 
 class Screen:
     def __init__(self,screen):
+        self.__logger=logging.getLogger("cjc.ui.Screen")
         self.scr=screen
         self.screen=self
         self.attrs={}
@@ -242,7 +244,7 @@ class Screen:
         except common.non_errors:
             raise
         except:
-            common.print_exception()
+            self.__logger.exception("Exception during user input processing")
 
     def do_user_input(self,s):
         if not s:

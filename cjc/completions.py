@@ -1,3 +1,4 @@
+import logging
 import ui
 import ui.cmdtable
 import common
@@ -6,8 +7,9 @@ import pyxmpp
 class UserCompletion(ui.Completion):
     def __init__(self,app):
         self.app=app
+        self.__logger=logging.getLogger("cjc.UserCompletion")
     def complete(self,word):
-        common.debug("UserCompletion.complete(self,%r)" % (word,))
+        self.__logger.debug("UserCompletion.complete(self,%r)" % (word,))
         matches=[]
         case_sensitive=self.app.settings["case_sensitive"]
         if case_sensitive:
@@ -42,15 +44,16 @@ class UserCompletion(ui.Completion):
             jid=jid.as_unicode()
             if jid.startswith(word) and jid not in matches:
                 matches.append(jid)
-        common.debug("roster completion matches for %r: %r" % (word,matches))
+        self.__logger.debug("roster completion matches for %r: %r" % (word,matches))
         matches=[[m,1] for m in matches]
         return self.make_result("",word,matches)
 
 class SettingCompletion(ui.Completion):
     def __init__(self,app):
         self.app=app
+        self.__logger=logging.getLogger("cjc.SettingCompletion")
     def complete(self,word):
-        common.debug("SettingCompletion.complete(self,%r)" % (word,))
+        self.__logger.debug("SettingCompletion.complete(self,%r)" % (word,))
         if "." in word:
             return self.complete_plugin(word)
         matches=[]
@@ -60,7 +63,7 @@ class SettingCompletion(ui.Completion):
         for s in self.app.settings.keys():
             if s.startswith(word) and s not in matches:
                 matches.append([s,1])
-        common.debug("word=%r matches=%r" % (word,matches))
+        self.__logger.debug("word=%r matches=%r" % (word,matches))
         return self.make_result("",word,matches)
     def complete_plugin(self,word):
         if word.startswith("."):
@@ -84,6 +87,7 @@ class SettingCompletion(ui.Completion):
 class CommandCompletion(ui.Completion):
     def __init__(self,app):
         self.app=app
+        self.__logger=logging.getLogger("cjc.CommandCompletion")
     def complete(self,word):
         matches=[]
         for a in self.app.aliases.keys():

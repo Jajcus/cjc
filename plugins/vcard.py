@@ -11,8 +11,8 @@ from pyxmpp.jabber import VCARD_NS,VCard
 vcard_fields=("FN","N","NICKNAME","EMAIL","JABBERID")
 
 class Plugin(PluginBase):
-    def __init__(self,app):
-        PluginBase.__init__(self,app)
+    def __init__(self,app,name):
+        PluginBase.__init__(self,app,name)
         ui.activate_cmdtable("vcard",self)
 
     def session_started(self,stream):

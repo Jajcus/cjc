@@ -9,8 +9,8 @@ from cjc import ui
 import pyxmpp
 
 class Plugin(PluginBase):
-    def __init__(self,app):
-        PluginBase.__init__(self,app)
+    def __init__(self,app,name):
+        PluginBase.__init__(self,app,name)
         self.available_settings={
             "name": ("Client name to return in reply to jabber:iq:version query",str),
             "version": ("Client version to return in reply to jabber:iq:version query",str),

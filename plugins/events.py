@@ -10,8 +10,8 @@ theme_formats=(
 )
 
 class Plugin(PluginBase):
-    def __init__(self,app):
-        PluginBase.__init__(self,app)
+    def __init__(self,app,name):
+        PluginBase.__init__(self,app,name)
         app.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "event_handlers": ("Event handlers (managed with /event_add and"

@@ -2,6 +2,8 @@ import pyxmpp
 import ui
 import threading
 import os
+import logging
+
 import common
 
 
@@ -134,6 +136,7 @@ class TLSHandler:
         buf.update()
 
     def cert_remember_decision(self,arg,ans):
+        logger=logging.getLogger("cjc.TLSHandler")
         arg.buf.close()
         if not ans:
             return
@@ -144,10 +147,11 @@ class TLSHandler:
         f=file(p,"w")
         f.write(arg.cert.as_der())
         f.close()
-        self.info("Peer certificate saved to: "+p)
+        logger.info("Peer certificate saved to: "+p)
 
     def cert_verification_callback(self,stream,ctx,cert,errnum,depth,ok):
-        self.debug("cert_verification_callback(depth=%i,ok=%i)" % (depth,ok))
+        logger=logging.getLogger("cjc.TLSHandler")
+        logger.debug("cert_verification_callback(depth=%i,ok=%i)" % (depth,ok))
         try:
             self.cert_verify_state.set_cert(depth,cert)
             if not ok:
@@ -166,29 +170,30 @@ class TLSHandler:
 
     def tls_is_cert_known(self,cert):
         from M2Crypto import X509
+        logger=logging.getLogger("cjc.TLSHandler")
         if not self.tls_known_cert:
             p=os.path.join(self.home_dir,"known_certs",self.tls_peer_name+".der")
-            common.debug("Loading cert file: "+p)
+            logger.debug("Loading cert file: "+p)
             try:
                 self.tls_known_cert=file(p,"r").read()
-                self.info("Last known peer certificate loaded from: "+p)
+                logger.info("Last known peer certificate loaded from: "+p)
             except IOError,e:
-                common.debug("Exception: "+str(e))
+                logger.debug("Exception: "+str(e))
                 self.tls_known_cert="unknown"
             except:
                 self.tls_known_cert="unknown"
                 raise
-            common.debug("cert loaded: "+`self.tls_known_cert`)
+            logger.debug("cert loaded: "+`self.tls_known_cert`)
         if self.tls_known_cert=="unknown":
-            common.debug("cert unknown")
+            logger.debug("cert unknown")
             return 0
         elif self.tls_known_cert==cert.as_der():
-            common.debug("the same cert known")
+            logger.debug("the same cert known")
             return 1
         else:
-            common.debug("other cert known")
-            common.debug("known: "+`self.tls_known_cert`)
-            common.debug("new:"+`cert.as_der()`)
+            logger.debug("other cert known")
+            logger.debug("known: "+`self.tls_known_cert`)
+            logger.debug("new:"+`cert.as_der()`)
             return 0
 
     def cert_verify_ask(self,ctx,cert,errnum,depth):
@@ -227,7 +232,8 @@ class TLSHandler:
         arg.cond.release()
 
     def format_cert_chain(self,attr,params):
-        self.debug("format_cert_chain(%r,%r,%r)" % (self,attr,params))
+        logger=logging.getLogger("cjc.TLSHandler")
+        logger.debug("format_cert_chain(%r,%r,%r)" % (self,attr,params))
         chain=params.get("chain_data")
         if not chain:
             return self.theme_manager.do_format_string("  <none>\n",attr,params)

@@ -2,8 +2,11 @@
 from types import StringType,IntType,UnicodeType
 import re
 import curses
+import logging
 
 from cjc import common
+
+__logger=logging.getLogger("cjc.ui.cmdtable")
 
 quoted_arg_re=re.compile(r'^"(?P<arg>.*?)(?<!\\)"(?P<rest>.*)$',re.UNICODE)
 need_quote_re=re.compile(r'[ \"\\\n\t]',re.UNICODE)
@@ -27,6 +30,7 @@ class CommandError(ValueError):
 
 class Command:
     def __init__(self,name,handler,usage,descr,hints=None):
+        self.__logger=logging.getLogger("cjc.ui.Command")
         self.name=name
         self.handler=handler
         self.usage=usage
@@ -38,9 +42,9 @@ class Command:
         except common.non_errors:
             raise
         except CommandError,e:
-            common.error(u"%s: %s" % (self.name,e))
+            self.__logger.error(u"%s: %s" % (self.name,e))
         except:
-            common.print_exception()
+            self.__logger.exception("Exception during command execution:")
 
 class CommandAlias:
     def __init__(self,name,cmd):
@@ -156,7 +160,7 @@ def run_command(cmd,args=None):
             continue
     if default_handler:
         return default_handler(cmd,args)
-    common.error("Unknown command: /"+cmd)
+    __logger.error("Unknown command: /"+cmd)
     try:
         curses.beep()
     except curses.error:
@@ -226,4 +230,5 @@ class CommandArgs:
         else:
             self.args+=" "
         self.args+=s
+
 # vi: sts=4 et sw=4
