@@ -8,6 +8,7 @@ type="text/xml"?>-->
 <title>Console Jabber Client manual</title>
 <bookinfo>
 	<author><firstname>Jacek</firstname><surname>Konieczny</surname></author>
+	<author><firstname>Marcin</firstname><surname>Chojnowski</surname></author>
 </bookinfo>
 
 <preface><title>Introduction</title>
@@ -159,17 +160,22 @@ command line, but it can be given some arguments:</para>
     <arg>-c <replaceable>file</replaceable> </arg>
     <arg>-t <replaceable>file</replaceable> </arg>
     <arg>-l <replaceable>file</replaceable> </arg>
+    <arg>-L <replaceable>file</replaceable> </arg>
+    <arg>-P <replaceable>file</replaceable> </arg>
 </cmdsynopsis>
 
 <para> <arg>-c <replaceable>file</replaceable> </arg> argument selects
 configuration file to use. If <replaceable>file</replaceable> contains slashes
-('/') it is assumed to be in ~/.cjc/ directory. </para>
+('/') it is assumed to be in ~/.cjc/ directory. If you use default as config
+file name default.conf file will be searched by CJC.</para>
 
 <para> <arg>-t <replaceable>file</replaceable> </arg> selects theme to use
 (themes are searched in ~/.cjc/themes by default).</para>
 <para> <arg>-l <replaceable>file</replaceable> </arg> makes CJC write some debug logs
 to the file.</para>
-
+<para> <arg>-L <replaceable>file</replaceable> </arg> makes CJC append some debug logs to the file.</para>
+<para> <arg>-P <replaceable>file</replaceable> </arg> makes CJC write profiling
+statistics.</para>
 </sect2>
 
 <sect2><title>Exiting</title>
@@ -319,6 +325,7 @@ change is identified by group name preceded with "+" or "-" sign.</para>
 <para> Example - the friend is not a friend anymore (cont). Both commands do the
 same: </para>
 
+
 <para> <userinput> /group "My Enemy" enemies </userinput></para>
 
 <para> <userinput> /group "My Enemy" -friends +enemies </userinput></para>
@@ -332,41 +339,182 @@ same: </para>
 <!-- ................................................. -->
 <sect1><title>Presence</title>
 
+<para> Presence is information about your current status for example: you're
+busy and don't want to be disturbed anymore, you're able to set your custom
+presence information that will be visible to the other users (as mentioned
+before). With presence change you can also give reason why you're for example busy.</para>
+
 <sect2><title>Changing presence information</title>
 
-<para>(...)</para>
+<para> Presence can be changed using commands: 
+
+<command>/away, /dnd or /busy, /xa, /chatready,  </command>. 
+
+All of them take one argument and it's a reason of presence change. 
+Getting back to online presence is possible with 
+<command> /back or /online </command> </para>
+
+<para> Usage examples:</para>
+
+<para> You are smoking cigarette:</para>
+<para> <userinput> /away I'm smoking ;)</userinput></para>
+
+<para> You're busy with your friend:</para>
+<para> <userinput> /dnd  My friend is here</userinput></para>
+
+<para> You've gone for longer period of time:</para>
+<para> <userinput> /xa I've gone swimming </userinput></para>
+
+<para> After you're ready to chat again you can type:</para>
+<para> <userinput> /online I'm ready to chat </userinput>.
+
+<command> /back </command> also gives ability to go online.
+</para>
+</sect2>
+
+<sect2><title>Presence information control</title>
+
+<para> There are also commands that allows supervise our and others presence
+information. It is:</para>
+
+<para>
+<command> /sunscribe, /unsubscribe, /cancel </command> 
+</para>
+
+As described before <command> /subscribe </command> is needed to get users in
+roster presence information and vice versa <command>/unsubscribe</command>  
+removes such information. Another important command <command>/cancel</command> 
+removes authorization for users.
 
 </sect2>
 
 <sect2><title>Auto-away</title>
 
-<para>(...)</para>
+<para>It's very nice feature that sets predefined presence mode and reason
+information after some period of idle time. It can be defined directly in cjc or
+or manualy by editing configuration file. Defaults are: AWAY after 5 minutes and
+Extended Away after 15 minutes of user inactivity.</para>
 
+<para>It easy to change this defaults using <command> /set </command>
+command.</para>
+
+For example:
+<para> <userinput> /set presence.auto_away 3 </userinput> </para>
+will set our presence to away
+after 3 minutes of inactivity. It is also possible to set reason of our
+automatic away. It can be done like that:
+<para><userinput> /set presence.auto_away_msg "Walking around" </userinput></para>
+This will set 'Walking around' description and it should be quoted as this
+command will take only one argument.
+<para>
+The same goes for eXtended Away. It's done by litte bit diffrent command:
+<para><userinput> /set presence.auto_xa 10</userinput> </para>
+and changing description:
+<para><userinput> /set presence.auto_xa.msg "I've gone for longer time"</userinput></para>
+</para>
 </sect2>
 
-
+<sect2><title>Additional useful features</title>
+<para>
+It's easy now to keep predefined presence description. It will be set if no
+description will be passed manualy or automatically to the options described
+above. It can be set with following command:
+<para><userinput> /set presence.keep_description "Important exam tommorow!"</userinput></para>
+This will cause that 'Important exam tomorrow!' will be set everytime we change presence without our own description.
+</para>
+</sect2>
 </sect1>
 
 <!-- ................................................. -->
 <sect1><title>Chat</title>
-<para>(...)</para>
+<para>Just like in most other Instant Messaging systems there are two ways of contacting other users. 
+The first one is chat mode. Chat is used to carry conversation for a while
+and after is started new windows will be created for each chat with new user. It
+allows instant communication between users.</para>
+<para> It's easy to start chat:</para>
+<para><command> /chat JID </command> or <command> /chat roster_nickname
+</command></para>
+For example:
+<para> <userinput> /chat friend@friend.org How are you?</userinput> </para>
+This will start new chat window and send How are you? message to user. More
+messages can be input in this newly created window. Our friends messages will
+apear in that window too. 
 </sect1>
 
 <!-- ................................................. -->
 <sect1><title>Messages</title>
-<para>(...)</para>
-
-
+<para>Using message mode is good idea for sending quick message to someone. It's
+not intended to make long conversation with messaging people.</para>
+<para> It's also easy to send message:</para>
+<para><command> /msg JID </command> or <command> /msg roster_nickname
+</command></para>
+For example:
+<para> <userinput> /msg friend@friend.org Call me at 8 p.m.</userinput> </para>
+This will send message asking for a call. New window will open with some
+information regarding our newly sent message.
 </sect1>
 </chapter>
 
 <!-- ************************************************* -->
 <appendix><title>Keyboard reference</title>
-<para>(...)</para>
+<para>
+<para> Windows switching: </para>
+<para><command> Alt-TAB </command></para>
+<para><command> Alt-*window_number* </command></para>
+</para>
+
 </appendix>
 
 <appendix><title>Command reference</title>
-<para>(...)</para>
+<table>
+  <title>Global commands:</title>
+  <tgroup cols="2">
+    <thead>
+      <row>
+        <entry>Command</entry>
+        <entry>Description</entry>
+      </row>
+    </thead>
+    <tbody>
+      <row>
+        <entry>/alias name command [arg...]</entry>
+        <entry>Defines an aliases for command. When the alias is used $1, $2,
+etc. are replaced with alias arguments.</entry>
+      </row>
+      <row>
+        <entry>/bind [function [[table] keyname]]</entry>
+        <entry>Without arguments - shows current keybindings otherwise binds
+given function to a key.</entry>
+      </row>
+    </tbody>
+   </tgroup>
+</table>
+
+<table>
+  <title>Screen commands:</title>
+  <tgroup cols="2">
+    <thead>
+      <row>
+        <entry>Command</entry>
+        <entry>Description</entry>
+      </row>
+    </thead>
+    <tbody>
+      <row>
+        <entry>/beep</entry>
+        <entry>Makes the terminal 'beep'</entry>
+      </row>
+      <row>
+        <entry>/move [oldnumber] number</entry>
+        <entry>Change buffer order</entry>
+      </row>
+      <row>
+        <entry>/next</entry>
+        <entry>Change active window to the next one</entry>
+      </row>
+    </tbody>
+   </tgroup>
+</table>
 </appendix>
 
 <appendix><title>Settings reference</title>
