@@ -1,0 +1,197 @@
+<?xml version='1.0'?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.0/docbookx.dtd">
+<!--<?xml-stylesheet href="xsl-stylesheets/html/docbook.xsl"
+type="text/xml"?>-->
+
+<book>
+<title>Console Jabber Client manual</title>
+<bookinfo>
+	<author><firstname>Jacek</firstname><surname>Konieczny</surname></author>
+</bookinfo>
+
+<preface><title>Introdution</title>
+
+<para> Console Jabber Client (CJC) is simple Jabber client to run on a text
+terminal.  It is far from being finished now, but it already has all basic
+funtionality and is quite usable.  </para>
+
+</preface>
+
+<chapter><title>User interace</title>
+
+<sect1><title>Basic layout</title>
+
+<para>When CJC is started the first time its screen consists of:</para>
+
+<itemizedlist>
+
+<listitem><para> Top status bar </para></listitem>
+
+<listitem><para> Main window with its status bar </para></listitem>
+
+<listitem><para> Bottom status bar </para></listitem>
+
+<listitem><para> Command line </para></listitem>
+
+</itemizedlist>
+
+<para>This is the "plain" layout. Other layouts may be choosen by modifying the "layout"
+setting. Exact content of status bars is controlled by a theme.</para> 
+
+</sect1>
+
+<sect1><title>Windows and buffers</title>
+
+<para>The part of the screen where most information is displayed is a window.
+One of windows is the active window. By default there is only one window so it
+is the active window. When multiple windows are available, the active one may be
+changed using <keycombo
+action="simul"><keycap>Alt</keycap><keycap>Tab</keycap></keycombo> key or
+<command>/next</command>, <command>/prev</command> commands.</para>
+
+<para>The content of a window is a buffer. Usually there are many buffers in CJC, but
+only one may be displayed in a window. Buffer may contain: status messages, a
+chat session, the roster, etc. Buffers may be switched using
+<keycombo action="simul"><keycap>Alt</keycap><keycap>number</keycap></keycombo> key (or 
+<keycombo action="seq"><keycap>Esc</keycap><keycap>number</keycap></keycombo>
+on terminals where <keycap>Alt</keycap>/<keycap>Meta</keycap>
+is not available or not working) or <command>/nextbuf</command>,
+<command>/prevbuf</command> commands. A list of buffers containing anything new
+is displayed in the bottom status bar. </para>
+
+</sect1>
+
+<sect1><title>Commands</title>
+
+<para> CJC is driven by commands. Commands are entered preceded with slash
+('/'). There are global commands, like <command>/quit</command>,
+<command>/connect</command>, etc. and commands local to current buffer - eg.
+<command>/me</command> is valid only in a chat window.</para>
+
+<para>Command may require some arguments. Parameters may be optional (like
+reason for <command>/quit</command>), other are required (like user for
+<command>/chat</command>). Usually arguments must be quoted when they contain
+spaces or quotes, but some arguments don't need quoting and in fact cannot be
+quoted. Such argument is always the last argument for command and usually is
+some kind of message or description - like quit reason or chat message.</para>
+
+<para>Examples of valid commands:</para>
+
+<itemizedlist>
+
+<listitem><para><userinput>/quit</userinput></para></listitem>
+
+<listitem><para><userinput>/quit I must go</userinput></para></listitem>
+
+<listitem><para><userinput>/chat someone</userinput></para></listitem>
+
+<listitem><para><userinput>/chat user@domain anything</userinput></para></listitem>
+
+<listitem><para><userinput>/chat @domain</userinput></para></listitem>
+
+</itemizedlist>
+
+<para>Username arguments (like the first argument of <command>/chat</command> command) may be
+roster names or JIDs. Usernames which don't contain '@' are always searched in
+roster, so to use JID which doesn't contain node part one must precede it with '@'.</para>
+
+<para>Custom commands may be defined as aliases for other commands using
+<command>/alias</command>. There are some built-in aliases for some commands -
+these cannot be changed with <command>/alias</command> and
+<command>/unaliase</command> commands.</para> 
+
+<para> There is an online help available for CJC commands.
+<command>/help</command> without arguments displays all available commands and
+built-in aliases. When given a command name as argument
+<command>/help</command> displays its description.</para>
+
+</sect1>
+
+<sect1><title>Settings</title>
+
+<para> CJC is very customizable. Its behaviour is controlled by various
+settings, which may be modified with <command>/set</command> and
+<command>/unset</command> commands. <command>/set</command> without arguments
+displays all available settings with their values. <command>/set</command>
+with one argument displays value and description of named setting.
+<command>/set</command> with two arguments changes value of a setting.</para>
+
+<para> Only two settings must be set to use CJC, these are:
+<varname>jid</varname> and <varname>password</varname>. </para>
+
+<para> Examples of variable setting: </para>
+
+<itemizedlist>
+
+<listitem><para><userinput>/set jid username@jabber.domain/CJC</userinput></para></listitem>
+
+<listitem><para><userinput>/set away_priority 0</userinput></para></listitem>
+
+<listitem><para><userinput>/set presence.auto_away_msg "I am gone"</userinput></para></listitem>
+
+</itemizedlist>
+
+<para> Please note, that values containing spaces or quotes must be quoted. </para>
+
+</sect1>
+
+</chapter>
+
+<chapter><title>Using CJC</title>
+
+<sect1><title>Starting and exiting</title>
+
+<para>CJC may be started by entering just <userinput>cjc</userinput> on shell
+commandline, but it can be given some arguments:</para>
+
+<cmdsynopsis>
+    <command>cjc</command>
+    <arg>-c <replaceable>file</replaceable> </arg>
+    <arg>-t <replaceable>file</replaceable> </arg>
+    <arg>-l <replaceable>file</replaceable> </arg>
+</cmdsynopsis>
+
+<para> <arg>-c <replaceable>file</replaceable> </arg> argument selects config
+file to use. If <replaceable>file</replaceable> contains slashes ('/') it is
+asuument to be in ~/.cjc/ directory. </para>
+
+
+</sect1>
+<sect1><title>Connection</title>
+<para>(...)</para>
+</sect1>
+
+<sect1><title>Presence</title>
+<para>(...)</para>
+</sect1>
+
+<sect1><title>Chat</title>
+<para>(...)</para>
+</sect1>
+
+<sect1><title>Messages</title>
+<para>(...)</para>
+
+
+</sect1>
+</chapter>
+
+<appendix><title>Keyboard reference</title>
+<para>(...)</para>
+</appendix>
+
+<appendix><title>Command reference</title>
+<para>(...)</para>
+</appendix>
+
+<appendix><title>Settings reference</title>
+<para>(...)</para>
+</appendix>
+
+
+</book>
+
+<!--
+ vi: tw=80 indentexpr=
+-->
