@@ -7,29 +7,33 @@ from widget import Widget
 from cjc import common
 
 
-class EditLine(Widget):
-	def __init__(self,theme_manager):
-		Widget.__init__(self)
+class LineInput:
+	def __init__(self,parent,arg,abortable,handler_arg=None,default=u"",history_len=0):
+		self.parent=parent
+		self.abortable=abortable
+		self.handler_arg=handler_arg
 		self.win=None
 		self.capture_rest=0
 		self.content=u""
 		self.pos=0
 		self.offset=0
-		self.theme_manager=theme_manager
+		self.theme_manager=parent.theme_manager
+		self.history_len=history_len
 		self.history=[]
 		self.history_pos=0
 		self.saved_content=None
 		
-	def set_parent(self,parent):
-		Widget.set_parent(self,parent)
-		self.screen.lock.acquire()
-		try:
-			self.win=curses.newwin(self.h,self.w,self.y,self.x)
+	def set_window(self,win):
+		if win:
+			self.win=win
+			self.h,self.w=win.getmaxyx()
+			self.h+=1
+			self.w+=1
+			self.screen=self.parent.screen
+			self.printable=string.digits+string.letters+string.punctuation+" "
 			self.win.keypad(1)
-			self.screen.set_default_key_handler(self)
-		finally:
-			self.screen.lock.release()
-		self.printable=string.digits+string.letters+string.punctuation+" "
+		else:
+			self.win=None
 
 	def get_height(self):
 		return 1
@@ -43,7 +47,11 @@ class EditLine(Widget):
 		
 	def _keypressed(self,c,escape):
 		if escape:
-			return
+			if c==27:
+				if self.abortable:
+					self.parent.abort_handler(handler_arg)
+				else:
+					curses.beep()
 		if c==curses.KEY_ENTER:
 			return self.key_enter()
 		elif c==curses.KEY_HOME:
@@ -112,12 +120,14 @@ class EditLine(Widget):
 		self.win.move(0,self.pos-self.offset)
 
 	def key_enter(self):
-		if self.history_pos:
-			if self.content==self.history[-self.history_pos]:
-				del self.history[-self.history_pos]
-			self.history_pos=0
-		self.history.append(self.content)
-		self.screen.user_input(self.content)
+		if self.history_len:
+			if self.history_pos:
+				if self.content==self.history[-self.history_pos]:
+					del self.history[-self.history_pos]
+				self.history_pos=0
+			self.history.append(self.content)
+			self.history=self.history[-self.history_len:]
+		self.parent.input_handler(self.handler_arg,self.content)
 		self.content=u""
 		self.saved_content=None
 		self.pos=0
@@ -214,7 +224,7 @@ class EditLine(Widget):
 		self.win.refresh()
 
 	def key_up(self):
-		if self.history_pos>=len(self.history):
+		if not self.history_len or self.history_pos>=len(self.history):
 			curses.beep()
 			return
 		if self.history_pos==0:
@@ -229,7 +239,7 @@ class EditLine(Widget):
 			self.redraw()
 
 	def key_down(self):
-		if self.history_pos<=0:
+		if not self.history_len or self.history_pos<=0:
 			curses.beep()
 			return
 		self.history_pos-=1

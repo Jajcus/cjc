@@ -7,7 +7,7 @@ from text_buffer import TextBuffer
 from list_buffer import ListBuffer
 from window import Window
 from status_bar import StatusBar
-from edit_line import EditLine
+from input import Input
 from split import HorizontalSplit,VerticalSplit
 
 def init():
