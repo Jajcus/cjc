@@ -4,6 +4,7 @@ import curses
 import pyxmpp
 
 from cjc.plugin import PluginBase
+from cjc.ui import ListBuffer
 
 theme_attrs=(
 	("roster.available_", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
@@ -14,9 +15,9 @@ theme_attrs=(
 )
 
 theme_formats=(
-	("roster.group", "%(group)s:\n"),
-	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)\n"),
-	("roster.available", "%[roster.available_%(show)s] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)\n"),
+	("roster.group", "%(group)s:"),
+	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)"),
+	("roster.available", "%[roster.available_%(show)s] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)"),
 )
 
 class Plugin(PluginBase):
@@ -33,11 +34,11 @@ class Plugin(PluginBase):
 		app.add_event_handler("presence changed",self.ev_presence_changed)
 		app.theme_manager.set_default_attrs(theme_attrs)
 		app.theme_manager.set_default_formats(theme_formats)
+		self.buffer=ListBuffer(app.theme_manager,"Roster")
 
 	def info_rostername(self,k,v):
 		if not v:
 			return None
-			
 		return "Roster name",v
 
 	def info_rostergroups(self,k,v):
@@ -45,14 +46,28 @@ class Plugin(PluginBase):
 			return None
 		return "Roster groups",string.join(v,",")
 
-	def ev_roster_updated(self,evend,arg):
-		self.update()
+	def ev_roster_updated(self,event,arg):
+		if not arg:
+			self.write_all()
+			return
+		self.update_item(arg)
 
 	def ev_presence_changed(self,event,arg):
 		if self.cjc.roster:
-			self.update()
+			if arg:
+				self.update_item(arg)
 
-	def write_item(self,item):
+	def update_item(self,item):
+		if isinstance(item,pyxmpp.JID):
+			try:
+				item=self.cjc.roster.item_by_jid(item)
+			except KeyError:
+				item=self.cjc.roster.item_by_jid(item.bare())
+		for group in item.groups():
+			self.write_item(group,item)
+		self.buffer.update()
+	
+	def write_item(self,group,item):
 		jid=item.jid()
 		name=item.name()
 		if not name:
@@ -91,12 +106,12 @@ class Plugin(PluginBase):
 			p["sflag"]="-"
 			
 		if available:
-			self.cjc.roster_buf.append_themed("roster.available",p)
+			self.buffer.insert_themed((group,jid),"roster.available",p)
 		else:
-			self.cjc.roster_buf.append_themed("roster.unavailable",p)
+			self.buffer.insert_themed((group,jid),"roster.unavailable",p)
 
-	def update(self):
-		self.cjc.roster_buf.clear()
+	def write_all(self):
+		self.buffer.clear()
 		groups=self.cjc.roster.groups()
 		groups.sort()
 		for group in groups:
@@ -104,10 +119,10 @@ class Plugin(PluginBase):
 				p={"group":group}
 			else:
 				p={"group":"unfiled"}
-			self.cjc.roster_buf.append_themed("roster.group",p)
+			self.buffer.insert_themed((group,None),"roster.group",p)
 			for item in self.cjc.roster.items_by_group(group):
-				self.write_item(item)
-		self.cjc.roster_buf.redraw()
+				self.write_item(group,item)
+		self.buffer.redraw()
 
 	def session_started(self,stream):
 		self.cjc.request_roster()
