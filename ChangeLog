@@ -1,5 +1,14 @@
 2004-07-21  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/roster.py:
+	- sort entries in /list output
+
+	* plugins/roster.py:
+	- show error instead of traceback on invalid regular expression in /list
+
+	* cjc/main.py:
+	- don't panic while using /buffer_list when some buffers where closed
+
 	* cjc/main.py:
 	- --config-directory command line option
 
