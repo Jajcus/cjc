@@ -45,7 +45,7 @@ class ScrollTest(Test):
         Test.__init__(self,plugin,"Scroll test")
 
     def run(self):
-        self.plugin.cjc.info("Test thread started")
+        self.plugin.info("Test thread started")
         for i in range(0,200):
             if self.plugin.cjc.exiting:
                 break
@@ -53,14 +53,14 @@ class ScrollTest(Test):
                 break
             self.buffer.append_line("line %i" % (i+1,))
         self.buffer.update()
-        self.plugin.cjc.info("Test thread finished")
+        self.plugin.info("Test thread finished")
 
 class WrapTest(Test):
     def __init__(self,plugin):
         Test.__init__(self,plugin,"Wrap test")
 
     def run(self):
-        self.plugin.cjc.info("Test thread started")
+        self.plugin.info("Test thread started")
         for i in range(0,20):
             for j in range(0,15):
                 if self.stop_it:
@@ -73,7 +73,7 @@ class WrapTest(Test):
             self.buffer.append_line("")
             self.buffer.update()
         self.buffer.update()
-        self.plugin.cjc.info("Test thread finished")
+        self.plugin.info("Test thread finished")
 
 class InputTest(Test):
     def __init__(self,plugin):
@@ -138,11 +138,11 @@ class Plugin(PluginBase):
     def cmd_test(self,args):
         name=args.shift()
         if not name:
-            self.cjc.error("Test name not given")
+            self.error("Test name not given")
             return
         clas=self.tests.get(name,None)
         if clas is None:
-            self.cjc.error("Uknown test: "+name)
+            self.error("Uknown test: "+name)
             return
         test_thread=clas(self)
         test_thread.start()
