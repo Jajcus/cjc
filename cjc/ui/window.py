@@ -65,15 +65,31 @@ class Window(Widget):
 			return []
 		
 	def get_command_info(self,cmd):
-		if self.buffer:
+		if cmd=="clear":
+			return ("cmd_clear","/clear","Clears current window")
+		elif self.buffer:
 			return self.buffer.get_command_info(cmd)
 		raise KeyError,cmd
 
 	def command(self,cmd,args):
-		if self.buffer:
+		if cmd=="clear":
+			self.cmd_clear(args)
+			return 1
+		elif self.buffer:
 			return self.buffer.command(cmd,args)
 		else:
 			return 0
+
+	def cmd_clear(self,args):
+		args.finish()
+		if not self.win:
+			return
+		self.screen.lock.acquire()
+		try:
+			self.win.erase()
+			self.update()
+		finally:
+			self.screen.lock.release()
 
 	def user_input(self,s):
 		if self.buffer:
