@@ -73,6 +73,7 @@ global_settings={
 	"port": ("Port number to connect to",int,".port"),
 	"server": ("Server address to connect to",str,".server"),
 	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5 digest')",list,".auth_methods"),
+	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,None,"set_layout"),
 }
 
 global_theme_attrs=(
@@ -87,18 +88,23 @@ global_theme_attrs=(
 global_theme_formats=(
 	("window_status",u"%[bar] %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s)"),
 	("title_bar",u"%[bar]%(name)s ver. %(version)s by %(author)s"),
-	("status_bar",u"%[bar]%(name)s"),
+	("status_bar",u"%[bar]%(name)-40s Active buffers: [%{buffers}]"),
 	("error",u"%[error][%(T:now)s] %(msg)s\n"),
 	("warning",u"%[warning][%(T:now)s] %(msg)s\n"),
 	("info",u"%[info][%(T:now)s] %(msg)s\n"),
 	("debug",u"%[debug][%(T:now)s] %(msg)s\n"),
+	("buffer_visible",""),
+	("buffer_inactive",""),
+	("buffer_active1","%[default]%(num)i"),
+	("buffer_active2","%[warning]%(num)i"),
+	("buffer_active3","%[error]%(num)i"),
 )
 
 class Application(pyxmpp.Client,ui.CommandHandler):
 	def __init__(self):
 		pyxmpp.Client.__init__(self)
 		ui.CommandHandler.__init__(self,global_commands)
-		self.settings={}
+		self.settings={"layout":"plain"}
 		self.available_settings=global_settings
 		self.plugin_dirs=["cjc/plugins"]
 		self.plugins={}
@@ -157,6 +163,114 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		if not ui.CommandHandler.command(self,cmd,args):
 			self.error(u"Unknown command: %s" % (cmd,))
 
+	def layout_plain(self):
+		status_bar_params={
+			"name": "CJC",
+			"version": version.version,
+			"author": "Jacek Konieczny <jajcus@bnet.pl>",
+			}
+		ui.buffer_activity_handlers=[]
+		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(top_bar.update)
+		main_window=ui.Window(self.theme_manager,"Main")
+		command_line=ui.EditLine()
+		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(bottom_bar.update)
+		sp=ui.HorizontalSplit(top_bar,main_window,bottom_bar,command_line)
+		self.screen.set_content(sp)
+		main_window.set_buffer(self.status_buf)
+		self.screen.focus_window(main_window)
+
+	def layout_icr(self):
+		status_bar_params={
+			"name": "CJC",
+			"version": version.version,
+			"author": "Jacek Konieczny <jajcus@bnet.pl>",
+			}
+		ui.buffer_activity_handlers=[]
+		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(top_bar.update)
+		status_window=ui.Window(self.theme_manager,"Status",1)
+		main_window=ui.Window(self.theme_manager,"Main")
+		command_line=ui.EditLine()
+		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(bottom_bar.update)
+		roster_window=ui.Window(self.theme_manager,"Roster",1)
+
+		sp=ui.VerticalSplit(main_window,roster_window)
+		sp=ui.HorizontalSplit(top_bar,status_window,sp,bottom_bar,command_line)
+		self.screen.set_content(sp)
+		status_window.set_buffer(self.status_buf)
+		main_window.set_buffer(self.message_buf)
+		roster_window.set_buffer(self.roster_buf)
+		self.screen.focus_window(main_window)
+	
+	def layout_irc(self):
+		status_bar_params={
+			"name": "CJC",
+			"version": version.version,
+			"author": "Jacek Konieczny <jajcus@bnet.pl>",
+			}
+		ui.buffer_activity_handlers=[]
+		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(top_bar.update)
+		status_window=ui.Window(self.theme_manager,"Status",1)
+		main_window=ui.Window(self.theme_manager,"Main")
+		command_line=ui.EditLine()
+		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(bottom_bar.update)
+		roster_window=ui.Window(self.theme_manager,"Roster",1)
+
+		sp=ui.VerticalSplit(status_window,roster_window)
+		sp=ui.HorizontalSplit(top_bar,sp,status_window,bottom_bar,command_line)
+		self.screen.set_content(sp)
+		status_window.set_buffer(self.status_buf)
+		main_window.set_buffer(self.message_buf)
+		roster_window.set_buffer(self.roster_buf)
+		self.screen.focus_window(main_window)
+
+	def layout_vertical(self):
+		status_bar_params={
+			"name": "CJC",
+			"version": version.version,
+			"author": "Jacek Konieczny <jajcus@bnet.pl>",
+			}
+		ui.buffer_activity_handlers=[]
+		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(top_bar.update)
+		main_window=ui.Window(self.theme_manager,"Main")
+		command_line=ui.EditLine()
+		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(bottom_bar.update)
+		roster_window=ui.Window(self.theme_manager,"Roster",1)
+
+		sp=ui.VerticalSplit(main_window,roster_window)
+		sp=ui.HorizontalSplit(top_bar,sp,bottom_bar,command_line)
+		self.screen.set_content(sp)
+		main_window.set_buffer(self.status_buf)
+		roster_window.set_buffer(self.roster_buf)
+		self.screen.focus_window(main_window)
+
+	def layout_horizontal(self):
+		status_bar_params={
+			"name": "CJC",
+			"version": version.version,
+			"author": "Jacek Konieczny <jajcus@bnet.pl>",
+			}
+		ui.buffer_activity_handlers=[]
+		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(top_bar.update)
+		main_window=ui.Window(self.theme_manager,"Main")
+		command_line=ui.EditLine()
+		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
+		ui.buffer_activity_handlers.append(bottom_bar.update)
+		roster_window=ui.Window(self.theme_manager,"Roster",1)
+		sp=ui.HorizontalSplit(top_bar,roster_window,main_window,bottom_bar,command_line)
+		self.screen.set_content(sp)
+		main_window.set_buffer(self.status_buf)
+		roster_window.set_buffer(self.roster_buf)
+		self.screen.focus_window(main_window)
+
 	def run(self,screen):
 		self.screen=screen
 		self.theme_manager=themes.ThemeManager()
@@ -165,31 +279,11 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		screen.set_default_command_handler(self)
 		
 		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
-		self.message_buf=ui.TextBuffer(self.theme_manager,"Messages")
 		self.roster_buf=ui.TextBuffer(self.theme_manager,"Roster")
+		self.message_buf=ui.TextBuffer(self.theme_manager,"Messages")
 
-		status_bar_params={
-			"name": "CJC",
-			"version": version.version,
-			"author": "Jacek Konieczny <jajcus@bnet.pl>",
-			}
-		self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		self.status_window=ui.Window(self.theme_manager,"Status",1)
-		self.main_window=ui.Window(self.theme_manager,"Main")
-		self.command_line=ui.EditLine()
-		self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
-
-		sp=ui.VerticalSplit(self.main_window,self.roster_window)
-		sp=ui.HorizontalSplit(self.top_bar,self.status_window,
-					sp,self.bottom_bar,
-					self.command_line)
-		screen.set_content(sp)
-		screen.focus_window(self.main_window)
+		self.layout_plain()
 		
-		self.status_window.set_buffer(self.status_buf)
-		self.main_window.set_buffer(self.message_buf)
-		self.roster_window.set_buffer(self.roster_buf)
 		self.screen.update()
 		
 		ui.error=self.error
@@ -266,7 +360,12 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 				else:
 					obj=self.plugins[plugin]
 				for var in obj.available_settings:
-					descr,typ,location=obj.available_settings[var]
+					sdef=obj.available_settings[var]
+					if len(sdef)<4:
+						nsdef=[None,str,None,None]
+						nsdef[:len(sdef)]=list(sdef)
+						sdef=nsdef
+					descr,typ,location,handler=sdef
 					if location is None:
 						val=obj.settings.get(var)
 					elif location.startswith("."):
@@ -303,7 +402,12 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			var=fvar
 
 		try:
-			descr,typ,location=obj.available_settings[var]
+			sdef=obj.available_settings[var]
+			if len(sdef)<4:
+				nsdef=[None,str,None,None]
+				nsdef[:len(sdef)]=list(sdef)
+				sdef=nsdef
+			descr,typ,location,handler=sdef
 		except KeyError:
 			self.error("Unknown setting: "+fvar)
 			return
@@ -352,11 +456,19 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		if not valid:
 			self.error("Bad value: "+str(e))
 			return
+
+		if handler:
+			if not callable(handler):
+				handler=getattr(obj,handler)
 		
 		if location is None:
+			oldval=obj.settings.get(var)
 			obj.settings[var]=val
 		elif location.startswith("."):
+			oldval=getattr(obj,location[1:],None)
 			setattr(obj,location[1:],val)
+		if handler:
+			handler(oldval,val)
 
 	def cmd_unset(self,args):
 		fvar=args.shift()
@@ -393,6 +505,13 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			del obj.settings[var]
 		elif location.startswith("."):
 			setattr(obj,location[1:],None)
+
+	def set_layout(self,oldval,newval):
+		if newval not in ("plain","icr","irc","vertical","horizontal"):
+			self.settings["layout"]=oldval
+			return
+		getattr(self,"layout_"+newval)()
+		self.screen.redraw()
 			
 	def cmd_save(self,args):
 		filename=args.shift()
@@ -556,7 +675,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			self.stream_cond.acquire()
 			stream=self.stream
 			if not stream:
-				self.stream_cond.wait()
+				self.stream_cond.wait(1)
 				stream=self.stream
 			self.stream_cond.release()
 			if not stream:
