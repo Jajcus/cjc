@@ -1,5 +1,8 @@
 2004-06-11  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/completions.py, cjc/main.py:
+	- use JIDs not strings as user_info keys
+
 	* plugins/xmlconsole.py:
 	- 'xmlconsole' plugin unloading
 
