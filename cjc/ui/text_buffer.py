@@ -6,12 +6,13 @@ from buffer import Buffer
 from cjc import common
 
 class TextBuffer(Buffer):
-	def __init__(self,theme_manager,name,length=200):
-		Buffer.__init__(self,name)
+	def __init__(self,theme_manager,info,descr_format="default_buffer_descr",length=200):
+		Buffer.__init__(self,info,descr_format)
 		self.theme_manager=theme_manager
 		self.length=length
 		self.lines=[]
 		self.pos=None
+		self.update_pos()
 		
 	def set_window(self,win):
 		Buffer.set_window(self,win)
@@ -218,9 +219,9 @@ class TextBuffer(Buffer):
 
 	def update_pos(self):
 		if self.pos:
-			self.window.update_status({"bufrow":self.pos[0],"bufcol":self.pos[1]})
+			self.update_info({"bufrow":self.pos[0],"bufcol":self.pos[1]})
 		else:
-			self.window.update_status({"bufrow":"","bufcol":""})
+			self.update_info({"bufrow":"","bufcol":""})
 
 	def page_up(self):
 		self.lock.acquire()

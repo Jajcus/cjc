@@ -92,7 +92,8 @@ global_theme_attrs=(
 )
 
 global_theme_formats=(
-	("window_status",u"%[bar] %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s) [%(bufcol)s,%(bufrow)s]"),
+	("window_status",u"%[bar] %(active)s%(locked)s %(buffer_num)s: %{buffer_descr}"),
+	("default_buffer_descr",u"%(buffer_name)s"),
 	("title_bar",u"%[bar]%(program_name)s ver. %(program_version)s by %(program_author)s"),
 	("status_bar",u"%[bar][%(J:me:show)s] (%(J:me:status)s) Active buffers: [%{buffers}]"),
 	("error",u"%[error][%(T:now)s] %(msg)s\n"),
@@ -101,9 +102,9 @@ global_theme_formats=(
 	("debug",u"%[debug][%(T:now)s] %(msg)s\n"),
 	("buffer_visible",""),
 	("buffer_inactive",""),
-	("buffer_active1","%[default]%(num)i"),
-	("buffer_active2","%[warning]%(num)i"),
-	("buffer_active3","%[error]%(num)i"),
+	("buffer_active1","%[default]%(buffer_num)i"),
+	("buffer_active2","%[warning]%(buffer_num)i"),
+	("buffer_active3","%[error]%(buffer_num)i"),
 )
 
 class Application(pyxmpp.Client,commands.CommandHandler):

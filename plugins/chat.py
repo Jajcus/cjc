@@ -15,6 +15,7 @@ theme_formats=(
 	("chat.me","[%(T:timestamp)s] %[chat.me]<%(J:me:nick)s>%[] %(msg)s\n"),
 	("chat.peer","[%(T:timestamp)s] %[chat.peer]<%(J:peer:nick)s>%[] %(msg)s\n"),
 	("chat.action","[%(T:timestamp)s] %[chat.info]* %(J:jid:nick)s %(msg)s\n"),
+	("chat.descr","Chat with %(J:peer:full)s [%(J:peer:show)s] %(J:peer:status)s"),
 )
 
 class Conversation:
@@ -29,14 +30,12 @@ class Conversation:
 			plugin.last_thread+=1
 			self.thread="thread-%i" % (plugin.last_thread,)
 			self.thread_inuse=0
-		self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,
-						u"Chat with %s" % (peer.as_unicode(),))
-		self.buffer.user_input=self.user_input
 		self.fparams={
-			"me":self.me,
 			"peer":self.peer,
 			"jid":self.me,
 		}
+		self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,self.fparams,"chat.descr")
+		self.buffer.user_input=self.user_input
 		self.buffer.append_themed("chat.started",self.fparams)
 		self.buffer.update()
 		self.buffer.register_commands({"me": (self.cmd_me,
@@ -103,6 +102,7 @@ class Plugin(PluginBase):
 					"/chat nick|jid [text]",
 					"Start chat with given user")
 					})
+		app.add_event_handler("presence changed",self.ev_presence_changed)
 
 	def cmd_chat(self,args):
 		peer=args.shift()
@@ -129,6 +129,14 @@ class Plugin(PluginBase):
 			conversation.user_input(args.all())
 			
 		self.cjc.screen.display_buffer(conversation.buffer)
+
+	def ev_presence_changed(self,event,arg):
+		key=arg.bare().as_unicode()
+		if not self.conversations.has_key(key):
+			return
+		for conv in self.conversations[key]:
+			if conv.peer==arg or conv.peer==arg.bare():
+				conv.buffer.update()
 
 	def session_started(self,stream):
 		self.cjc.stream.set_message_handler("chat",self.message_chat)

@@ -1,5 +1,6 @@
 
 import threading
+from types import StringType,UnicodeType
 
 from cjc.commands import CommandHandler
 from cjc import common
@@ -8,15 +9,20 @@ buffer_list=[]
 activity_handlers=[]
 
 class Buffer(CommandHandler):
-	def __init__(self,name):
+	def __init__(self,info,descr_format="default_buffer_descr"):
 		CommandHandler.__init__(self)
-		self.name=name
-		self.window=None
-		self.lock=threading.RLock()
 		try:
 			buffer_list[buffer_list.index(None)]=self
 		except ValueError:
 			buffer_list.append(self)
+		if type(info) in (StringType,UnicodeType):
+			self.info={"buffer_name": info}
+		else:
+			self.info=info
+		self.info["buffer_num"]=self.get_number()
+		self.info["buffer_descr"]=descr_format
+		self.window=None
+		self.lock=threading.RLock()
 		self.active=0
 		for f in activity_handlers:
 			f()
@@ -25,6 +31,11 @@ class Buffer(CommandHandler):
 		self.window=win
 		if win:
 			self.activity(0)
+
+	def update_info(self,info):
+		self.info.update(info)
+		if self.window:
+			self.window.update_status(self.info)
 
 	def close(self):
 		common.debug("Closing buffer "+self.name)

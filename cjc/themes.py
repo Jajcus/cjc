@@ -166,8 +166,7 @@ class ThemeManager:
 			if buf is None:
 				continue
 			p=params.copy()
-			p["name"]=buf.name
-			p["num"]=num+1
+			p.update(buf.info)
 			if buf.window:
 				format="buffer_visible"
 			elif buf.active==1:

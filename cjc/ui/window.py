@@ -28,15 +28,16 @@ class Window(Widget):
 			a="*"
 		else:
 			a=""
+		
+		d={"active":a,"winname":self.title,"locked":l}
 		if self.buffer:
-			bnam=self.buffer.name
-			bnum=self.buffer.get_number()
+			common.debug("get_status_dict: buffer.info="+`self.buffer.info`)
+			d.update(self.buffer.info)
 		else:
-			bnam=""
-			bnum=""
-			
-		return {"active":a,"winname":self.title,"locked":l,
-			"bufname":bnam,"bufnum":bnum,"bufcol":"","bufrow":""}
+			d["buffer_descr"]="default_buffer_descr"
+			d["bufname"]=""
+		common.debug("get_status_dict: d="+`d`)
+		return d
 
 	def keypressed(self,ch,escape):
 		if self.buffer and self.buffer.keypressed(ch,escape):
@@ -56,12 +57,6 @@ class Window(Widget):
 				old.update()
 			return 1
 		return 0
-
-	def description(self):
-		if self.buffer: 
-			return self.buffer.name
-		else:
-			return "Empty window"
 
 	def commands(self):
 		if self.buffer:
@@ -128,7 +123,7 @@ class Window(Widget):
 			if buf.window:
 				buf.window.set_buffer(self.buffer)
 		self.buffer=buf
-		d=self.get_status_dict()
+		self.status_bar.dict=self.get_status_dict()
 		if buf:
 			buf.set_window(self)
 		if self.win:
