@@ -68,8 +68,6 @@ class Conversation:
 		self.add_msg(s,"chat.peer",self.peer)
 		
 	def user_input(self,s):
-		if not s:
-			return 0
 		if not self.plugin.cjc.stream:
 			self.buffer.append_themed("error","Not connected")
 			self.buffer.update()
