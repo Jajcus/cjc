@@ -51,7 +51,7 @@ class KeyFunction:
 		
 	def invoke(self,object,arg=None):
 		if self.accepts_arg and arg is None:
-			raise KeytableErrot,"%s requires argument" % (self.name,)
+			raise KeytableError,"%s requires argument" % (self.name,)
 		if self.accepts_arg:
 			self.handler(object,arg)
 		else:
@@ -70,7 +70,7 @@ class KeyTable:
 					fun=self.lookup_function(binding.fun)
 				except KeyError:
 					try:
-						fun=lookup_function(binding.fun)
+						fun,obj=lookup_function(binding.fun)
 					except KeyError:
 						fun=binding.fun
 			elif isinstance(x,KeyFunction):
@@ -103,14 +103,16 @@ class KeyTable:
 	
 	def process_key(self,c,meta):
 		#common.debug("%r.process_key(%r,%r); table=%r" % (self,c,meta,self.keytable))
+		object=None
 		fun,arg=self.keytable[(c,meta)]
 		if not isinstance(fun,KeyFunction):
 			try:
 				fun=self.lookup_function(fun)
 			except KeyError:
-				fun=lookup_function(fun,1)
-			self.keytable[(c,meta)]=fun,arg
-		fun.invoke(self.object,arg)
+				fun,object=lookup_function(fun,1)
+		if object is None:
+			object=self.object
+		fun.invoke(object,arg)
 		
 	def has_function(self,name):
 		return self.funtable.has_key(name)
@@ -125,7 +127,7 @@ class KeyTable:
 				try:
 					fun=self.lookup_function(fun)
 				except KeyError:
-					fun=lookup_function(fun)
+					fun,obj=lookup_function(fun)
 			if only_new and self.orig_keytable.has_key((c,meta)):
 				# function name from original keybindings may 
 				# have not be resolved yet
@@ -288,7 +290,7 @@ def lookup_function(name,active_only=0):
 		if active_only and not ktb.active:
 			continue
 		try:
-			return ktb.lookup_function(name)
+			return ktb.lookup_function(name),ktb.object
 		except KeyError:
 			pass
 	raise KeyError,name
