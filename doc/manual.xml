@@ -10,16 +10,18 @@ type="text/xml"?>-->
 	<author><firstname>Jacek</firstname><surname>Konieczny</surname></author>
 </bookinfo>
 
-<preface><title>Introdution</title>
+<preface><title>Introduction</title>
 
 <para> Console Jabber Client (CJC) is simple Jabber client to run on a text
 terminal.  It is far from being finished now, but it already has all basic
-funtionality and is quite usable.  </para>
+functionality and is quite usable.  </para>
 
 </preface>
 
-<chapter><title>User interace</title>
+<!-- ************************************************* -->
+<chapter><title>User interface</title>
 
+<!-- ................................................. -->
 <sect1><title>Basic layout</title>
 
 <para>When CJC is started the first time its screen consists of:</para>
@@ -36,11 +38,12 @@ funtionality and is quite usable.  </para>
 
 </itemizedlist>
 
-<para>This is the "plain" layout. Other layouts may be choosen by modifying the "layout"
+<para>This is the "plain" layout. Other layouts may be chosen by modifying the "layout"
 setting. Exact content of status bars is controlled by a theme.</para> 
 
 </sect1>
 
+<!-- ................................................. -->
 <sect1><title>Windows and buffers</title>
 
 <para>The part of the screen where most information is displayed is a window.
@@ -62,11 +65,12 @@ is displayed in the bottom status bar. </para>
 
 </sect1>
 
+<!-- ................................................. -->
 <sect1><title>Commands</title>
 
 <para> CJC is driven by commands. Commands are entered preceded with slash
 ('/'). There are global commands, like <command>/quit</command>,
-<command>/connect</command>, etc. and commands local to current buffer - eg.
+<command>/connect</command>, etc. and commands local to current buffer - e.g.
 <command>/me</command> is valid only in a chat window.</para>
 
 <para>Command may require some arguments. Parameters may be optional (like
@@ -99,7 +103,7 @@ roster, so to use JID which doesn't contain node part one must precede it with '
 <para>Custom commands may be defined as aliases for other commands using
 <command>/alias</command>. There are some built-in aliases for some commands -
 these cannot be changed with <command>/alias</command> and
-<command>/unaliase</command> commands.</para> 
+<command>/unalias</command> commands.</para> 
 
 <para> There is an online help available for CJC commands.
 <command>/help</command> without arguments displays all available commands and
@@ -108,6 +112,7 @@ built-in aliases. When given a command name as argument
 
 </sect1>
 
+<!-- ................................................. -->
 <sect1><title>Settings</title>
 
 <para> CJC is very customizable. Its behaviour is controlled by various
@@ -138,12 +143,16 @@ with one argument displays value and description of named setting.
 
 </chapter>
 
+<!-- ************************************************* -->
 <chapter><title>Using CJC</title>
 
+<!-- ................................................. -->
 <sect1><title>Starting and exiting</title>
 
+<sect2><title>Starting</title>
+
 <para>CJC may be started by entering just <userinput>cjc</userinput> on shell
-commandline, but it can be given some arguments:</para>
+command line, but it can be given some arguments:</para>
 
 <cmdsynopsis>
     <command>cjc</command>
@@ -152,24 +161,198 @@ commandline, but it can be given some arguments:</para>
     <arg>-l <replaceable>file</replaceable> </arg>
 </cmdsynopsis>
 
-<para> <arg>-c <replaceable>file</replaceable> </arg> argument selects config
-file to use. If <replaceable>file</replaceable> contains slashes ('/') it is
-asuument to be in ~/.cjc/ directory. </para>
+<para> <arg>-c <replaceable>file</replaceable> </arg> argument selects
+configuration file to use. If <replaceable>file</replaceable> contains slashes
+('/') it is assumed to be in ~/.cjc/ directory. </para>
 
+<para> <arg>-t <replaceable>file</replaceable> </arg> selects theme to use
+(themes are searched in ~/.cjc/themes by default).</para>
+<para> <arg>-l <replaceable>file</replaceable> </arg> makes CJC write some debug logs
+to the file.</para>
+
+</sect2>
+
+<sect2><title>Exiting</title>
+
+<para> CJC may be left using <command>/quit</command>. The command will accept
+an optional <replaceable>reason</replaceable> argument, which will be sent to
+the server if connected. </para>
+
+<para> Examples: </para>
+<para> <userinput> /quit </userinput></para>
+<para> <userinput> /quit I must go </userinput></para>
+
+
+</sect2>
 
 </sect1>
+
+<!-- ................................................. -->
 <sect1><title>Connection</title>
-<para>(...)</para>
+
+<sect2><title>Configuration</title>
+
+<para>To connect to a jabber server you must first set the <varname>jid</varname>
+and the <varname>password</varname> settings. If your server differs from your
+JID's domain you should also set the <varname>server</varname> setting. When your
+server listens on nonstandard port number (other than 5222) you should set the
+<varname>port</varname> setting. </para>
+
+<para> Example: </para>
+
+<para> <userinput> /set jid me@my.server/Home </userinput></para>
+<para> <userinput> /set password "very secret" </userinput></para>
+
+</sect2>
+
+<sect2><title>Connecting</title>
+
+<para>After configuring your account as described above you may connect to the
+server using <command>/connect</command>. After connection is established the
+presence is to "online" and the roster roster is retrieved.</para>
+
+<para> Example: </para>
+
+<para> <userinput> /connect </userinput></para>
+
+</sect2>
+
+<sect2><title>Disconnecting</title>
+
+<para>To disconnect use the <command>/disconnect</command> command. Also the
+<command>/quit</command> command disconnect current connection. Both commands
+accept optional <replaceable>reason</replaceable> argument which will be sent to
+the server. Disconnection is not instant - it must take a while so the
+connection is closed cleanly and the reason is properly received by the
+server.</para>
+
+<para> Example: </para>
+
+<para> <userinput> /disconnect </userinput></para>
+<para> <userinput> /disconnect I must go </userinput></para>
+
+
+</sect2>
+
 </sect1>
 
+<!-- ................................................. -->
+<sect1><title>Roster</title>
+
+<para>Roster is a list of contacts. It is stored on the server and received
+just after connecting.</para>
+
+<sect2><title>Roster buffer</title>
+
+<para>Roster view is kept in a separate buffer - it is usually the buffer number
+2, so you can look at it using 
+<keycombo action="simul"><keycap>Alt</keycap><keycap>2</keycap></keycombo>.
+Contacts in roster are divided into groups. Additionally to the groups defined in
+the roster CJC may display three special groups in its roster buffer:</para>
+
+<itemizedlist>
+
+<listitem> <computeroutput>me</computeroutput> - this group contains all active
+sessions of the current user including current CJC connection. </listitem>
+
+<listitem> <computeroutput>unknown</computeroutput> - this group contains 
+users which presence is known although they are not in the roster. </listitem>
+
+<listitem> <computeroutput>unfiled</computeroutput> - this group contains 
+users which doesn't belong to any roster group. </listitem>
+
+</itemizedlist>
+
+<para>Each contact in roster buffer is displayed along with his presence
+information. Also the color of the entry depends of its presence.</para>
+
+<para>By default all contacts are displayed, but this behaviour may be modified
+by changing the <varname>roster.show</varname> setting. Its value is one of the
+following: "all" (which is default and means all contacts), "available"
+(only those, who are currently available), "unavailable" (only those who are
+currently unavailable), "chat", "online", "away", "xa" (only those with named
+presence mode). Multiple values may also be given - separated by commas.</para>
+
+</sect2>
+
+<sect2><title>Modifying roster</title>
+
+<para>Users may be added to the roster using <command>/add</command>. The only
+required argument is user's JID. Group may be defined using <arg>-group
+<replaceable>group</replaceable></arg> argument. The name of the new contact is
+defined by the last argument (not quoted).</para>
+
+<para> Example - adds "friend@friendly.server" contact named "My Friend" to
+group "friends": </para>
+
+<para> <userinput> /add -group friends friend@friendly.server My Friend
+</userinput></para>
+
+<para> Please note, that adding a contact to the roster doesn't mean
+subscription to its presence. Presence of the contact will not be known unless
+it is subscribed using <command>/subscribe</command> command.</para>
+
+<para> Contacts may be removed using <command>/remove</command> command. The only
+(quoted) argument is user name or JID. </para>
+
+<para> Example - both of the following commands remove contact added in the
+previous example:</para>
+
+<para> <userinput> /remove friend@friendly.server </userinput></para>
+
+<para> <userinput> /remove "My Friend" </userinput></para>
+
+<para> Contact name may be changed using <command>/rename</command> command. The
+first argument is contact name or JID, the second (not quoted) is the new name.
+</para>
+
+<para> Example - the friend is not a friend anymore: </para>
+
+<para> <userinput> /rename "My Friend" My Enemy </userinput></para>
+
+<para> The list of groups user belongs to may also be changed - using
+<command>/group</command> command. This commands has two forms. The first
+argument is always a contact name or JID. In the first form the second argument
+is a new list of groups. In the second form it is list of group changes. Each of
+change is identified by group name preceded with "+" or "-" sign.</para>
+
+<para> Example - the friend is not a friend anymore (cont). Both commands do the
+same: </para>
+
+<para> <userinput> /group "My Enemy" enemies </userinput></para>
+
+<para> <userinput> /group "My Enemy" -friends +enemies </userinput></para>
+
+</sect2>
+
+
+</sect1>
+
+
+<!-- ................................................. -->
 <sect1><title>Presence</title>
+
+<sect2><title>Changing presence information</title>
+
 <para>(...)</para>
+
+</sect2>
+
+<sect2><title>Auto-away</title>
+
+<para>(...)</para>
+
+</sect2>
+
+
 </sect1>
 
+<!-- ................................................. -->
 <sect1><title>Chat</title>
 <para>(...)</para>
 </sect1>
 
+<!-- ................................................. -->
 <sect1><title>Messages</title>
 <para>(...)</para>
 
@@ -177,6 +360,7 @@ asuument to be in ~/.cjc/ directory. </para>
 </sect1>
 </chapter>
 
+<!-- ************************************************* -->
 <appendix><title>Keyboard reference</title>
 <para>(...)</para>
 </appendix>
