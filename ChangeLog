@@ -1,3 +1,8 @@
+2004-09-24  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/choice_input.py, cjc/ui/text_input.py:
+	- always use 'replace' for str.encode()
+
 2004-09-18  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py:
