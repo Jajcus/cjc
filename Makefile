@@ -22,7 +22,7 @@ SNAPSHOT=
 PY_DIRS=cjc cjc/ui plugins
 DOCS=doc/manual.html COPYING ChangeLog README TODO
 
-EXTRA_DIST=Makefile cjc.in cjc.py doc/manual.xml doc/Makefile
+EXTRA_DIST=cjc.in cjc.py doc/manual.xml doc/Makefile
 
 .PHONY: all version dist cosmetics ChangeLog
 
@@ -85,6 +85,7 @@ dist: all
 		$(INSTALL_DIR) $$distname/$$d || exit 1; \
 		cp -a $$f $$distname/$$d || exit 1; \
 	done ; \
+	sed -e "s/^SNAPSHOT=.*/SNAPSHOT=$(SNAPSHOT)/" Makefile > $$distname/Makefile ; \
 	mkdir -p dist ; \
 	tar czf dist/$${distname}.tar.gz $$distname && \
 	rm -r $$distname
