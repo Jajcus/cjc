@@ -1,5 +1,8 @@
 2003-11-30  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/ui/complete.py, cjc/completions.py:
+	- tab-completion fixes
+
 	* doc/Makefile, Makefile:
 	- more portable Makefiles
 
