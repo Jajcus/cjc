@@ -1,3 +1,8 @@
+2004-06-11  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/plugin.py:
+	- plugin management: /load_plugin and /unload_plugin commands and Plugin.unload() callback
+
 2004-06-09  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py:
