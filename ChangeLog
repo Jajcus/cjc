@@ -1,5 +1,11 @@
 2004-01-18  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* Makefile:
+	- *** Version: 0.3 ***
+
+	* Makefile:
+	- all unneeded and non-portable magic removed
+
 	* plugins/xmlconsole.py:
 	- disable xmlconsole after closing it (fix to bug #3180)
 
