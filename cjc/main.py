@@ -1062,6 +1062,8 @@ class Application(jabber.Client,tls.TLSHandler):
         formatted_list=[]
         i=1
         for b in ui.buffer.buffer_list:
+            if not b:
+                continue
             formatted_list+=self.theme_manager.format_string("buffer_on_list",b.info)
             i+=1
         params={
