@@ -57,11 +57,37 @@ class WrapTest(Test):
 			self.buffer.update()
 		self.buffer.update()
 		self.plugin.cjc.info("Test thread finished")
+	
+class InputTest(Test): 
+	def __init__(self,plugin):
+		Test.__init__(self,plugin,"Input")
+		
+	def run(self):
+		self.plugin.cjc.info("Test thread started")
+		self.plugin.cjc.command_line.ask_question(
+					"What is your name?",
+					"text-single",
+					u"",
+					self.input_handler,
+					self.abort_handler,
+					(u"Your name is %s.",
+						u"You don't seem to know your own name")
+					)
+		self.plugin.cjc.info("Test thread finished")
+	
+	def input_handler(self,arg,answer):
+		self.buffer.append(arg[0] % answer)
+		self.buffer.update()
+
+	def abort_handler(self,arg):
+		self.buffer.append(arg[1])
+		self.buffer.update()
 		
 class Plugin(PluginBase):
 	tests={
 		"scroll": ScrollTest,
-		"wrap": WrapTest
+		"wrap": WrapTest,
+		"input": InputTest
 		}
 	def __init__(self,app):
 		PluginBase.__init__(self,app)

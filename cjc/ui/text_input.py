@@ -7,11 +7,10 @@ from widget import Widget
 from cjc import common
 
 
-class LineInput:
-	def __init__(self,parent,arg,abortable,handler_arg=None,default=u"",history_len=0):
+class TextInput:
+	def __init__(self,parent,abortable,default=u"",history_len=0):
 		self.parent=parent
 		self.abortable=abortable
-		self.handler_arg=handler_arg
 		self.win=None
 		self.capture_rest=0
 		self.content=u""
@@ -32,6 +31,7 @@ class LineInput:
 			self.screen=self.parent.screen
 			self.printable=string.digits+string.letters+string.punctuation+" "
 			self.win.keypad(1)
+			self.win.leaveok(0)
 		else:
 			self.win=None
 
@@ -46,13 +46,14 @@ class LineInput:
 			self.screen.lock.release()
 		
 	def _keypressed(self,c,escape):
-		if escape:
-			if c==27:
-				if self.abortable:
-					self.parent.abort_handler(handler_arg)
-				else:
-					curses.beep()
-		if c==curses.KEY_ENTER:
+		if c==27:
+			if self.abortable:
+				self.parent.abort_handler()
+				return
+			else:
+				curses.beep()
+				return
+		elif c==curses.KEY_ENTER:
 			return self.key_enter()
 		elif c==curses.KEY_HOME:
 			return self.key_home()
@@ -127,7 +128,7 @@ class LineInput:
 				self.history_pos=0
 			self.history.append(self.content)
 			self.history=self.history[-self.history_len:]
-		self.parent.input_handler(self.handler_arg,self.content)
+		self.parent.input_handler(self.content)
 		self.content=u""
 		self.saved_content=None
 		self.pos=0
@@ -259,6 +260,8 @@ class LineInput:
 			self.redraw()
 
 	def update(self,now=1,refresh=0):
+		if self.pos>len(self.content):
+			self.pos=len(self.content)
 		self.screen.lock.acquire()
 		try:
 			if self.pos<0 or (self.offset and self.pos<=self.offset):
@@ -285,6 +288,9 @@ class LineInput:
 				self.win.noutrefresh()
 		finally:
 			self.screen.lock.release()
+
+	def redraw(self,now=1):
+		self.update(now,1)
 
 	def cursync(self,now=1):
 		self.screen.lock.acquire()
