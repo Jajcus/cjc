@@ -164,6 +164,7 @@ class Window(Widget):
         self.status_bar.update(now)
 
     def draw_buffer(self):
+        lines=self.buffer.format(self.iw,self.ih)
         self.screen.lock.acquire()
         try:
             if not self.screen.active:
@@ -172,7 +173,6 @@ class Window(Widget):
             self.win.move(0,0)
             if not self.buffer:
                 return
-            lines=self.buffer.format(self.iw,self.ih)
             if not lines:
                 return
             eol=0
