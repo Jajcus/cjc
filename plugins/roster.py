@@ -33,7 +33,7 @@ class Plugin(PluginBase):
 		PluginBase.__init__(self,app)
 		self.available_settings={
 			"show": ("Which items show - list of 'available','unavailable','chat',"
-					"'online','away','xa' or 'all'",list,None),
+					"'online','away','xa' or 'all'",list),
 			}
 		self.settings={"show":["all"]}
 		app.add_info_handler("rostername",self.info_rostername)

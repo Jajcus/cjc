@@ -71,14 +71,14 @@ global_commands={
 }
 
 global_settings={
-	"jid": ("Jabber ID to use.",pyxmpp.JID,".jid"),
-	"password": ("Jabber ID to use.",unicode,".password"),
-	"port": ("Port number to connect to",int,".port"),
-	"server": ("Server address to connect to",str,".server"),
-	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5 digest')",list,".auth_methods"),
-	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,None,"set_layout"),
-	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float,None),
-	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float,None),
+	"jid": ("Jabber ID to use.",pyxmpp.JID),
+	"password": ("Jabber ID to use.",unicode),
+	"port": ("Port number to connect to",int),
+	"server": ("Server address to connect to",str),
+	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5 digest')",list),
+	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,"set_layout"),
+	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
+	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
 }
 
 global_theme_attrs=(
@@ -110,7 +110,13 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	def __init__(self):
 		pyxmpp.Client.__init__(self)
 		commands.CommandHandler.__init__(self,global_commands)
-		self.settings={"layout":"plain","disconnect_timeout":10.0,"disconnect_delay":0.25}
+		self.settings={
+			"jid":self.jid,
+			"password":self.password,
+			"auth_methods":self.auth_methods,
+			"layout":"plain",
+			"disconnect_timeout":10.0,
+			"disconnect_delay":0.25}
 		self.available_settings=global_settings
 		self.plugin_dirs=["cjc/plugins"]
 		self.plugins={}
@@ -298,7 +304,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.load_plugins()
 
 		self.load()
-		if not self.jid:
+		if not self.settings["jid"]:
 			self.info("")
 			self.info("Quickstart:")
 			self.info("/set jid your_username@your.domain/your_resource")
@@ -316,8 +322,15 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.ui_thread.start()
 		self.stream_thread.start()
 		self.main_loop()
-		self.ui_thread.join(1)
-		self.stream_thread.join(1)
+
+		for th in threading.enumerate():
+			if th is threading.currentThread():
+				continue
+			th.join(1)
+		for th in threading.enumerate():
+			if th is threading.currentThread():
+				continue
+			th.join(0)
 
 	def session_started(self):
 		for p in self.plugins.values():
@@ -348,15 +361,24 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.exit_request(reason)
 
 	def cmd_connect(self,args):
-		if not self.jid:
+		jid=self.settings.get("jid")
+		if not jid:
 			self.error(u"Can't connect - jid not given")
 			return
-		if None in (self.jid.node,self.jid.resource):
+		if None in (jid.node,jid.resource):
 			self.error(u"Can't connect - jid is not full")
 			return
-		if not self.password:
+		password=self.settings.get("password")
+		if not password:
 			self.error(u"Can't connect - password not given")
 			return
+		self.jid=jid
+		self.password=password
+		self.port=self.settings.get("port")
+		if not self.port:
+			self.port=5222
+		self.server=self.settings.get("server")
+		self.auth_methodsr=self.settings.get("auth_methods")
 		self.info(u"Connecting...")
 		try:
 			self.connect()
@@ -389,17 +411,14 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 					obj=self.plugins[plugin]
 				for var in obj.available_settings:
 					sdef=obj.available_settings[var]
-					if len(sdef)<4:
-						nsdef=[None,str,None,None]
+					if len(sdef)<3:
+						nsdef=[None,str,None]
 						nsdef[:len(sdef)]=list(sdef)
 						sdef=nsdef
-					descr,typ,location,handler=sdef
-					if location is None:
-						val=obj.settings.get(var)
-					elif location.startswith("."):
-						val=getattr(obj,location[1:],None)
-					else:
-						continue
+					descr,typ,handler=sdef
+					val=obj.settings.get(var)
+					if var=="password":
+						val=len(val) * '*'
 					if plugin is not None:
 						var="%s.%s" % (plugin,var)
 					if val is None:
@@ -431,23 +450,18 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 		try:
 			sdef=obj.available_settings[var]
-			if len(sdef)<4:
-				nsdef=[None,str,None,None]
+			if len(sdef)<3:
+				nsdef=[None,str,None]
 				nsdef[:len(sdef)]=list(sdef)
 				sdef=nsdef
-			descr,typ,location,handler=sdef
+			descr,typ,handler=sdef
 		except KeyError:
 			self.error("Unknown setting: "+fvar)
 			return
 
 		if val is None:
 			self.info(u"%s - %s" % (fvar,descr))
-			if location is None:
-				val=obj.settings.get(var)
-			elif location.startswith("."):
-				val=getattr(obj,location[1:],None)
-			else:
-				return
+			val=obj.settings.get(var)
 			if val is None:
 				self.info("%s is not set" % (fvar,))
 				return
@@ -489,12 +503,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			if not callable(handler):
 				handler=getattr(obj,handler)
 		
-		if location is None:
-			oldval=obj.settings.get(var)
-			obj.settings[var]=val
-		elif location.startswith("."):
-			oldval=getattr(obj,location[1:],None)
-			setattr(obj,location[1:],val)
+		oldval=obj.settings.get(var)
+		obj.settings[var]=val
 		if handler:
 			handler(oldval,val)
 
@@ -516,7 +526,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			var=fvar
 
 		try:
-			descr,typ,location=obj.available_settings[var]
+			descr,typ=obj.available_settings[var][:2]
 		except KeyError:
 			self.error("Unknown setting: "+fvar)
 			return
@@ -528,11 +538,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		else:
 			self.error("%s cannot be unset %r" % (fvar,typ))
 			return
-
-		if location is None and obj.settings.has_key(var):
-			del obj.settings[var]
-		elif location.startswith("."):
-			setattr(obj,location[1:],None)
+		del obj.settings[var]
 
 	def set_layout(self,oldval,newval):
 		if newval not in ("plain","icr","irc","vertical","horizontal"):
@@ -567,13 +573,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			else:
 				obj=self.plugins[plugin]
 			for var in obj.available_settings:
-				descr,typ,location=obj.available_settings[var][:3]
-				if location is None:
-					val=obj.settings.get(var)
-				elif location.startswith("."):
-					val=getattr(obj,location[1:],None)
-				else:
-					continue
+				descr,typ=obj.available_settings[var][:2]
+				val=obj.settings.get(var)
 				if val is None:
 					continue
 				if plugin is not None:
@@ -622,6 +623,11 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.screen.redraw()
 	
 	def cmd_info(self,args):
+		jid=args.shift()
+		if not jid:
+			self.error("JID missing")
+			return
+		args.finish()
 		try:
 			jid=pyxmpp.JID(args.all())
 		except pyxmpp.JIDError:

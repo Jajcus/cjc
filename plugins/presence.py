@@ -33,12 +33,12 @@ class Plugin(PluginBase):
 		PluginBase.__init__(self,app)
 		app.theme_manager.set_default_formats(theme_formats)
 		self.available_settings={
-			"priority": ("Priority of current resource",int,None),
-			"away_priority": ("Priority of current resource in away and xa modes",(int,None),None),
-			"auto_away": ("Time in minutes after set presence should be set to 'away' (unset or 0 to disable)",(int,None),None),
-			"auto_xa": ("Time in minutes after set presence should be set to 'xa' (unset or 0 to disable)",(int,None),None),
-			"auto_away_msg": ("Auto-away status description",(unicode,None),None),
-			"auto_xa_msg": ("Auto-away status description",(unicode,None),None),
+			"priority": ("Priority of current resource",int),
+			"away_priority": ("Priority of current resource in away and xa modes",(int,None)),
+			"auto_away": ("Time in minutes after set presence should be set to 'away' (unset or 0 to disable)",(int,None)),
+			"auto_xa": ("Time in minutes after set presence should be set to 'xa' (unset or 0 to disable)",(int,None)),
+			"auto_away_msg": ("Auto-away status description",(unicode,None)),
+			"auto_xa_msg": ("Auto-away status description",(unicode,None)),
 			}
 		self.settings={
 			"priority": 1,
