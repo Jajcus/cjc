@@ -24,9 +24,9 @@ DOCS=doc/manual.html COPYING ChangeLog README TODO
 
 EXTRA_DIST=Makefile cjc.in cjc.py doc/manual.xml doc/Makefile
 
-.PHONY: all cvs-version dist
+.PHONY: all version dist
 
-all: cjc.inst $(DOCS) cvs-version
+all: cjc.inst $(DOCS) version
 
 doc/manual.html: doc/manual.xml 
 	cd doc; make
