@@ -348,6 +348,11 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.stream.set_message_handler("error",self.message_error)
 
 	def disconnected(self):
+		for user,info in self.user_info.items():
+			if info.has_key("presence"):
+				del info["presence"]
+			if info.has_key("resources"):
+				del info["resources"]
 		self.warning("Disconnected")
 
 	def message_error(self,stanza):
