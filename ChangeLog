@@ -1,3 +1,8 @@
+2004-09-12  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/muc.py, plugins/presence.py, plugins/roster.py:
+	- stream.jid -> stream.me everywhere
+
 2004-09-11  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* doc/manual.xml:
