@@ -1,5 +1,11 @@
 2004-05-28  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/main.py, plugins/roster.py:
+	- updated for the new roster API in PyXMPP
+
+	* cjc.py:
+	- profile support fixes
+
 	* .cvsignore:
 	- ignore profiler output
 
