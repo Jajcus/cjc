@@ -204,8 +204,12 @@ def complete(s):
     else:
         if s:
             sp=s.split()
-            word=s.split()[-1]
-            head=s[:-len(word)]
+            if sp:
+                word=sp[-1]
+                head=s[:-len(word)]
+            else:
+                word=u""
+                head=u""
         else:
             head=""
             word=""
