@@ -3,6 +3,7 @@ from types import StringType,IntType,UnicodeType
 import curses
 
 from buffer import Buffer
+from cjc import common
 
 class TextBuffer(Buffer):
 	def __init__(self,theme_manager,name,length=200):
@@ -14,8 +15,6 @@ class TextBuffer(Buffer):
 		
 	def set_window(self,win):
 		Buffer.set_window(self,win)
-		if win:
-			win.scroll_and_wrap=1
 		
 	def append(self,s,attr="default"):
 		self.lock.acquire()
@@ -27,10 +26,8 @@ class TextBuffer(Buffer):
 	def _append(self,s,attr):
 		if type(attr) is not IntType:
 			attr=self.theme_manager.attrs[attr]
-		if self.window and self.pos is None:
-			self.window.write(s,attr)
-		else:
-			self.activity(1)
+		if self.lines[-1]==[] and self.window:
+			self.window.nl()
 		newl=0
 		s=s.split(u"\n")
 		for l in s:
@@ -38,9 +35,28 @@ class TextBuffer(Buffer):
 				self.lines.append([])
 			if l:
 				self.lines[-1].append((attr,l))
+				if self.window:
+					y,x=self.window.win.getyx()
+					while l:
+						if x+len(l)>self.window.iw:
+							p,l=self.split_text(l,self.window.iw-x)
+						else:
+							p,l=l,None
+						self.window.write(p,attr)
+						x+=len(p)
+						if x>=self.window.iw:
+							x=0
+							y+=1
+							if y>=self.window.ih:
+								y=self.window.ih-1
+					else:
+						self.window.write(l,attr)
 			newl=1
-		self.lines=self.lines[-self.length:]
-		self.activity(1)
+		l=len(self.lines)
+		if l>self.length and self.pos is None:
+			self.lines=self.lines[-self.length:]
+		if not self.window or self.pos is not None:
+			self.activity(1)
 		
 	def append_line(self,s,attr="default"):
 		self.lock.acquire()
@@ -54,8 +70,6 @@ class TextBuffer(Buffer):
 			attr=self.theme_manager.attrs[attr]
 		self._append(s,attr)
 		self.lines.append([])
-		if self.window and self.pos is None:
-			self.window.write(u"\n",attr)
 
 	def append_themed(self,format,params):
 		for attr,s in self.theme_manager.format_string(format,params):
@@ -138,6 +152,9 @@ class TextBuffer(Buffer):
 		else:
 			return 0,0
 
+	def split_text(self,s,n,allow_all=0):
+		return s[:n],s[n:]
+
 	def cut_line(self,line,cut):
 		i=0
 		left=[]
@@ -176,45 +193,48 @@ class TextBuffer(Buffer):
 			ret=[]
 			
 		end=len(self.lines)
-		if self.lines[-1]==[]:
-			end-=1
-
 		while height>0 and l<end:
 			line=self.lines[l]
-			ln=self.line_length(line)
-			h=ln/width+1
-			ret.append(line)
-			height-=h
+			while line is not None and height>0:
+				ln=self.line_length(line)
+				if ln>width:
+					part,line=self.cut_line(line,width)
+				else:
+					part,line=line,None
+				if part==[] and height==1:
+					break
+				ret.append(part)
+				height-=1
 			l+=1
-
-		if height>=0:
-			if self.lines[-1]==[]:
-				ret.append([])
-			return ret
-
-		cut=(-height)*width
-		ret[-1],x=self.cut_line(ret[-1],cut)
-		ret.append([])
+		common.debug("format returning: "+`ret`)	
 		return ret
+
+	def update_pos(self):
+		if self.pos:
+			self.window.update_status({"bufrow":self.pos[0],"bufcol":self.pos[1]})
+		else:
+			self.window.update_status({"bufrow":"","bufcol":""})
 
 	def page_up(self):
 		self.lock.acquire()
 		try:
 			if self.pos is None:
-				l,c=self.offset_back(self.window.w,self.window.h-2)
+				l,c=self.offset_back(self.window.iw,self.window.ih-1)
 			else:
 				l,c=self.pos
 
 			if (l,c)==(0,0):
 				self.pos=l,c
-				formatted=self._format(self.window.w,self.window.h-1)
-				if len(formatted)<=self.window.h-1:
+				formatted=self._format(self.window.iw,self.window.ih+1)
+				if len(formatted)<=self.window.ih:
 					self.pos=None
+				self.update_pos()
 				return
-			l1,c1=self.offset_back(self.window.w,self.window.h-2,l,c)
+			l1,c1=self.offset_back(self.window.iw,self.window.ih-1,l,c)
 			self.pos=l1,c1
 		finally:
 			self.lock.release()
+		self.update_pos()
 		self.window.draw_buffer()
 		self.window.update()
 
@@ -222,17 +242,23 @@ class TextBuffer(Buffer):
 		self.lock.acquire()
 		try:
 			if self.pos is None:
+				self.update_pos()
 				return
 
 			l,c=self.pos
 				
-			l1,c1=self.offset_forward(self.window.w,self.window.h-2,l,c)
+			l1,c1=self.offset_forward(self.window.iw,self.window.ih-1,l,c)
 			self.pos=l1,c1
-			formatted=self.format(self.window.w,self.window.h-1)
-			if len(formatted)<=self.window.h-1:
+			formatted=self.format(self.window.iw,self.window.ih+1)
+			if len(formatted)<=self.window.ih:
 				self.pos=None
 		finally:		
 			self.lock.release()
+		if self.pos:
+			self.window.update_status({"bufrow":self.pos[0],"bufcol":self.pos[1]})
+		else:
+			self.window.update_status({"bufrow":"","bufcol":""})
+		self.update_pos()
 		self.window.draw_buffer()
 		self.window.update()
 
