@@ -3,7 +3,7 @@
 import libxml2
 import time
 import traceback
-import sys
+import sys,os
 import curses
 import curses.textpad
 import select
@@ -13,6 +13,7 @@ from types import StringType,UnicodeType
 import pyxmpp
 
 encoding="iso-8859-2"
+logfile=file("cjc.log","a")
 
 class Exit(StandardError):
 	pass
@@ -192,6 +193,10 @@ class Application(pyxmpp.Client):
 		self.status_buf.append_line("Status:")
 		self.status_window.set_buffer(self.status_buf)
 
+		self.message_buf=Buffer(w,100)
+		self.message_buf.append_line("Messages:")
+		self.main_window.set_buffer(self.message_buf)
+
 		self.cmd_load()
 		self.redraw()
 
@@ -200,6 +205,39 @@ class Application(pyxmpp.Client):
 		except Exit:
 			pass
 
+	def session_started(self):
+		pyxmpp.Client.session_started(self)
+		self.stream.set_presence_handler("error",self.presence_error)
+		self.stream.set_presence_handler(None,self.presence_available)
+		self.stream.set_presence_handler("unavailable",self.presence_unavailable)
+		self.stream.set_message_handler("error",self.message_error)
+		self.stream.set_message_handler("normal",self.message_normal)
+		self.stream.set_message_handler("chat",self.message_chat)
+
+	def presence_error(self,stanza):
+		self.warning("Presence error from: "+stanza.get_from().as_unicode().encode(encoding))
+		
+	def presence_available(self,stanza):
+		self.info(stanza.get_from().as_unicode().encode(encoding)+" is available")
+		
+	def presence_unavailable(self,stanza):
+		self.info(stanza.get_from().as_unicode().encode(encoding)+" is unavailable")
+
+	def message_error(self,stanza):
+		self.warning("Message error from: "+stanza.get_from().as_unicode().encode(encoding))
+		
+	def message_normal(self,stanza):
+		self.info("Message from: "+stanza.get_from().as_unicode().encode(encoding))
+		self.message_buf.append_line("Message from: "+stanza.get_from().as_unicode().encode(encoding))
+		self.message_buf.append_line("Subject: "+stanza.get_subject().encode(encoding))
+		self.message_buf.append_line(stanza.get_body().encode(encoding))
+		self.message_buf.update(1)
+	
+	def message_chat(self,stanza):
+		self.message_buf.append_line("%s: %s" %
+			(stanza.get_from().as_unicode().encode(encoding),stanza.get_body().encode(encoding)))
+		self.message_buf.update(1)
+		
 	def cmd_quit(self,args):
 		raise Exit
 
@@ -345,20 +383,28 @@ class Application(pyxmpp.Client):
 		pyxmpp.Client.idle(self)
 				
 	def error(self,s):
+		if logfile:
+			print >>logfile,time.asctime(),"ERROR",s
 		self.status_buf.append_line(s,self.attrs["error"])
 		self.status_buf.update(1)
 		
 	def warning(self,s):
+		if logfile:
+			print >>logfile,time.asctime(),"WARNING",s
 		self.status_buf.append_line(s,self.attrs["warning"])
 		self.status_buf.update(1)
 		
 	def info(self,s):
+		if logfile:
+			print >>logfile,time.asctime(),"INFO",s
 		self.status_buf.append_line(s,self.attrs["info"])
 		self.status_buf.update(1)
 
 	def debug(self,s):
-		self.status_buf.append_line(s,self.attrs["debug"])
-		self.status_buf.update(1)
+		if logfile:
+			print >>logfile,time.asctime(),"DEBUG",s
+		#self.status_buf.append_line(s,self.attrs["debug"])
+		#self.status_buf.update(1)
 
 app=Application()
 
@@ -369,6 +415,8 @@ try:
 	curses.noecho()
 	curses.nonl()
 	screen.keypad(1)
+	#fd=os.open("/dev/null",os.O_WRONLY)
+	#os.dup2(fd,sys.stderr.fileno())
 	app.run(screen)
 finally:
 	curses.endwin()	
