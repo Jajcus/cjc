@@ -1,3 +1,11 @@
+2004-06-15  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/message.py:
+	- logging of messages sent fixed
+
+	* cjc/ui/complete.py:
+	- fix for the text input tab-completion bug with empty input
+
 2004-06-11  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/completions.py, cjc/main.py:
