@@ -34,7 +34,7 @@ class Plugin(PluginBase):
 		app.theme_manager.set_default_formats(theme_formats)
 		self.available_settings={
 			"priority": ("Priority of current resource",int),
-			"away_priority": ("Priority of current resource in away and xa modes",(int,None)),
+			"away_priority": ("Priority of current resource in away or xa mode",(int,None)),
 			"auto_away": ("Time in minutes after set presence should be set to 'away' (unset or 0 to disable)",(int,None)),
 			"auto_xa": ("Time in minutes after set presence should be set to 'xa' (unset or 0 to disable)",(int,None)),
 			"auto_away_msg": ("Auto-away status description",(unicode,None)),
@@ -44,13 +44,15 @@ class Plugin(PluginBase):
 			"priority": 1,
 			"auto_away": 5,
 			"auto_xa": 15,
-			"auto_away_msg": u"Automaticaly away after %i minutes",
-			"auto_away_msg": u"Automaticaly xa after %i minutes",
+			"auto_away_msg": u"Automaticaly away after %i minutes of inactivity",
+			"auto_xa_msg": u"Automaticaly xa after %i minutes of inactivity",
 			}
 		app.add_info_handler("resources",self.info_resources)
 		app.add_info_handler("presence",self.info_presence)
 		app.add_event_handler("disconnect request",self.ev_disconnect_request)
+		app.add_event_handler("idle",self.ev_idle)
 		app.register_commands(commands,self)
+		self.away_saved_presence=None
 
 	def info_resources(self,k,v):
 		if not v:
@@ -98,50 +100,118 @@ class Plugin(PluginBase):
 		self.cjc.stream.set_presence_handler("error",self.presence_error)
 		self.cjc.stream.set_presence_handler(None,self.presence_available)
 		self.cjc.stream.set_presence_handler("unavailable",self.presence_unavailable)
-		self.set_presence(pyxmpp.Presence(priotity=self.settings["priority"]))
+		self.set_presence(pyxmpp.Presence(priority=self.settings["priority"]))
 
 	def ev_disconnect_request(self,event,arg):
 		p=pyxmpp.Presence(type="unavailable",status=arg)
 		self.set_presence(p)
 
+	def ev_idle(self,event,arg):
+		if not self.cjc.stream:
+			return
+		auto_away=self.settings["auto_away"]
+		auto_xa=self.settings["auto_xa"]
+		if auto_away and auto_xa:
+			minidle=min(auto_away,auto_xa)
+		elif auto_away:
+			minidle=auto_away
+		elif auto_xa:
+			minidle=auto_xa
+		else:
+			return
+		idle=int(arg/60)
+		if idle<minidle:
+			return
+		p=self.cjc.get_user_info(self.cjc.jid,"presence")
+		if (not p or p.get_type()=="unavailable" 
+		    or (p.get_show() in ("xa","away") and not self.away_saved_presence)):
+			return
+
+		if not self.away_saved_presence:
+			self.away_saved_presence=p
+
+		if auto_xa and idle>=auto_xa:
+			if p.get_show()=="xa":
+				return
+			show="xa"
+			status=self.settings.get("auto_xa_msg","")
+		elif auto_away and idle>=auto_away:
+			if p.get_show()=="away":
+				return
+			show="away"
+			status=self.settings.get("auto_away_msg","")
+		else:
+			return
+
+		self.cjc.add_event_handler("keypressed",self.ev_keypressed)
+		prio=self.settings.get("away_priority",self.settings.get("priority",0))
+		p=pyxmpp.Presence(priotity=prio, show=show, status=status % (idle,))
+		self.set_presence(p)
+		
+	def ev_keypressed(self,event,arg):
+		self.cjc.remove_event_handler(event,self.ev_keypressed)
+		if self.away_saved_presence:
+			self.set_presence(self.away_saved_presence)
+			self.away_saved_presence=None
+
 	def cmd_online(self,args):
+		if self.away_saved_presence:
+			self.away_saved_presence=None
+			self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
 		if not self.cjc.stream:
 			self.error("Connect first!")
 			return
 		reason=args.all()
-		p=pyxmpp.Presence(status=reason)
+		prio=self.settings.get("priority",0)
+		p=pyxmpp.Presence(status=reason,priority=prio)
 		self.set_presence(p)
 		
 	def cmd_away(self,args):
+		if self.away_saved_presence:
+			self.away_saved_presence=None
+			self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
 		if not self.cjc.stream:
 			self.error("Connect first!")
 			return
 		reason=args.all()
-		p=pyxmpp.Presence(show="away",status=reason)
+		prio=self.settings.get("away_priority",self.settings.get("priority",0))
+		p=pyxmpp.Presence(show="away",status=reason,priority=prio)
 		self.set_presence(p)
 
 	def cmd_xa(self,args):
+		if self.away_saved_presence:
+			self.away_saved_presence=None
+			self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
 		if not self.cjc.stream:
 			self.error("Connect first!")
 			return
 		reason=args.all()
-		p=pyxmpp.Presence(show="xa",status=reason)
+		prio=self.settings.get("away_priority",self.settings.get("priority",0))
+		p=pyxmpp.Presence(show="xa",status=reason,priority=prio)
 		self.set_presence(p)
 		
 	def cmd_dnd(self,args):
+		if self.away_saved_presence:
+			self.away_saved_presence=None
+			self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
 		if not self.cjc.stream:
 			self.error("Connect first!")
 			return
 		reason=args.all()
-		p=pyxmpp.Presence(show="dnd",status=reason)
+		prio=self.settings.get("priority",0)
+		p=pyxmpp.Presence(show="dnd",status=reason,priority=prio)
 		self.set_presence(p)
 		
 	def cmd_chatready(self,args):
+		if self.away_saved_presence:
+			self.away_saved_presence=None
+			self.cjc.remove_event_handler("keypressed",self.ev_keypressed)
 		if not self.cjc.stream:
 			self.error("Connect first!")
 			return
 		reason=args.all()
-		p=pyxmpp.Presence(show="chat",status=reason)
+		prio=self.settings.get("priority",0)
+		p=pyxmpp.Presence(show="chat",status=reason,priority=prio)
 		self.set_presence(p)
 		
 	def set_presence(self,p):
