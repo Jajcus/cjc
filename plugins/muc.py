@@ -34,7 +34,7 @@ theme_formats=(
     ("muc.my_affiliation_changed","[%(T:timestamp)s] %[muc.info]* Your affiliation is now: %(affiliation)s\n"),
     ("muc.nick_changed","[%(T:timestamp)s] %[muc.info]* %(old_nick)s is now known as: %(nick)s\n"),
     ("muc.my_nick_changed","[%(T:timestamp)s] %[muc.info]* Your are now known as: %(nick)s\n"),
-    ("muc.presence_changed","[%(T:timestamp)s] %[muc.info]* %(nick)s is now: [%(show)s?%(show)s,online] %(status)s\n"),
+    ("muc.presence_changed","[%(T:timestamp)s] %[muc.info]* %(nick)s is now: [%(show?%(show)s,online)s]%(status? %(status)s)s\n"),
     ("muc.info","[%(T:timestamp)s] %[muc.info]* %(msg)s\n"),
     ("muc.descr","Conference on %(J:room:bare)s"),
 )
@@ -195,13 +195,16 @@ class Room(muc.MucRoomHandler):
     
     def presence_changed(self,user,stanza):
         fr=stanza.get_from()
+        available=stanza.get_type()!="unavailable"
         old_presence=self.plugin.cjc.get_user_info(fr,"presence")
-        self.plugin.cjc.set_user_info(fr,"presence",stanza.copy())
+        if available:
+            self.plugin.cjc.set_user_info(fr,"presence",stanza.copy())
+        else:
+            self.plugin.cjc.set_user_info(fr,"presence",None)
         if not old_presence:
             return
-        if (stanza.get_type()!="unavailable" and
-                (stanza.get_type()!=old_presence.get_type()
-                or stanza.get_show()!=old_presence.get_show()
+        if (available and
+                (stanza.get_show()!=old_presence.get_show()
                 or stanza.get_status()!=old_presence.get_status())):
             fparams=self.user_format_params(user)
             self.buffer.append_themed("muc.presence_changed",fparams)
