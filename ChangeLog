@@ -1,5 +1,10 @@
 2004-09-03  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/presence.py:
+	- "-to" option to /online, /away, etc. for directed presence
+	- "keep_description" setting and "-keep"/"-clear" options to /online, /away, etc. for keeping presence description on "show" changes
+	- "no_auto_away_when" option to disable auto_away and auto_xa in some states (default: "away,xa,dnd")
+
 	* plugins/xmlconsole.py:
 	- use 'logging' module for displaying stream data in xmlconsole
 
