@@ -180,10 +180,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 	def send_event(self,event,arg=None):
 		if event=="presence changed" and arg==self.jid:
-			if self.top_bar:
-				self.top_bar.update()
-			if self.bottom_bar:
-				self.bottom_bar.update()
+			self.update_status_bars()
 		if not self.event_handlers.has_key(event):
 			return
 		for h in self.event_handlers[event]:
@@ -281,6 +278,12 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.screen.focus_window(self.main_window)
 		self.status_window=None
 
+	def update_status_bars(self):
+		if self.top_bar:
+			self.top_bar.update()
+		if self.bottom_bar:
+			self.bottom_bar.update()
+
 	def run(self,screen):
 		self.screen=screen
 		self.theme_manager=themes.ThemeManager(self)
@@ -318,9 +321,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.info("press Alt-Tab (or Escape Tab) to change active window")
 			self.info("PgUp/PgDown to scroll window content")
 
+		self.update_status_bars()
 		self.ui_thread=threading.Thread(None,self.ui_loop,"UI")
 		self.stream_thread=threading.Thread(None,self.stream_loop,"Stream")
-		self.screen.redraw()
 
 		self.ui_thread.start()
 		self.stream_thread.start()
