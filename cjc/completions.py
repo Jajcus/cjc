@@ -15,10 +15,11 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import logging
-import ui
-import ui.cmdtable
-import common
 import pyxmpp
+
+from cjc import ui
+from cjc.ui import cmdtable
+from cjc import common
 
 class UserCompletion(ui.Completion):
     def __init__(self,app):
@@ -112,7 +113,7 @@ class CommandCompletion(ui.Completion):
         for a in self.app.aliases.keys():
             if a.startswith(word):
                 matches.append(a)
-        for t in ui.cmdtable.command_tables:
+        for t in cmdtable.command_tables:
             if not t.active:
                 continue
             for cmd in t.get_command_names():

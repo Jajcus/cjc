@@ -21,10 +21,10 @@ import curses
 import logging
 
 from cjc import common
-import buffer
-import cmdtable
-import keytable
-import complete
+from cjc.ui import buffer
+from cjc.ui import cmdtable
+from cjc.ui import keytable
+from cjc.ui import complete
 
 class Screen:
     def __init__(self,screen):

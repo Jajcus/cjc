@@ -18,10 +18,10 @@
 import curses
 import curses.textpad
 import string
-import keytable
 
 from cjc import common
-from input_widget import InputWidget
+from cjc.ui.input_widget import InputWidget
+from cjc.ui import keytable
 
 class BooleanInput(InputWidget):
     def __init__(self,abortable,required,default=None):

@@ -25,9 +25,9 @@ import locale
 
 import pyxmpp
 
-from ui import CommandError,CommandArgs
-import ui
-import common
+from cjc.ui import CommandError,CommandArgs
+from cjc import ui
+from cjc import common
 
 attr_sel_re=re.compile(r"(?<!\%)\%\[([^]]*)\]",re.UNICODE)
 formatted_re=re.compile(r"(?<!\%)\%\{([^}]*)\}",re.UNICODE)

@@ -20,13 +20,13 @@ import curses.textpad
 import string
 import logging
 
-from widget import Widget
+from cjc.ui.widget import Widget
 from cjc import common
-import text_input
-import bool_input
-import choice_input
-import list_input
-import complete
+from cjc.ui import text_input
+from cjc.ui import bool_input
+from cjc.ui import choice_input
+from cjc.ui import list_input
+from cjc.ui import complete
 
 class InputError(StandardError):
     pass

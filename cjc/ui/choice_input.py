@@ -20,9 +20,9 @@ import curses.textpad
 import string
 from types import StringType,UnicodeType,IntType,XRangeType
 
-import keytable
+from cjc.ui import keytable
 from cjc import common
-from input_widget import InputWidget
+from cjc.ui.input_widget import InputWidget
 
 class ChoiceInput(InputWidget):
     def __init__(self,abortable,required,default,choice):

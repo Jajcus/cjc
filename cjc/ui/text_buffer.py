@@ -18,9 +18,9 @@
 from types import StringType,IntType,UnicodeType
 import curses
 
-from buffer import Buffer
+from cjc.ui.buffer import Buffer
 from cjc import common
-import keytable
+from cjc.ui import keytable
 
 class TextBuffer(Buffer):
     def __init__(self,theme_manager,info,descr_format="default_buffer_descr",

@@ -20,7 +20,7 @@ import threading
 import os
 import logging
 
-import common
+from cjc import common
 
 
 tls_errors={ # taken from `man openssl_verify`

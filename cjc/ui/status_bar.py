@@ -17,7 +17,7 @@
 
 import curses
 
-from widget import Widget
+from cjc.ui.widget import Widget
 from cjc import common
 
 class StatusBar(Widget):

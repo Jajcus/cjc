@@ -18,9 +18,9 @@
 import re
 import curses
 import logging
+from types import StringType,UnicodeType
 
 from cjc import common
-from types import StringType,UnicodeType
 
 __logger=logging.getLogger("cjc.ui.keytable")
 

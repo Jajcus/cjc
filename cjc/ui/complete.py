@@ -17,7 +17,7 @@
 import re
 import logging
 
-import cmdtable
+from cjc.ui import cmdtable
 from cjc import common
 
 completions={}

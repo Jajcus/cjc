@@ -20,8 +20,8 @@ import logging
 from types import StringType,UnicodeType
 
 from cjc import common
-from input import InputError
-import cmdtable
+from cjc.ui.input import InputError
+from cjc.ui import cmdtable
 
 buffer_list=[]
 activity_handlers=[]

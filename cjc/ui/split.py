@@ -16,7 +16,7 @@
 
 import curses
 
-from widget import Widget
+from cjc.ui.widget import Widget
 
 class Split(Widget):
     def __init__(self,*children):

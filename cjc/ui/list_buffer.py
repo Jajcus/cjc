@@ -19,9 +19,9 @@ from types import StringType,IntType,UnicodeType
 import curses
 import logging
 
-from buffer import Buffer
 from cjc import common
-import keytable
+from cjc.ui import keytable
+from cjc.ui.buffer import Buffer
 
 class ListBufferError(StandardError):
     pass

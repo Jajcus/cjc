@@ -34,16 +34,16 @@ import logging
 import pyxmpp
 from pyxmpp import jabber
 
-import cjclogging
-import ui
-import ui.buffer
-import ui.keytable
-import ui.cmdtable
-import version
-import themes
-import common
-import tls
-import completions
+from cjc import cjclogging
+from cjc import ui
+from cjc.ui import buffer as ui_buffer
+from cjc.ui import keytable as ui_keytable
+from cjc.ui import cmdtable as ui_cmdtable
+from cjc import version
+from cjc import themes
+from cjc import common
+from cjc import tls
+from cjc import completions
 
 class Exit(Exception):
     pass
@@ -350,13 +350,13 @@ class Application(jabber.Client,tls.TLSHandler):
         ui.set_default_command_handler(self.unknown_command)
 
     def layout_plain(self):
-        ui.buffer.activity_handlers=[]
+        ui_buffer.activity_handlers=[]
         self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
-        ui.buffer.activity_handlers.append(self.top_bar.update)
+        ui_buffer.activity_handlers.append(self.top_bar.update)
         self.main_window=ui.Window(self.theme_manager,"Main")
         self.command_line=ui.Input(self.theme_manager)
         self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
-        ui.buffer.activity_handlers.append(self.bottom_bar.update)
+        ui_buffer.activity_handlers.append(self.bottom_bar.update)
         sp=ui.HorizontalSplit(self.top_bar,self.main_window,self.bottom_bar,self.command_line)
         self.screen.set_content(sp)
         self.screen.focus_window(self.main_window)
@@ -364,14 +364,14 @@ class Application(jabber.Client,tls.TLSHandler):
         self.roster_window=None
 
     def layout_icr(self):
-        ui.buffer.activity_handlers=[]
+        ui_buffer.activity_handlers=[]
         self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
-        ui.buffer.activity_handlers.append(self.top_bar.update)
+        ui_buffer.activity_handlers.append(self.top_bar.update)
         self.status_window=ui.Window(self.theme_manager,"Status",1)
         self.main_window=ui.Window(self.theme_manager,"Main")
         self.command_line=ui.Input(self.theme_manager)
         self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
-        ui.buffer.activity_handlers.append(self.bottom_bar.update)
+        ui_buffer.activity_handlers.append(self.bottom_bar.update)
         self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
         sp=ui.VerticalSplit(self.main_window,self.roster_window)
@@ -380,14 +380,14 @@ class Application(jabber.Client,tls.TLSHandler):
         self.screen.focus_window(self.main_window)
 
     def layout_irc(self):
-        ui.buffer.activity_handlers=[]
+        ui_buffer.activity_handlers=[]
         self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
-        ui.buffer.activity_handlers.append(self.top_bar.update)
+        ui_buffer.activity_handlers.append(self.top_bar.update)
         self.status_window=ui.Window(self.theme_manager,"Status",1)
         self.main_window=ui.Window(self.theme_manager,"Main")
         self.command_line=ui.Input(self.theme_manager)
         self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
-        ui.buffer.activity_handlers.append(self.bottom_bar.update)
+        ui_buffer.activity_handlers.append(self.bottom_bar.update)
         self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
         sp=ui.VerticalSplit(self.status_window,self.roster_window)
@@ -401,13 +401,13 @@ class Application(jabber.Client,tls.TLSHandler):
             "version": version.version,
             "author": "Jacek Konieczny <jajcus@bnet.pl>",
             }
-        ui.buffer.activity_handlers=[]
+        ui_buffer.activity_handlers=[]
         self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
-        ui.buffer.activity_handlers.append(self.top_bar.update)
+        ui_buffer.activity_handlers.append(self.top_bar.update)
         self.main_window=ui.Window(self.theme_manager,"Main")
         self.command_line=ui.Input(self.theme_manager)
         self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
-        ui.buffer.activity_handlers.append(self.bottom_bar.update)
+        ui_buffer.activity_handlers.append(self.bottom_bar.update)
         self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
         sp=ui.VerticalSplit(self.main_window,self.roster_window)
@@ -417,13 +417,13 @@ class Application(jabber.Client,tls.TLSHandler):
         self.status_window=None
 
     def layout_horizontal(self):
-        ui.buffer.activity_handlers=[]
+        ui_buffer.activity_handlers=[]
         self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
-        ui.buffer.activity_handlers.append(self.top_bar.update)
+        ui_buffer.activity_handlers.append(self.top_bar.update)
         self.main_window=ui.Window(self.theme_manager,"Main")
         self.command_line=ui.Input(self.theme_manager)
         self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
-        ui.buffer.activity_handlers.append(self.bottom_bar.update)
+        ui_buffer.activity_handlers.append(self.bottom_bar.update)
         self.roster_window=ui.Window(self.theme_manager,"Roster",1)
         sp=ui.HorizontalSplit(self.top_bar,self.roster_window,self.main_window,self.bottom_bar,{})
         self.screen.set_content(sp)
@@ -917,7 +917,7 @@ class Application(jabber.Client,tls.TLSHandler):
         for alias,value in self.aliases.items():
             print >>f,"alias",alias,value
 
-        for table in ui.keytable.keytables:
+        for table in ui_keytable.keytables:
             for keyname,funame,descr in table.get_changed_bindings():
                 if funame:
                     print >>f,"bind",funame,table.name,keyname
@@ -1032,7 +1032,7 @@ class Application(jabber.Client,tls.TLSHandler):
         cmd=args.shift()
         if not cmd:
             self.__logger.info("Available commands:")
-            for tb in ui.cmdtable.command_tables:
+            for tb in ui_cmdtable.command_tables:
                 tname=tb.name[0].upper()+tb.name[1:]
                 if tb.active:
                     active="active"
@@ -1047,10 +1047,10 @@ class Application(jabber.Client,tls.TLSHandler):
             cmd=cmd[1:]
 
         try:
-            cmd=ui.cmdtable.lookup_command(cmd,1)
+            cmd=ui_cmdtable.lookup_command(cmd,1)
         except KeyError:
             try:
-                cmd=ui.cmdtable.lookup_command(cmd,0)
+                cmd=ui_cmdtable.lookup_command(cmd,0)
             except KeyError:
                 self.__logger.error(u"Unknown command: "+`cmd`)
                 return
@@ -1103,14 +1103,14 @@ class Application(jabber.Client,tls.TLSHandler):
         args.finish()
         formatted_list=[]
         i=1
-        for b in ui.buffer.buffer_list:
+        for b in ui_buffer.buffer_list:
             if not b:
                 continue
             formatted_list+=self.theme_manager.format_string("buffer_on_list",b.info)
             i+=1
         params={
                 "buffers_on_list": formatted_list,
-                "buffer_count": len(ui.buffer.buffer_list),
+                "buffer_count": len(ui_buffer.buffer_list),
         }
         self.status_buf.append_themed("buffer_list",params)
         self.status_buf.update(1)
@@ -1141,7 +1141,7 @@ class Application(jabber.Client,tls.TLSHandler):
 
     def format_keytables(self,attr,params):
         r=[]
-        for table in ui.keytable.keytables:
+        for table in ui_keytable.keytables:
             p={ "name": table.name, "priority": table.prio,
                 "bindings": self.format_keybindings,
                 "unbound": self.format_unbound_keyfunctions}
@@ -1149,7 +1149,7 @@ class Application(jabber.Client,tls.TLSHandler):
         return r
 
     def format_keybindings(self,attr,params):
-        table=ui.keytable.lookup_table(params["name"])
+        table=ui_keytable.lookup_table(params["name"])
         r=[]
         for keyname,funame,desc in table.get_bindings():
             p={ "table": table.name, "key": keyname,
@@ -1158,7 +1158,7 @@ class Application(jabber.Client,tls.TLSHandler):
         return r
 
     def format_unbound_keyfunctions(self,attr,params):
-        table=ui.keytable.lookup_table(params["name"])
+        table=ui_keytable.lookup_table(params["name"])
         r=[]
         for f in table.get_unbound_functions():
             p={ "table": table.name, "function": f.name,

@@ -18,11 +18,11 @@ import curses
 import re
 import logging
 
-import buffer
-import keytable
-import cmdtable
-from widget import Widget
-from status_bar import StatusBar
+from cjc.ui import buffer
+from cjc.ui import keytable
+from cjc.ui import cmdtable
+from cjc.ui.widget import Widget
+from cjc.ui.status_bar import StatusBar
 from cjc import common
 
 control_re=re.compile("[\x00-\x1f\x7f]",re.UNICODE)

@@ -20,9 +20,9 @@ import curses.textpad
 import string
 from types import ListType,TupleType
 
-import keytable
+from cjc.ui import keytable
 from cjc import common
-from input_widget import InputWidget
+from cjc.ui.input_widget import InputWidget
 
 class ListInput(InputWidget):
     def __init__(self,abortable,required,default,values,multi=0):
