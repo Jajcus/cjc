@@ -1,3 +1,13 @@
+2004-03-23  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- register libxml2 error handler, so warnings about bad XML (relative
+	  'vcard-temp' namespace) won't clutter the screen
+	- allow roster name as /info argument
+
+	* plugins/vcard.py:
+	- basic /whois command
+
 2004-02-24  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/presence.py:
