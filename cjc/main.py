@@ -82,7 +82,15 @@ global_commands={
 	"unalias": ("cmd_unalias",
 		"/unalias name",
 		"Undefines an alias for command."),
-
+	"bind": ("cmd_bind",
+		"/bind [function [[table] keyname]]",
+		"Without arguments - shows current keybindings otherwise binds"
+		" given function to a key. If keyname is not given user will be"
+		" asked to press one. If a table is given only the function is bound"
+		" in that table, otherwise in all tables that define it."),
+	"unbind": ("cmd_unbind",
+		"/unbind [table] keyname",
+		"Unbinds given key."),
 }
 
 global_settings={
@@ -128,7 +136,10 @@ global_theme_formats=(
 	("buffer_inactive",""),
 	("buffer_active1","%[default]%(buffer_num)i"),
 	("buffer_active2","%[warning]%(buffer_num)i"),
-	("buffer_active3","%[error]%(buffer_num)i"),
+	("keybindings","%[info]Current key bindings:\n%{tables}"),
+	("keytable","%[info] table %(name)s:\n%{bindings}%{unbound}"),
+	("keybinding","%[info]  %(key)-10s %(function)-20s %(description)s\n"),
+	("keyfunction","%[info]             %(function)-20s %(description)s\n"),
 	("certificate","  Subject: %(subject)s\n"
 			"  Issuer: %(issuer)s\n"
 			"  Serial number: %(serial_number)s\n"
@@ -893,6 +904,41 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 	def cmd_theme(self,args):
 		self.theme_manager.command(args)
 
+	def cmd_bind(self,args):
+		self.status_buf.append_themed("keybindings",{"tables":self.format_keytables})
+		self.status_buf.update()
+
+	def cmd_unbind(self):
+		pass
+
+	def format_keytables(self,attr,params):
+		r=[]
+		for table in ui.keytable.keytables:
+			p={ "name": table.name, "priority": table.prio, 
+				"bindings": self.format_keybindings,
+				"unbound": self.format_unbound_keyfunctions}
+			r+=self.theme_manager.format_string("keytable",p)
+		return r
+		
+	def format_keybindings(self,attr,params):
+		table=ui.keytable.lookup_table(params["name"])
+		r=[]
+		for keyname,funame,desc in table.get_bindings():
+			p={ "table": table.name, "key": keyname, 
+				"function": funame, "description": desc}
+			r+=self.theme_manager.format_string("keybinding",p)
+		return r
+	
+	def format_unbound_keyfunctions(self,attr,params):
+		table=ui.keytable.lookup_table(params["name"])
+		r=[]
+		for f in table.get_unbound_functions():
+			p={ "table": table.name, "function": f.name, 
+				"description": f.descr}
+			r+=self.theme_manager.format_string("keyfunction",p)
+		return r
+		
+
 	def exit_request(self,reason):
 		if self.stream:
 			if reason:
@@ -1106,7 +1152,7 @@ from ui.keytable import KeyFunction
 default_ktb=ui.keytable.KeyTable("default",0,(
 			KeyFunction("command()",
 				Application.key_command,
-				"Execute command"),
+				"Execute command <arg>"),
 		))
 global_ktb=ui.keytable.KeyTable("global",100,(
 			KeyFunction("resize",

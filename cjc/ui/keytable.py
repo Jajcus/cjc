@@ -61,7 +61,7 @@ class KeyTable:
 	def __init__(self,name,prio,content):
 		self.name=name
 		self.prio=prio
-		self.keytable={}
+		self.orig_keytable={}
 		self.funtable={}
 		for x in content:
 			if isinstance(x,KeyBinding):
@@ -81,7 +81,8 @@ class KeyTable:
 				raise "%r is not a KeyBinding nor a KeyFunction" % (x,)
 			if binding:
 				for k in binding.keys:
-					self.keytable[k]=(fun,binding.arg)
+					self.orig_keytable[k]=(fun,binding.arg)
+		self.keytable=self.orig_keytable
 		self.object=None
 		self.active=0
 		self.default_handler=None
@@ -108,12 +109,78 @@ class KeyTable:
 			try:
 				fun=self.lookup_function(fun)
 			except KeyError:
-				fun=lookup_function(fun)
+				fun=lookup_function(fun,1)
 			self.keytable[(c,meta)]=fun,arg
 		fun.invoke(self.object,arg)
 		
+	def has_function(self,name):
+		return self.funtable.has_key(name)
+
 	def lookup_function(self,name):
 		return self.funtable[name]
+
+	def get_bindings(self,only_new=0):
+		ret=[]
+		for (c,meta),(fun,arg) in self.keytable.items():
+			if only_new and self.orig_keytable.has_key((c,meta)):
+				# function name from original keybindings may 
+				# have not be resolved yet
+				ofun,arg=self.orig_keytable[c,meta]
+				if isinstance(ofun,KeyFunction):
+					if (ofun,arg)==(fun,arg):
+						continue
+				elif (ofun,arg)==(fun.name,arg):
+					continue
+			keyname=keycode_to_name(c,meta)
+			if not isinstance(fun,KeyFunction):
+				fun=lookup_function(fun)
+			if fun.accepts_arg:
+				if arg:
+					funame="%s(%s)"  % (fun.name,arg)
+				else:
+					funame="%s()"  % (fun.name,)
+			else:
+				funame=fun.name
+			descr=fun.descr
+			if descr and arg is not None:
+				descr=descr.replace("<arg>",arg)
+			ret.append((keyname,funame,descr))
+		ret.sort()
+		return ret
+		
+	def get_changed_bindings(self):
+		ret=self.get_bindings(1)
+		for (c,meta) in self.orig_keytable.keys():
+			if not self.keytable.has_key((c,meta)):
+				ret.append(keycode_to_name(c,meta),None,None)
+		return ret
+
+	def get_unbound_functions(self):
+		kl=self.funtable.keys()
+		kl.sort()
+		ret=[self.funtable[k] for k in kl]
+		for f,arg in self.keytable.values():
+			if f in ret:
+				ret.remove(f)
+		return ret
+
+	def bind(self,binding):
+		try:
+			fun=self.lookup_function(binding.fun)
+		except KeyError:
+			try:
+				fun=lookup_function(binding.fun)
+			except KeyError:
+				fun=binding.fun
+		for k in binding.keys:
+			self.keytable[k]=(fun,binding.arg)
+
+	def unbind(self,keyname):
+		(c,meta)=keyname_to_code(keyname)
+		try:
+			del self.keytable[c,meta]
+		except KeyError:
+			pass
 
 def keyname_to_code(name):
 	if name.startswith("M-") or name.startswith("m-") or name.startswith("^["):
@@ -123,6 +190,10 @@ def keyname_to_code(name):
 		meta=0
 	if hasattr(curses,"KEY_"+name.upper()):
 		return getattr(curses,"KEY_"+name.upper()),meta
+	if name.upper()=="SPACE":
+		return 32,meta
+	if name.upper()=="ESCAPE":
+		return 27,meta
 	if len(name)==2 and name[0]=="^":
 		c=ord(name[1].upper())
 		if c=="?":
@@ -150,6 +221,10 @@ def keycode_to_name(code,meta):
 			name="F"+name[2:-1]
 	elif code>=128:
 		name="\\%03o" % (code,)
+	elif code==27:
+		name="ESCAPE"
+	elif code==32:
+		name="SPACE"
 	else:
 		name=curses.keyname(code)
 	if meta:
@@ -199,9 +274,9 @@ def deactivate(name,object=None):
 	table.default_handler=None
 	table.input_window=None
 
-def lookup_function(name):
+def lookup_function(name,active_only=0):
 	for ktb in keytables:
-		if not ktb.active:
+		if active_only and not ktb.active:
 			continue
 		try:
 			return ktb.lookup_function(name)
@@ -256,3 +331,17 @@ def keypressed():
 		common.print_exception()
 	meta=0
 	return 1
+
+def bind(keyname,fun,table=None):
+	binding=KeyBinding(keyname,fun)
+	if table:
+		return table.bind(binding)
+	for t in keytables:
+		if t.has_function(binding.fun):
+			t.bind(binding)
+
+def unbind(keyname,table=None):
+	if table:
+		return table.unbind(keyname)
+	for t in keytables:
+		t.unbind(keyname)
