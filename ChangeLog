@@ -1,5 +1,8 @@
 2004-01-24  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/main.py:
+	- replace default DiscoInfo with CJC's own
+
 	* plugins/message.py, plugins/presence.py, plugins/version.py:
 	- disco features fix ('message' and 'pressence' removed, 'jabber:iq:version' added)
 
