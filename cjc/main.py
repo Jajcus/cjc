@@ -10,6 +10,7 @@ from types import StringType,UnicodeType,IntType,ListType,TupleType
 import locale
 import curses
 import threading
+import socket
 
 import pyxmpp
 
@@ -348,7 +349,12 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.error(u"Can't connect - password not given")
 			return
 		self.info(u"Connecting...")
-		self.connect()
+		try:
+			self.connect()
+		except pyxmpp.StreamError,e:
+			self.error("Connection failed: "+str(e))
+		except (socket.error),e:
+			self.error("Connection failed: "+e.args[1])
 	
 	def cmd_disconnect(self,args):
 		self.disconnect()
