@@ -29,6 +29,8 @@ class CommandCompletion(Completion):
 	def complete(self,word):
 		matches=[]
 		for t in cmdtable.command_tables:
+			if not t.active:
+				continue
 			for cmd in t.get_commands():
 				if cmd.name.startswith(word) and cmd not in matches:
 					matches.append(cmd)
