@@ -59,12 +59,18 @@ class Buffer:
 
     def close(self):
         self.active=0
-        n=buffer_list.index(self)
+        try:
+            n=buffer_list.index(self)
+        except:
+            n=None
         if self.window:
             window=self.window
             self.window=None
             common.debug("Buffer has window")
-            i=n
+            if n:
+                i=n
+            else:
+                i=1
             while i>0:
                 i-=1
                 if buffer_list[i] and not buffer_list[i].window:
@@ -77,9 +83,10 @@ class Buffer:
                 window.set_buffer(None)
                 window.update()
                 window=None
-        buffer_list[n]=None
-        for f in activity_handlers:
-            f()
+        if n:
+            buffer_list[n]=None
+            for f in activity_handlers:
+                f()
 
     def get_number(self):
         return buffer_list.index(self)+1
