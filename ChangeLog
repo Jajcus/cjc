@@ -1,3 +1,8 @@
+2004-07-26  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- info about registration added to the 'Quickstart'
+
 2004-07-21  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/roster.py:
