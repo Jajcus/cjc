@@ -53,7 +53,7 @@ class ChoiceInput(InputWidget):
                 prompt.append(p)
             else:
                 raise InputError,"Bad choice value: %r" % (c,)
-        self.prompt=u"[%s]: " % (string.join(prompt,"/"))
+        self.prompt=u" [%s]: " % (string.join(prompt,"/"))
         self.content=u""
         self.default=default
         self.pos=0
@@ -170,7 +170,7 @@ class ChoiceInput(InputWidget):
     def update(self,now=1,refresh=0):
         self.screen.lock.acquire()
         try:
-            if not active:
+            if not self.screen.active:
                 return
             if refresh:
                 self.win.move(0,0)
