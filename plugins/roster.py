@@ -262,7 +262,8 @@ class Plugin(PluginBase):
 		try:
 			item=self.cjc.roster.rm_item(user)
 		except KeyError:
-			self.cjc.error(u"There is not %s in roster" % (user.as_unicode()))
+			self.cjc.error(u"There is no %s in roster" % (user.as_unicode()))
+			return
 		iq=item.make_roster_push()
 		self.cjc.stream.send(iq)
 
