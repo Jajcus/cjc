@@ -1,3 +1,11 @@
+2004-01-18  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/xmlconsole.py:
+	- disable xmlconsole after closing it (fix to bug #3180)
+
+	* plugins/version.py:
+	- use .newTextChild instead .newChild to create text nodes
+
 2003-12-07  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/ui/list_buffer.py:
