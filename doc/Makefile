@@ -1,7 +1,10 @@
 .PHONY: validate
 .SUFFIXES: .xml .fo .dvi .ps .pdf .html
 
-all: manual.html
+XSLTPROC=/usr/bin/xsltproc
+
+all: 
+	[ "x$(XSLTPROC)" != "x" ] && [ -x "$(XSLTPROC)" ] && make manual.html || :
 
 .fo.pdf:
 	pdfxmltex $<

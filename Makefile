@@ -32,10 +32,10 @@ doc/manual.html: doc/manual.xml
 	cd doc; make
 
 version:
-	if test -n "$(RELEASE)" ; then \
+	if [ "x$(RELEASE)" != "x" ]; then \
 		SNAPSHOT="" ; \
 	else \
-		SNAPSHOT=.`find . -name "*.py" '!' -name "version.py" -printf '%TY%Tm%Td_%TH%TM\n' | sort -r | head -1` ; \
+		SNAPSHOT=.`find . -name "*.py" '!' -name "version.py" -printf '%TY%Tm%Td_%TH%TM\n' | sort -r | head -1 2>/dev/null || "unknown"` ; \
 	fi ; \
 	echo "version='$(BASE_VERSION)$$SNAPSHOT'" > cjc/version.py ;
 
