@@ -282,7 +282,12 @@ class ThemeManager:
 		return format.replace("%%(%s)" % key,"%%%%(%s)" % key)
 
 	def find_format_param(self,key,params):
-		if key in ("now","timestamp"):
+		if key.startswith("$"):
+			if os.environ.has_key(key[1:]):
+				val=os.environ[key[1:]]
+			else:
+				return None
+		elif key in ("now","timestamp"):
 			val=time.time()
 		elif key in ("me","jid"):
 			if self.app.stream:
