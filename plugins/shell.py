@@ -26,6 +26,9 @@ class Plugin(PluginBase):
 
 	def cmd_shell(self,args):
 		command=args.all()
+		if not command or not command.strip():
+			self.error("Command must be given") 
+			return
 		try:
 			ret=os.system(command)
 		except OSError,e:
@@ -34,6 +37,9 @@ class Plugin(PluginBase):
 
 	def cmd_pipe_in(self,args):
 		command=args.all()
+		if not command or not command.strip():
+			self.error("Command must be given") 
+			return
 		try:
 			pipe=os.popen(command,"r")
 		except OSError,e:
@@ -60,6 +66,9 @@ class Plugin(PluginBase):
 
 	def cmd_pipe_out(self,args):
 		command=args.all()
+		if not command or not command.strip():
+			self.error("Command must be given") 
+			return
 		try:
 			pipe=os.popen(command,"w")
 		except OSError,e:
