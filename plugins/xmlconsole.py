@@ -14,6 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+import logging
+
 import string
 from types import UnicodeType,StringType
 import curses
@@ -37,6 +39,28 @@ theme_formats=(
     ("xmlconsole.day_change","%{@day_change}"),
 )
 
+class DataInHandler(logging.Handler):
+    def __init__(self,plugin):
+        logging.Handler.__init__(self,level=logging.CRITICAL)
+        self.plugin=plugin
+    def emit(self,record):
+        data=record.args[0]
+        if not data or data in (" ","\n"):
+            # skip keepalive data (but we are not sure it is keepalive)
+            return
+        self.plugin.show_data(record.args[0],"in")
+
+class DataOutHandler(logging.Handler):
+    def __init__(self,plugin):
+        logging.Handler.__init__(self,level=logging.CRITICAL)
+        self.plugin=plugin
+    def emit(self,record):
+        data=record.args[0]
+        if not data or data in (" ","\n"):
+            # skip keepalive data (but we are not sure it is keepalive)
+            return
+        self.plugin.show_data(record.args[0],"out")
+
 class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
@@ -50,40 +74,20 @@ class Plugin(PluginBase):
             "pretty_print": 0,
             "check": 1,
             }
-        app.add_event_handler("stream created",self.ev_stream_created)
-        app.add_event_handler("stream closed",self.ev_stream_closed)
         app.add_event_handler("day changed",self.ev_day_changed)
         ui.activate_cmdtable("xmlconsole",self)
         self.away_saved_presence=None
         self.buffer=None
-        self.saved_data_in_cb=None
-        self.saved_data_out_cb=None
-
-    def ev_stream_created(self,event,arg):
-        if not self.buffer:
-            return
-        self.setup_stream_callbacks(arg)
-
-    def ev_stream_closed(self,event,arg):
-        if not self.buffer:
-            return
-        self.setup_stream_callbacks(None)
+        self.data_in_handler=DataInHandler(self)
+        self.data_out_handler=DataOutHandler(self)
+        logging.getLogger("pyxmpp.Stream.in").addHandler(self.data_in_handler)
+        logging.getLogger("pyxmpp.Stream.out").addHandler(self.data_out_handler)
 
     def ev_day_changed(self,event,arg):
         if not self.buffer:
             return
         self.buffer.append_themed("xmlconsole.day_change",{},activity_level=0)
         self.buffer.update()
-
-    def setup_stream_callbacks(self,stream):
-        if stream:
-            self.saved_data_in_cb=stream.data_in
-            self.saved_data_out_cb=stream.data_out
-            stream.data_in=self.data_in
-            stream.data_out=self.data_out
-        else:
-            self.saved_data_in_cb=None
-            self.saved_data_out_cb=None
 
     def user_input(self,s):
         if not self.cjc.stream:
@@ -118,18 +122,13 @@ class Plugin(PluginBase):
                 "xmlconsole buffer",self)
         self.buffer.user_input=self.user_input
         self.buffer.update()
-        if self.cjc.stream:
-            self.setup_stream_callbacks(self.cjc.stream)
+        self.data_in_handler.setLevel(logging.DEBUG)
+        self.data_out_handler.setLevel(logging.DEBUG)
         self.cjc.screen.display_buffer(self.buffer)
 
     def cmd_close(self,args):
-        if self.cjc.stream:
-            if self.saved_data_in_cb:
-                self.cjc.stream.data_in=self.saved_data_in_cb
-            if self.saved_data_out_cb:
-                self.cjc.stream.data_out=self.saved_data_out_cb
-        self.saved_data_in_cb=None
-        self.saved_data_out_cb=None
+        self.data_in_handler.setLevel(logging.CRITICAL)
+        self.data_out_handler.setLevel(logging.CRITICAL)
         self.buffer.close()
         self.buffer=None
 
@@ -152,17 +151,9 @@ class Plugin(PluginBase):
         self.buffer.append_themed("xmlconsole."+dir,data)
         self.buffer.update()
 
-    def data_in(self,data):
-        if self.saved_data_in_cb:
-            self.saved_data_in_cb(data)
-        self.show_data(data,"in")
-
-    def data_out(self,data):
-        if self.saved_data_in_cb:
-            self.saved_data_out_cb(data)
-        self.show_data(data,"out")
-
     def unload(self):
+        logging.getLogger("pyxmpp.Stream.in").removeHandler(self.data_in_handler)
+        logging.getLogger("pyxmpp.Stream.in").removeHandler(self.data_out_handler)
         ui.uninstall_cmdtable("xmlconsole buffer")
         ui.uninstall_cmdtable("xmlconsole")
         self.cjc.remove_event_handler("stream created",self.ev_stream_created)
