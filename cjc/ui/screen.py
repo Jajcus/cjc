@@ -81,10 +81,10 @@ class Screen(commands.CommandHandler):
 	def redraw(self):
 		self.lock.acquire()
 		try:
+			self.scr.clear()
+			self.scr.noutrefresh()
 			if self.content:
 				self.content.redraw(0)
-			else:
-				self.scr.clear()
 			curses.doupdate()
 		finally:
 			self.lock.release()
