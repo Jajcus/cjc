@@ -272,7 +272,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 	def run(self,screen):
 		self.screen=screen
-		self.theme_manager=themes.ThemeManager()
+		self.theme_manager=themes.ThemeManager(self)
 		self.theme_manager.set_default_attrs(global_theme_attrs)
 		self.theme_manager.set_default_formats(global_theme_formats)
 		screen.set_default_command_handler(self)
@@ -713,19 +713,28 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 	def get_user(self,name):
 		if name.find("@")>=0:
+			if self.roster:
+				try:
+					ritems=self.roster.items_by_name(name)
+				except KeyError:
+					ritems=None
+				if ritems:
+					if len(ritems)==1:
+						return ritems[0].jid()
 			try:
 				return pyxmpp.JID(name)
 			except pyxmpp.JIDError:
-				pass
+				self.error(u"Invalid JID: %s" % (name,))
+				return None
 
 		if not self.roster:
-			self.error("%s not found in roster" % (name,))
+			self.error(u"%s not found in roster" % (name,))
 			return None
 
 		try:
 			ritems=self.roster.items_by_name(name)
 		except KeyError:
-			self.error("%s not found in roster" % (name,))
+			self.error(u"%s not found in roster" % (name,))
 			return None
 		
 		if ritems:
