@@ -1078,6 +1078,11 @@ class Application(jabber.Client,tls.TLSHandler):
 		try:
 			ritems=self.roster.items_by_name(name)
 		except KeyError:
+			try:
+				jid=pyxmpp.JID(name)
+				return self.roster.item_by_jid(jid).jid()
+			except (ValueError,pyxmpp.JIDError,KeyError):
+				pass
 			self.error(u"%s not found in roster" % (name,))
 			return None
 		
