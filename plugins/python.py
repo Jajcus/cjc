@@ -29,7 +29,11 @@ class Plugin(PluginBase):
         if not code or not code.strip():
             self.error("Python code must be given")
             return
-        vars={"app":self.cjc}
+        vars={"app":self.cjc,"cjc":self.cjc,
+                "debug":self.debug,
+                "info":self.info,
+                "warning":self.warning,
+                "error":self.error}
         try:
             try:
                 r=eval(code,vars,vars)
@@ -37,14 +41,24 @@ class Plugin(PluginBase):
                 r=None
                 exec code in vars
         except:
-            self.cjc.print_exception()
+            self.logger.exception("Exception caught in /python code")
             return
         if r is not None:
             self.info(repr(r))
 
 ui.CommandTable("python",50,(
     ui.Command("python",Plugin.cmd_python,
-        "/python code...",
-        "Executes given python code"),
+        "/python code|expression",
+        "Executes given python code or expression.\n"
+        "In the code's namespace following names are defined:\n"
+        "  cjc -- CJC Application object.\n"
+        "  debug(str,args) -- Passes str%args to debug output.\n"
+        "  info(str,args) -- Prints str%args as an info message to the status window.\n"
+        "  warning(str,args) -- Prints str%args as a warning message to the status window.\n"
+        "  error(str,args) -- Prints str%args as an error message to the status window.\n"
+        "If expression is given and evaluates to not None then"
+        " it's result will be printed."
+        " '/python expression' is equivalent to '/python info(expression)'",
+        ("opaque",)),
     )).install()
 # vi: sts=4 et sw=4
