@@ -16,24 +16,24 @@ theme_attrs=(
 theme_formats=(
     ("message.received",
 """------------------
-%[message.subject]From:    %(from)s
-%[message.sender]Subject: %(subject)s
+%[message.sender]From:    %(from)s
+%[message.subject]Subject: %(subject)s
 
 %[message.body]%(body)s
 ------------------
 """),
     ("message.sent",
 """------------------
-%[message.subject]To:      %(to)s
-%[message.sender]Subject: %(subject)s
+%[message.sender]To:      %(to)s
+%[message.subject]Subject: %(subject)s
 
 %[message.body]%(body)s
 ------------------
 """),
     ("message.composing",
 """------------------
-%[message.subject]To:      %(from)s
-%[message.sender]Subject: %(subject)s
+%[message.sender]To:      %(from)s
+%[message.subject]Subject: %(subject)s
 
 %[message.body]%(body)s
 ------------------
