@@ -23,14 +23,15 @@ from cmdtable import set_default_handler as set_default_command_handler
 from complete import Completion
 
 def init():
-	screen=curses.initscr()
-	if curses.has_colors():
-		curses.start_color()
-	curses.cbreak()
-	curses.meta(1)
-	curses.noecho()
-	curses.nonl()
-	return Screen(screen)
+    screen=curses.initscr()
+    if curses.has_colors():
+        curses.start_color()
+    curses.cbreak()
+    curses.meta(1)
+    curses.noecho()
+    curses.nonl()
+    return Screen(screen)
 
 def deinit():
-	curses.endwin()
+    curses.endwin()
+# vi: sts=4 et sw=4
