@@ -247,7 +247,7 @@ class Screen(commands.CommandHandler):
 				
 		if self.escape:
 			if ch==ord("\t"):
-				self.focus_next()
+				self.cmd_next()
 				return
 		else:
 			if ch==0x0c:
