@@ -1,3 +1,8 @@
+2004-02-08  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- 'import select' removed (not needed)
+
 2004-01-24  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/main.py:
