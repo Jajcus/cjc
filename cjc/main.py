@@ -91,32 +91,32 @@ global_theme_formats=(
     ("info",u"%[info][%(T:now)s] %(msg)s\n"),
     ("debug",u"%[debug][%(T:now)s] %(msg)s\n"),
     ("day_change",u"%[warning][%(T:now:%c)s] And here comes a brand new day...\n"),
-    ("buffer_visible",""),
-    ("buffer_inactive",""),
-    ("buffer_active1","%[default]%(buffer_num)i"),
-    ("buffer_active2","%[warning]%(buffer_num)i"),
-    ("buffer_list","[%(T:now)s] Buffers: \n%{buffers_on_list}"),
-    ("buffer_on_list","[%(T:now)s] %(buffer_num)i. %{buffer_descr}\n"),
-    ("keybindings","%[info]Current key bindings:\n%{tables}"),
-    ("keytable","%[info] table %(name)s:\n%{bindings}%{unbound}"),
-    ("keybinding","%[info]  %(key)-10s %(function)-20s %(description)s\n"),
-    ("keyfunction","%[info]         %(function)-20s %(description)s\n"),
-    ("certificate","  Subject: %(subject)s\n"
+    ("buffer_visible",u""),
+    ("buffer_inactive",u""),
+    ("buffer_active1",u"%[default]%(buffer_num)i"),
+    ("buffer_active2",u"%[warning]%(buffer_num)i"),
+    ("buffer_list",u"[%(T:now)s] Buffers: \n%{buffers_on_list}"),
+    ("buffer_on_list",u"[%(T:now)s] %(buffer_num)i. %{buffer_descr}\n"),
+    ("keybindings",u"%[info]Current key bindings:\n%{tables}"),
+    ("keytable",u"%[info] table %(name)s:\n%{bindings}%{unbound}"),
+    ("keybinding",u"%[info]  %(key)-10s %(function)-20s %(description)s\n"),
+    ("keyfunction",u"%[info]         %(function)-20s %(description)s\n"),
+    ("certificate",u"  Subject: %(subject)s\n"
             "  Issuer: %(issuer)s\n"
             "  Serial number: %(serial_number)s\n"
             "  Valid not before: %(not_before)s\n"
             "  Valid not after: %(not_after)s\n"),
-    ("certificate_error","%[warning]Server certificate failed verifiaction.\n\n"
+    ("certificate_error",u"%[warning]Server certificate failed verifiaction.\n\n"
         "%[info]Server has presented following certificate chain:\n"
         "%{chain}\n"
         "The rejected certificate is:\n"
         "%{certificate}\n"
         "%[error]Verification failed with error #%(errnum)i: %(errdesc)s\n"),
-    ("certificate_remember","%[info]Server '%(who)s' has presented following certificate:\n\n"
+    ("certificate_remember",u"%[info]Server '%(who)s' has presented following certificate:\n\n"
         "%{certificate}\n"
         "Verification of that certificat failed.\n"
         "Should it be accepted in future sessions anyway?\n"),
-    ("tls_error_ignored","%[info]Certificate verification error #%(errnum)i:"
+    ("tls_error_ignored",u"%[info]Certificate verification error #%(errnum)i:"
             " '%(errdesc)s' ignored - peer certificate is known as trustworthy.\n"),
 )
 

@@ -105,7 +105,7 @@ class ThemeManager:
                 filename=os.path.join(self.app.home_dir,"themes",filename)
         f=open(filename,"r")
         for l in f.xreadlines():
-            command=CommandArgs(l.strip())
+            command=CommandArgs(unicode(l,"utf-8").strip())
             self.command(command,1)
         f.close()
         if self.app and self.app.screen:
@@ -127,10 +127,10 @@ class ThemeManager:
         attr_names2.sort()
         for name in attr_names1+attr_names2:
             (fg,bg,attr,fallback)=self.attr_defs[name]
-            cmd=CommandArgs("attr")
+            cmd=CommandArgs(u"attr")
             cmd.add_quoted(name)
             if attr is None:
-                cmd.add_quoted("empty")
+                cmd.add_quoted(u"empty")
             else:
                 cmd.add_quoted(color2name(fg))
                 cmd.add_quoted(color2name(bg))
@@ -144,48 +144,48 @@ class ThemeManager:
         format_names2.sort()
         for name in format_names1+format_names2:
             format=self.formats[name]
-            cmd=CommandArgs("format")
+            cmd=CommandArgs(u"format")
             cmd.add_quoted(name)
             cmd.add_quoted(format)
-            print >>f,cmd.all()
+            print >>f,cmd.all().encode("utf-8")
         f.close()
 
     def command(self,args,safe=0):
         cmd=args.shift()
-        if cmd=="save" and not safe:
+        if cmd==u"save" and not safe:
             filename=args.shift()
             args.finish()
             self.save(filename)
             return
-        if cmd=="load" and not safe:
+        if cmd==u"load" and not safe:
             filename=args.shift()
             args.finish()
             self.load(filename)
             return
-        if cmd=="attr":
+        if cmd==u"attr":
             name=args.shift()
             arg1=args.shift()
-            if arg1=="empty":
+            if arg1==u"empty":
                 fg,bg,attr,fallback=(None,)*4
             else:
                 try:
                     fg=name2color(arg1)
                     bg=name2color(args.shift())
                 except KeyError,e:
-                    common.error("Unknown color name: %s" % (e,))
+                    common.error(u"Unknown color name: %s" % (e,))
                     return
                 if None in (fg,bg) and fg!=bg:
-                    common.error("Both foreground and background colors must be 'none' or none of them." % (e,))
+                    common.error(u"Both foreground and background colors must be 'none' or none of them." % (e,))
                     return
                 try:
                     attr=name2attr(args.shift())
                     fallback=name2attr(args.shift())
                 except KeyError,e:
-                    common.error("Unknown attribute name: %s" % (e,))
+                    common.error(u"Unknown attribute name: %s" % (e,))
                     return
             args.finish()
             self.set_attr(name,fg,bg,attr,fallback)
-        if cmd=="format":
+        if cmd==u"format":
             name=args.shift()
             format=args.shift()
             args.finish()
@@ -279,14 +279,14 @@ class ThemeManager:
 
     def do_format_string(self,format,attr,params):
         if type(params) in (UnicodeType,StringType):
-            params={"msg":params}
+            params={u"msg":params}
         else:
             params=params.copy()
         l=attr_sel_re.split(format,1)
         if len(l)==3:
             format=l[0]
             next_attr=l[1]
-            if next_attr.find("%")>=0:
+            if next_attr.find(u"%")>=0:
                 next_attr=self.substitute(next_attr,params)
             next=l[2]
         else:
@@ -295,7 +295,7 @@ class ThemeManager:
         l=formatted_re.split(format,1)
         if len(l)==3:
             before,name,after=l
-            if name.startswith("@"):
+            if name.startswith(u"@"):
                 val=name[1:]
             elif params.has_key(name):
                 val=params[name]
@@ -313,7 +313,7 @@ class ThemeManager:
                     f=self.formats[val]
                     ret+=self.do_format_string(f,attr,params)
                 else:
-                    format="%s%%%%{%s}%s" % (before,name,after)
+                    format=u"%s%%%%{%s}%s" % (before,name,after)
                     ret+=self.do_format_string(format,attr,params)
                     before=None
                     after=None
@@ -323,7 +323,7 @@ class ThemeManager:
                     ret+=self.do_format_string(next,next_attr,params)
                 return ret
             else:
-                format="%s%%%%{%s}%s" % (before,name,after)
+                format=u"%s%%%%{%s}%s" % (before,name,after)
                 return self.do_format_string(format,attr,params)
 
         s=self.substitute(format,params)
@@ -346,13 +346,13 @@ class ThemeManager:
                 s=format % params
                 break
             except (ValueError,TypeError),e:
-                s="[%s: %r, %r]" % (str(e),format,params)
+                s=u"[%s: %r, %r]" % (str(e),format,params)
                 break
             except KeyError,key:
                 key=key.args[0]
-                if key.find("?")>0:
+                if key.find(u"?")>0:
                     format=self.process_format_cond(format,key,params)
-                elif key.find(":")>0:
+                elif key.find(u":")>0:
                     format=self.process_format_param(format,key,params)
                 else:
                     val=self.find_format_param(key,params)
@@ -364,25 +364,25 @@ class ThemeManager:
         return format.replace(u"%%(%s)" % (key,),u"%%%%(%s)" % (key,))
 
     def find_format_param(self,key,params):
-        if key.startswith("$"):
+        if key.startswith(u"$"):
             if os.environ.has_key(key[1:]):
                 val=os.environ[key[1:]]
             else:
                 return None
-        elif key in ("now","timestamp"):
+        elif key in (u"now",u"timestamp"):
             val=datetime.datetime.now()
-        elif key in ("me","jid"):
+        elif key in (u"me",u"jid"):
             if self.app.stream:
                 val=self.app.jid
             else:
                 val=self.app.settings["jid"]
-        elif key=="buffers":
+        elif key==u"buffers":
             val=self.format_buffers
-        elif key=="program_name":
-            val="CJC"
-        elif key=="program_author":
-            val="Jacek Konieczny <jajcus@bnet.pl>"
-        elif key=="program_version":
+        elif key==u"program_name":
+            val=u"CJC"
+        elif key==u"program_author":
+            val=u"Jacek Konieczny <jajcus@bnet.pl>"
+        elif key==u"program_version":
             val=version.version
         else:
             return None
@@ -414,7 +414,7 @@ class ThemeManager:
             if not u":" in opt:
                 retval=opt
                 break
-            test,val=opt.split(":",1)
+            test,val=opt.split(u":",1)
             if value==test:
                 retval=val
                 break
@@ -424,7 +424,7 @@ class ThemeManager:
         return format
 
     def process_format_param(self,format,key,params):
-        sp=key.split(":",2)
+        sp=key.split(u":",2)
         if len(sp)==2:
             typ,param=sp
             form=None
@@ -437,7 +437,7 @@ class ThemeManager:
             if val is None:
                 return self.quote_format_param(format,key)
 
-        if typ=="T":
+        if typ==u"T":
             if form:
                 form=form.encode(self.encoding,"replace")
                 formatted=val.strftime(form)
@@ -445,42 +445,42 @@ class ThemeManager:
                 formatted=val.strftime("%H:%M")
             params[key]=unicode(formatted,self.encoding,"replace")
             return format
-        elif typ=="J":
+        elif typ==u"J":
             if not isinstance(val,pyxmpp.JID):
                 try:
                     val=pyxmpp.JID(val)
                 except pyxmpp.JIDError:
                     params[key]=""
                     return format
-            if form=="nick":
+            if form==u"nick":
                 rostername=self.app.get_user_info(val,"rostername")
                 if rostername:
                     params[key]=rostername
                 else:
                     params[key]=val.node
-            elif form=="node":
+            elif form==u"node":
                 params[key]=val.node
-            elif form=="domain":
+            elif form==u"domain":
                 params[key]=val.domain
-            elif form=="resource":
+            elif form==u"resource":
                 params[key]=val.resource
-            elif form=="bare":
+            elif form==u"bare":
                 params[key]=val.bare().as_unicode()
-            elif form in ("show","status"):
+            elif form in (u"show",u"status"):
                 pr=self.app.get_user_info(val,"presence")
-                if form=="show":
+                if form==u"show":
                     if pr is None or pr.get_type()=="unavailable":
-                        val="offline"
+                        val=u"offline"
                     elif pr.get_type()=="error":
-                        val="error"
+                        val=u"error"
                     else:
                         val=pr.get_show()
                         if not val or val=="":
-                            val="online"
-                elif form=="status":
+                            val=u"online"
+                elif form==u"status":
                     if pr is None:
                         val=""
-                    elif pr.get_type()=="error":
+                    elif pr.get_type()==u"error":
                         err=pr.get_error()
                         val=err.get_message()
                     else:
@@ -488,7 +488,7 @@ class ThemeManager:
                         if val is None:
                             val=""
                 params[key]=val
-            elif form in ("full",None):
+            elif form in (u"full",None):
                 params[key]=val.as_unicode()
             else:
                 ival=self.app.get_user_info(val,form)
