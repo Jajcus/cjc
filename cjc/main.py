@@ -155,6 +155,8 @@ class Application(jabber.Client,tls.TLSHandler):
         try:
             mod=__import__(name)
             plugin=mod.Plugin(self)
+            plugin.module=mod
+            plugin.sys_path=sys.path
             self.plugins[name]=plugin
         except:
             self.print_exception()
@@ -192,6 +194,30 @@ class Application(jabber.Client,tls.TLSHandler):
         del self.plugins[name]
         return True
 
+    def reload_plugin(self,name):
+        try:
+            plugin=self.plugins[name]
+        except KeyError:
+            self.error("Plugin %s is not loaded" % (name,))
+            return False
+        self.info("Reloading plugin %s..." % (name,))
+        r=plugin.unload()
+        if not r:
+            self.error("Plugin %s cannot be reloaded" % (name,))
+            return False
+        sys_path=sys.path
+        sys.path=plugin.sys_path
+        try:
+            mod=reload(plugin.module)
+            plugin=mod.Plugin(self)
+            plugin.module=mod
+            self.plugins[name]=plugin
+        except:
+            self.print_exception()
+            self.info("Plugin load failed")
+            del self.plugins[name]
+        sys.path=sys_path
+
     def load_plugins(self):
         sys_path=sys.path
         try:
@@ -213,6 +239,9 @@ class Application(jabber.Client,tls.TLSHandler):
                         self._load_plugin(name)
         finally:
             sys.path=sys_path
+
+    def get_plugin(self,name):
+        return self.plugins[name]
 
     def add_event_handler(self,event,handler):
         self.lock.acquire()
@@ -1000,6 +1029,14 @@ class Application(jabber.Client,tls.TLSHandler):
             return
         self.unload_plugin(name)
 
+    def cmd_reload_plugin(self,args):
+        name=args.shift()
+        args.finish()
+        if not name:
+            self.error("Plugin name missing.")
+            return
+        self.reload_plugin(name)
+
     def format_keytables(self,attr,params):
         r=[]
         for table in ui.keytable.keytables:
@@ -1369,7 +1406,10 @@ ui.CommandTable("global",100,(
         "Loads a plugin."),
     ui.Command("unload_plugin",Application.cmd_unload_plugin,
         "/unload_plugin name",
-        "Unloads a plugin."),
+        "Unloads a plugin. Loaded code is still remembered, but not active."),
+    ui.Command("reload_plugin",Application.cmd_reload_plugin,
+        "/reload_plugin name",
+        "Reloads a plugin."),
     )).install()
 
 def usage():

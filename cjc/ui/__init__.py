@@ -16,6 +16,7 @@ from keytable import deactivate as deactivate_keytable
 
 from cmdtable import CommandError,CommandTable,Command,CommandAlias,CommandArgs,run_command
 from cmdtable import install as install_cmdtable
+from cmdtable import uninstall as uninstall_cmdtable
 from cmdtable import activate as activate_cmdtable
 from cmdtable import deactivate as deactivate_cmdtable
 from cmdtable import set_default_handler as set_default_command_handler

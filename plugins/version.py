@@ -24,6 +24,17 @@ class Plugin(PluginBase):
             }
         ui.activate_cmdtable("version",self)
 
+    def unload(self):
+        try:
+            if self.cjc.stream:
+                self.cjc.stream.unset_iq_get_handler("query","jabber:iq:version")
+            if self.cjc.disco_info:
+                self.cjc.disco_info.remove_feature("jabber:iq:version")
+            ui.uninstall_cmdtable("version")
+        except:
+            self.cjc.print_exception()
+        return True
+
     def session_started(self,stream):
         self.cjc.stream.set_iq_get_handler("query","jabber:iq:version",self.version_get)
         self.cjc.disco_info.add_feature("jabber:iq:version")

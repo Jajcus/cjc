@@ -98,6 +98,15 @@ def install(command_table):
             break
     command_tables.insert(pos,command_table)
 
+def uninstall(name,object=None):
+    deactivate(name,object)
+    table=lookup_table(name)
+    if table:
+        try:
+            command_tables.remove(table)
+        except ValueError:
+            pass
+
 def lookup_table(name):
     for t in command_tables:
         if t.name==name:
