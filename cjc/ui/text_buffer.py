@@ -33,8 +33,12 @@ class TextBuffer(Buffer):
 			self.window.nl()
 		newl=0
 		s=s.split(u"\n")
-		for l in s:
+		ln=len(s)
+		for i in range(0,ln):
+			l=s[i]
 			if newl:
+				if i<ln-1 and self.window:
+					self.window.nl()
 				self.lines.append([])
 			if l:
 				self.lines[-1].append((attr,l))
@@ -71,8 +75,7 @@ class TextBuffer(Buffer):
 	def _append_line(self,s,attr):
 		if type(attr) is not IntType:
 			attr=self.theme_manager.attrs[attr]
-		self._append(s,attr)
-		self.lines.append([])
+		self._append(s+u"\n",attr)
 
 	def append_themed(self,format,params):
 		for attr,s in self.theme_manager.format_string(format,params):
