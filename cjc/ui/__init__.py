@@ -3,7 +3,7 @@ import curses
 
 from screen import Screen
 from text_buffer import TextBuffer
-from list_buffer import ListBuffer
+from list_buffer import ListBuffer,ListBufferError
 from window import Window
 from status_bar import StatusBar
 from input import Input

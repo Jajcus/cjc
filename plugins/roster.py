@@ -1,11 +1,12 @@
 import string
 import curses
+import re
 
 import pyxmpp
 import pyxmpp.roster
 
 from cjc.plugin import PluginBase
-from cjc.ui import ListBuffer
+from cjc.ui import ListBuffer,ListBufferError
 from cjc import common
 from cjc import ui
 
@@ -25,6 +26,10 @@ theme_formats=(
     ("roster.group_unknown", "not in roster:"),
     ("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)-20s [%(J:jid:show)s] %(J:jid:status)s"),
     ("roster.available", "%[roster.available_%(J:jid:show)s] %(aflag)s%(sflag)s%(name)-20s [%(J:jid:show)s] %(J:jid:status)s"),
+    ("roster.list", "[%(T:now)s] Roster:\n%{roster_groups}\n"),
+    ("roster.list_group", "[%(T:now)s]   %(group)s:\n%{roster_group_items}"),
+    ("roster.list_unavailable", "[%(T:now)s]   %{@roster.unavailable}\n"),
+    ("roster.list_available", "[%(T:now)s]   %{@roster.unavailable}\n"),
 )
 
 # virtual groups
@@ -125,14 +130,7 @@ class Plugin(PluginBase):
             self.extra_items.append((group,item))
         self.buffer.update()
 
-    def write_item(self,group,item):
-        common.debug("Roster.write_item(%r): %r" % (item,str(item)))
-        if not self.buffer.has_key((group,None)):
-            if group:
-                p={"group":group}
-                self.buffer.insert_themed((group,None),"roster.group",p)
-            else:
-                self.buffer.insert_themed((group,None),"roster.group_none",{})
+    def get_item_format_params(self,group,item,show_list):
         if isinstance(item,pyxmpp.JID):
             jid=item
             name=None
@@ -164,7 +162,6 @@ class Plugin(PluginBase):
             if not show:
                 show="online"
 
-        show_list=self.settings["show"]
         if subs=="remove":
             show_it=0
         elif "all" in show_list:
@@ -179,10 +176,7 @@ class Plugin(PluginBase):
             show_it=0
 
         if not show_it:
-            if self.buffer.has_key((group,jid)):
-                common.debug("Roster.write_item: removing item")
-                self.buffer.remove_item((group,jid))
-            return
+            return None
 
         p["ask"]=ask
         if not ask:
@@ -200,12 +194,37 @@ class Plugin(PluginBase):
             p["sflag"]=">"
         else:
             p["sflag"]="-"
+        p["available"]=available
+        return p
 
+    def write_item(self,group,item):
+        common.debug("Roster.write_item(%r): %r" % (item,str(item)))
+        if not self.buffer.has_key((group,None)):
+            if group:
+                p={"group":group}
+                self.buffer.insert_themed((group,None),"roster.group",p)
+            else:
+                self.buffer.insert_themed((group,None),"roster.group_none",{})
+                
+        params=self.get_item_format_params(group,item,self.settings["show"])
+
+        if params is None:
+            common.debug("Roster.write_item: removing item")
+            if isinstance(item,pyxmpp.JID):
+                jid=item
+            else:
+                jid=item.jid
+            try:
+                self.buffer.remove_item((group,jid))
+            except ListBufferError:
+                pass
+            return
+        
         common.debug("Roster.write_item: updating item")
-        if available:
-            self.buffer.insert_themed((group,jid),"roster.available",p)
+        if params["available"]:
+            self.buffer.insert_themed((group,params["jid"]),"roster.available",params)
         else:
-            self.buffer.insert_themed((group,jid),"roster.unavailable",p)
+            self.buffer.insert_themed((group,params["jid"]),"roster.unavailable",params)
 
     def write_all(self):
         self.buffer.clear()
@@ -353,6 +372,102 @@ class Plugin(PluginBase):
                 item.groups.remove(group)
         iq=item.make_roster_push()
         self.cjc.stream.send(iq)
+        
+    def cmd_list(self,args):
+        if not self.cjc.roster:
+            self.cjc.error("No roster available.")
+            return
+        groups=[]
+        jids=[]
+        filter=[]
+        names=[]
+        while 1:
+            arg=args.shift()
+            if arg is None:
+                break
+            if not arg.startswith("-"):
+                names.append(re.compile(arg))
+                continue
+            if arg=="-group":
+                arg=args.shift()
+                groups.append(re.compile(arg))
+            elif arg=="-jid":
+                arg=args.shift()
+                jids.append(re.compile(arg))
+            elif arg=="-state" or arg=="-show":
+                arg=args.shift()
+                if "," in arg:
+                    filter+=arg.split(",")
+                else:
+                    filter.append(arg)
+            elif arg=="-name":
+                arg=args.shift()
+                names.append(re.compile(arg))
+            else:
+                self.cjc.error("Bad /list option: %r" % (arg,))
+                return
+        args.finish()
+
+        if not filter:
+            filter=["all"]
+
+        rgroups=self.cjc.roster.groups()
+        rgroups.sort()
+        formatted_list=[]
+        for group in rgroups:
+            if groups:
+                if not group:
+                    continue
+                ok=False
+                for g in groups:
+                    if g.search(group):
+                        ok=True
+                        break
+                if not ok:
+                    continue
+            formatted_group=[]
+            for item in self.cjc.roster.items_by_group(group):
+                if names:
+                    if item.name is None:
+                        continue
+                    ok=False
+                    for g in names:
+                        if g.search(item.name):
+                            ok=True
+                            break
+                    if not ok:
+                        continue
+                if jids:
+                    if item.jid is None:
+                        continue
+                    ok=False
+                    for g in jids:
+                        if g.search(item.jid.as_unicode()):
+                            ok=True
+                            break
+                    if not ok:
+                        continue
+                params=self.get_item_format_params(group,item,filter)
+                if not params:
+                    continue
+                if params["available"]:
+                    formatted_group+=self.cjc.theme_manager.format_string(
+                            "roster.list_available",params)
+                else:
+                    formatted_group+=self.cjc.theme_manager.format_string(
+                            "roster.list_unavailable",params)
+            if not formatted_group:
+                continue
+            if group is None:
+                group=u"unfiled"
+            params={"roster_group_items":formatted_group,"group":group}
+            formatted_list+=self.cjc.theme_manager.format_string("roster.list_group",params)
+        if formatted_list:
+            params={"roster_groups":formatted_list}
+            self.cjc.status_buf.append_themed("roster.list",params)
+        else:
+            self.cjc.error("No roster items matches your filter")
+        self.cjc.status_buf.update()
 
 ui.CommandTable("roster",50,(
     ui.Command("add",Plugin.cmd_add,
@@ -371,5 +486,13 @@ ui.CommandTable("roster",50,(
         "/group user [+|-]group...",
         "Change groups a user from roster belongs to.",
         ("user","text")),
+    ui.Command("list",Plugin.cmd_list,
+        ("/list [-group regexp]..."
+            " [-jid regexp]..."
+            " [-state available|unavailable|online|offline|away|xa|chat|error]... "
+            " [[-name] regexp]..."
+            ),
+        "List roster items",
+        ("-group opaque","-jid opaque","-state opaque","-name opaque","opaque")),
     )).install()
 # vi: sts=4 et sw=4
