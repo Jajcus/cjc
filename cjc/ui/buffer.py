@@ -2,9 +2,9 @@
 import threading
 from types import StringType,UnicodeType
 
-from cjc import commands
 from cjc import common
 from input import InputError
+import cmdtable
 
 buffer_list=[]
 activity_handlers=[]
@@ -43,10 +43,10 @@ class Buffer:
 				self.activity(0)
 			if self.command_table:
 				if win:
-					commands.activate_table(self.command_table,
+					cmdtable.activate(self.command_table,
 							self.command_table_object)
 				else:
-					commands.deactivate_table(self.command_table,
+					cmdtable.deactivate(self.command_table,
 							self.command_table_object)
 		finally:
 			self.lock.release()

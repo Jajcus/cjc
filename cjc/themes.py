@@ -8,7 +8,7 @@ import os
 
 import pyxmpp
 
-from commands import CommandError,CommandArgs
+from ui import CommandError,CommandArgs
 import ui
 import common
 

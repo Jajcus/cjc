@@ -187,6 +187,9 @@ class KeyTable:
 		except KeyError:
 			pass
 
+	def install(self):
+		install(self)
+
 def keyname_to_code(name):
 	if name.startswith("M-") or name.startswith("m-") or name.startswith("^["):
 		meta=1

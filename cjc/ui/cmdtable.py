@@ -3,7 +3,7 @@ from types import StringType,IntType,UnicodeType
 import re
 import curses
 
-import common
+from cjc import common
 
 quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)"(?P<rest>.*)$',re.UNICODE)
 need_quote_re=re.compile(r'[ \"\\\n\t]',re.UNICODE)
@@ -79,8 +79,11 @@ class CommandTable:
 		l.sort()
 		return [i[1] for i in l if i[0]==i[1].name]
 
+	def install(self):
+		install(self)
+
 command_tables=[]
-def install_table(command_table):
+def install(command_table):
 	pos=len(command_tables)
 	for i in range(0,len(command_tables)):
 		if command_table.priority>command_tables[i].priority:
@@ -94,12 +97,12 @@ def lookup_table(name):
 			return t
 	raise KeyError,name
 
-def activate_table(name,object):
+def activate(name,object):
 	table=lookup_table(name)
 	table.active=1
 	table.object=object
 
-def deactivate_table(name,object=None):
+def deactivate(name,object=None):
 	table=lookup_table(name)
 	if object and table.object!=object:
 		return

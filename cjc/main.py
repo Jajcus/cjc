@@ -20,8 +20,8 @@ from pyxmpp import jabber
 import ui
 import ui.buffer
 import ui.keytable
+import ui.cmdtable
 import version
-import commands
 import themes
 import common
 import tls
@@ -140,10 +140,10 @@ class Application(jabber.Client,tls.TLSHandler):
 		self.top_bar=None
 		self.bottom_bar=None
 		self.resize_request=0
-		ui.keytable.activate("default",self)
-		ui.keytable.activate("global",self)
-		commands.activate_table("global",self)
-		commands.set_default_handler(self.unknown_command)
+		ui.activate_keytable("default",self)
+		ui.activate_keytable("global",self)
+		ui.activate_cmdtable("global",self)
+		ui.set_default_command_handler(self.unknown_command)
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -208,9 +208,9 @@ class Application(jabber.Client,tls.TLSHandler):
 		self.info_handlers[var]=handler
 
 	def key_command(self,arg):
-		args=commands.CommandArgs(arg)
+		args=ui.CommandArgs(arg)
 		cmd=args.shift()
-		commands.run_command(cmd,args)
+		ui.run_command(cmd,args)
 
 	def unknown_command(self,cmd,args):
 		if self.aliases.has_key(cmd):
@@ -225,11 +225,11 @@ class Application(jabber.Client,tls.TLSHandler):
 						break
 					newcommand=newcommand.replace(var,val)
 					i+=1
-			args=commands.CommandArgs(newcommand)
+			args=ui.CommandArgs(newcommand)
 			cmd=args.shift()
-		commands.set_default_handler(None)
-		commands.run_command(cmd,args)
-		commands.set_default_handler(self.unknown_command)
+		ui.set_default_command_handler(None)
+		ui.run_command(cmd,args)
+		ui.set_default_command_handler(self.unknown_command)
 
 	def layout_plain(self):
 		ui.buffer.activity_handlers=[]
@@ -705,7 +705,7 @@ class Application(jabber.Client,tls.TLSHandler):
 					continue
 				if plugin is not None:
 					var="%s.%s" % (plugin,var)
-				args=commands.CommandArgs(var)
+				args=ui.CommandArgs(var)
 				if type(typ) is tuple:
 					typ=typ[0]
 				if typ is list:
@@ -759,7 +759,7 @@ class Application(jabber.Client,tls.TLSHandler):
 			if not l:
 				continue
 			try:
-				args=commands.CommandArgs(unicode(l,"utf-8"))
+				args=ui.CommandArgs(unicode(l,"utf-8"))
 				self.debug("args: "+`args.args`)
 				cmd=args.get()
 				self.debug("cmd: %r args: %r" % (cmd,args.args))
@@ -818,7 +818,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		cmd=args.shift()
 		if not cmd:
 			self.info("Available commands:")
-			for tb in commands.command_tables:
+			for tb in ui.cmdtable.command_tables:
 				tname=tb.name[0].upper()+tb.name[1:]
 				if tb.active:
 					active="active"
@@ -833,10 +833,10 @@ class Application(jabber.Client,tls.TLSHandler):
 			cmd=cmd[1:]
 
 		try:
-			cmd=commands.lookup_command(cmd,1)
+			cmd=ui.cmdtable.lookup_command(cmd,1)
 		except KeyError:
 			try:
-				cmd=commands.lookup_command(cmd,0)
+				cmd=ui.cmdtable.lookup_command(cmd,0)
 			except KeyError:
 				self.error(u"Unknown command: "+`cmd`)
 				return
@@ -1138,79 +1138,72 @@ class Application(jabber.Client,tls.TLSHandler):
 			self.status_buf.append_themed("debug",s)
 			self.status_buf.update(1)
 
-from ui.keytable import KeyFunction
-default_ktb=ui.keytable.KeyTable("default",0,(
-			KeyFunction("command()",
-				Application.key_command,
-				"Execute command '<arg>'"),
-		))
-global_ktb=ui.keytable.KeyTable("global",100,(
-			KeyFunction("resize",
-				Application.resize_handler,
-				"Proces terminal resize request",
-				"RESIZE"),
-		))
+ui.KeyTable("default",0,(
+	ui.KeyFunction("command()",
+		Application.key_command,
+		"Execute command '<arg>'"),
+	)).install()
+ui.KeyTable("global",100,(
+	ui.KeyFunction("resize",
+		Application.resize_handler,
+		"Proces terminal resize request",
+		"RESIZE"),
+	)).install()
 
-ui.keytable.install(default_ktb)
-ui.keytable.install(global_ktb)
-	
-from commands import Command,CommandAlias
-
-global_ctb=commands.CommandTable("global",100,(
-	Command("quit",Application.cmd_quit,
+ui.CommandTable("global",100,(
+	ui.Command("quit",Application.cmd_quit,
 		"/quit [reason]",
 		"Exit CJC"),
-	CommandAlias("exit","quit"),
-	Command("set",Application.cmd_set,
+	ui.CommandAlias("exit","quit"),
+	ui.Command("set",Application.cmd_set,
 		"/set [setting] [value]",
 		"Changes one of the settings."
 		" Without any arguments shows all current settings."
 		" With only one argument shows description and current value of given settings."),
-	Command("unset",Application.cmd_unset,
+	ui.Command("unset",Application.cmd_unset,
 		"/unset [setting]",
 		"Unsets one of settings."),
-	Command("connect",Application.cmd_connect,
+	ui.Command("connect",Application.cmd_connect,
 		"/connect",
 		"Connect to a Jabber server"),
-	Command("disconnect",Application.cmd_disconnect,
+	ui.Command("disconnect",Application.cmd_disconnect,
 		"/disconnect [reason]",
 		"Disconnect from a Jabber server"),
-	Command("save",Application.cmd_save,
+	ui.Command("save",Application.cmd_save,
 		"/save [filename]",
 		"Save current settings to a file (default: ~/.cjc/config)"),
-	Command("load",Application.cmd_load,
+	ui.Command("load",Application.cmd_load,
 		"/load [filename]",
 		"Load settings from a file (default: ~/.cjc/config)"),
-	Command("redraw",Application.cmd_redraw,
+	ui.Command("redraw",Application.cmd_redraw,
 		"/redraw",
 		"Redraw screen"),
-	Command("info",Application.cmd_info,
+	ui.Command("info",Application.cmd_info,
 		"/info jid",
 		"Show information known about given jid"),
-	Command("help",Application.cmd_help,
+	ui.Command("help",Application.cmd_help,
 		"/help [command]",
 		"Show simple help"),
-	Command("theme",Application.cmd_theme,
+	ui.Command("theme",Application.cmd_theme,
 		("/theme load [filename]","/theme save [filename]"),
 		"Theme management. Default theme filename is \"~/.cjc/theme\""),
-	Command("alias",Application.cmd_alias,
+	ui.Command("alias",Application.cmd_alias,
 		"/alias name command [arg...]",
 		"Defines an alias for command. When the alias is used $1, $2, etc."
 		" are replaced with alias arguments."),
-	Command("unalias",Application.cmd_unalias,
+	ui.Command("unalias",Application.cmd_unalias,
 		"/unalias name",
 		"Undefines an alias for command."),
-	Command("bind",Application.cmd_bind,
+	ui.Command("bind",Application.cmd_bind,
 		"/bind [function [[table] keyname]]",
 		"Without arguments - shows current keybindings otherwise binds"
 		" given function to a key. If keyname is not given user will be"
 		" asked to press one. If a table is given only the function is bound"
 		" in that table, otherwise in all tables that define it."),
-	Command("unbind",Application.cmd_unbind,
+	ui.Command("unbind",Application.cmd_unbind,
 		"/unbind [table] keyname",
 		"Unbinds given key."),
-	))
-commands.install_table(global_ctb)
+	)).install()
 	
 def usage():
 	print

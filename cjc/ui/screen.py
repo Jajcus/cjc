@@ -4,9 +4,8 @@ import locale
 import curses
 
 from cjc import common
-from cjc import commands
 import buffer
-
+import cmdtable
 import keytable
 
 class Screen:
@@ -26,7 +25,7 @@ class Screen:
 		if self.encoding is None:
 			self.encoding="us-ascii"
 		keytable.activate("screen",self,input_window=self.scr)
-		commands.activate_table("screen",self)
+		cmdtable.activate("screen",self)
 
 	def set_background(self,char,attr):
 		self.lock.acquire()
@@ -241,8 +240,8 @@ class Screen:
 			cmd,args=s
 		else:
 			cmd,args=s[0],None
-		args=commands.CommandArgs(args)
-		commands.run_command(cmd,args)
+		args=cmdtable.CommandArgs(args)
+		cmdtable.run_command(cmd,args)
 			
 	def display_buffer(self,buffer):
 		if buffer.window:
@@ -258,29 +257,25 @@ class Screen:
 				return w
 		return None
 
-from keytable import KeyFunction,KeyBinding
-ktb=keytable.KeyTable("screen",20,(
-			KeyBinding("command(next)","M-^I"),
-			KeyFunction("redraw-screen",Screen.redraw,"Redraw the screen","^L"),
-		))
-keytable.install(ktb)
+keytable.KeyTable("screen",20,(
+		keytable.KeyBinding("command(next)","M-^I"),
+		keytable.KeyFunction("redraw-screen",Screen.redraw,"Redraw the screen","^L"),
+	)).install()
 
-from cjc.commands import Command
-ctb=commands.CommandTable("screen",90,(
-	Command("next",Screen.cmd_next,
+cmdtable.CommandTable("screen",90,(
+	cmdtable.Command("next",Screen.cmd_next,
 		"/next",
 		"Change active window to the next one"),
-	Command("prev",Screen.cmd_prev,
+	cmdtable.Command("prev",Screen.cmd_prev,
 		"/previous",
 		"Change active window to the previous one"),
-	Command("nextbuf",Screen.cmd_nextbuf,
+	cmdtable.Command("nextbuf",Screen.cmd_nextbuf,
 		"/nextbuf",
 		"Change buffer in active window to next available"),
-	Command("prevbuf",Screen.cmd_prevbuf,
+	cmdtable.Command("prevbuf",Screen.cmd_prevbuf,
 		"/nextbuf",
 		"Change buffer in active window to next available"),
-	Command("move",Screen.cmd_move,
+	cmdtable.Command("move",Screen.cmd_move,
 		"/move [oldnumber] number",
 		"Change buffer order"), 
-))
-commands.install_table(ctb)
+	)).install()

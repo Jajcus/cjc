@@ -3,10 +3,10 @@ import re
 
 import buffer
 import keytable
+import cmdtable
 from widget import Widget
 from status_bar import StatusBar
 from cjc import common
-from cjc import commands
 
 control_re=re.compile("[\x00-\x1f\x7f]",re.UNICODE)
 
@@ -61,29 +61,6 @@ class Window(Widget):
 				return 1
 		return 1
 
-	def commands(self):
-		if self.buffer:
-			return self.buffer.commands()+CommandHandler.commands(self)
-		else:
-			return CommandHandler.commands(self)
-		
-	def get_command_info(self,cmd):
-		if self.buffer:
-			try:
-				return self.buffer.get_command_info(cmd)
-			except KeyError:
-				pass
-		return CommandHandler.get_command_info(self,cmd)
-
-	def command(self,cmd,args):
-		if self.buffer:
-			try:
-				if self.buffer.command(cmd,args):
-					return 1
-			except KeyError:
-				pass
-		return CommandHandler.command(self,cmd,args)
-
 	def cmd_clear(self,args):
 		args.finish()
 		if not self.win:
@@ -129,12 +106,12 @@ class Window(Widget):
 			self.active=1
 			a="*"
 			keytable.activate("window",self)
-			commands.activate_table("window",self)
+			cmdtable.activate("window",self)
 		else:
 			self.active=0
 			a=""
-			keytable.deactivate("window")
-			commands.deactivate_table("window",self)
+			keytable.deactivate("window",self)
+			cmdtable.deactivate("window",self)
 		d=self.status_bar.get_dict()
 		d["active"]=a
 		if self.screen:
@@ -276,30 +253,28 @@ class Window(Widget):
 		finally:
 			self.screen.lock.release()
 
-from keytable import KeyFunction,KeyBinding
-ktb=keytable.KeyTable("window",60,(
-		KeyFunction("switch-to-active-buffer",
+keytable.KeyTable("window",60,(
+		keytable.KeyFunction("switch-to-active-buffer",
 			Window.switch_to_active_buffer,
 			"Switch to the first active buffer",
 			"M-a"),
-		KeyFunction("switch-to-buffer()",
+		keytable.KeyFunction("switch-to-buffer()",
 			Window.switch_to_buffer,
 			"Switch to buffer <arg>"),
-		KeyBinding("switch-to-buffer(1)","M-1"),
-		KeyBinding("switch-to-buffer(2)","M-2"),
-		KeyBinding("switch-to-buffer(3)","M-3"),
-		KeyBinding("switch-to-buffer(4)","M-4"),
-		KeyBinding("switch-to-buffer(5)","M-5"),
-		KeyBinding("switch-to-buffer(6)","M-6"),
-		KeyBinding("switch-to-buffer(7)","M-7"),
-		KeyBinding("switch-to-buffer(8)","M-8"),
-		KeyBinding("switch-to-buffer(9)","M-9"),
-		KeyBinding("switch-to-buffer(0)","M-0"),
-	))
-keytable.install(ktb)
+		keytable.KeyBinding("switch-to-buffer(1)","M-1"),
+		keytable.KeyBinding("switch-to-buffer(2)","M-2"),
+		keytable.KeyBinding("switch-to-buffer(3)","M-3"),
+		keytable.KeyBinding("switch-to-buffer(4)","M-4"),
+		keytable.KeyBinding("switch-to-buffer(5)","M-5"),
+		keytable.KeyBinding("switch-to-buffer(6)","M-6"),
+		keytable.KeyBinding("switch-to-buffer(7)","M-7"),
+		keytable.KeyBinding("switch-to-buffer(8)","M-8"),
+		keytable.KeyBinding("switch-to-buffer(9)","M-9"),
+		keytable.KeyBinding("switch-to-buffer(0)","M-0"),
+	)).install()
 
-from cjc.commands import Command
-ctb=commands.CommandTable("window",80,(
-	Command("clear",Window.cmd_clear,"/clear","Clears current window"),
-))
-commands.install_table(ctb)
+cmdtable.CommandTable("window",80,(
+	cmdtable.Command("clear",Window.cmd_clear,
+		"/clear",
+		"Clears current window"),
+	)).install()
