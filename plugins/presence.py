@@ -2,9 +2,15 @@ import string
 from cjc.plugin import PluginBase
 import pyxmpp
 
+theme_formats=(
+	("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is available\n"),
+	("presence.unavailable","%[info][%(T:timestamp)s]  %(J:user)s (%(J:user:rostername)s) is unavailable\n"),
+)
+
 class Plugin(PluginBase):
 	def __init__(self,app):
 		PluginBase.__init__(self,app)
+		app.theme_manager.set_default_formats(theme_formats)
 		self.available_settings={
 			"priority": ("Priority of current resource",int,None),
 			"away_priority": ("Priority of current resource in away and xa modes",(int,None),None),
@@ -104,7 +110,8 @@ class Plugin(PluginBase):
 		fr=stanza.get_from()
 		p=self.cjc.get_user_info(fr,"presence")
 		if not p or p!=stanza:
-			self.info(fr.as_unicode()+u" is available")
+			self.cjc.status_buf.append_themed("presence.available",{"user":fr})
+			self.cjc.status_buf.update()
 		else:
 			self.debug(fr.as_unicode()+u" is unavailable")
 		self.cjc.set_user_info(fr,"presence",stanza.copy())
@@ -114,7 +121,8 @@ class Plugin(PluginBase):
 	def presence_unavailable(self,stanza):
 		fr=stanza.get_from()
 		if self.cjc.get_user_info(fr):
-			self.info(fr.as_unicode()+u" is unavailable")
+			self.cjc.status_buf.append_themed("presence.unavailable",{"user":fr})
+			self.cjc.status_buf.update()
 		else:
 			self.debug(fr.as_unicode()+u" is unavailable")
 		self.cjc.set_user_info(fr,"presence",stanza.copy())
