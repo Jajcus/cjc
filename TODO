@@ -1,16 +1,18 @@
 Important:
+- fix those awful race conditions and lockups
 - finish the manual
 - jabber:x:data (forms)
 - new Jabber account registration
 - registration and search in Jabber services and gateways
 - message composition (in external editor)
 - storing root CA certificates presented by server and accepted by user
+- finish multi-user chat
 
 Less important:
 - translate the manual to english ;-)
 - sending/receiving JIDs (jabber:x:roster)
-- multi-user chat
 - filetransfer
+- Jogger.pl plugin
 
 The least important:
 - XHTML
