@@ -21,6 +21,7 @@ import os
 import pyxmpp
 from pyxmpp.jabber import muc,delay
 from cjc import ui
+from cjc.ui.form_buffer import FormBuffer
 from cjc.plugin import PluginBase
 from cjc import common
 
@@ -53,6 +54,7 @@ theme_formats=(
     ("muc.presence_changed",u"[%(T:timestamp)s] %[muc.info]* %(nick)s is now: [%(show?%(show)s,online)s]%(status? %(status)s)s\n"),
     ("muc.info",u"[%(T:timestamp)s] %[muc.info]* %(msg)s\n"),
     ("muc.descr",u"Conference on %(J:room:bare)s"),
+    ("muc.conf_descr",u"Configuration for conference %(J:room:bare)s"),
     ("muc.day_change",u"%{@day_change}"),
 )
 
@@ -244,8 +246,16 @@ class Room(muc.MucRoomHandler):
         if response == "a":
             self.room_state.request_instant_room()
         else:
-            self.buffer.append_themed("error","Not implemented yet")
-            self.buffer.update()
+            self.room_state.request_configuration_form()
+
+    def configuration_form_received(self, form):
+        form_buffer = FormBuffer(self.plugin.cjc.theme_manager, self.fparams, "muc.conf_descr")
+        form_buffer.set_form(form, self.configuration_callback)
+        self.plugin.cjc.screen.display_buffer(form_buffer)
+
+    def configuration_callback(self, form_buffer, form):
+        form_buffer.close()
+        self.room_state.configure_room(form)
 
     def room_configured(self):
         self.buffer.append_themed("muc.info","Room configured")
@@ -321,6 +331,11 @@ class Room(muc.MucRoomHandler):
         self.buffer.close()
         return 1
 
+    def cmd_configure(self,args):
+        args.finish()
+        self.room_state.request_configuration_form()
+        return 1
+
     def get_completion_words(self):
         return [nick+u":" for nick in self.room_state.users.keys()]
 
@@ -346,6 +361,9 @@ ui.CommandTable("muc buffer",51,(
         "/leave [jid]",
         "Leave the chat room",
         ("jid",)),
+    ui.Command("configure",Room.cmd_configure,
+        "/configure",
+        "Configure the room"),
     ui.Command("close",Room.cmd_close,
         "/close",
         "Closes current chat buffer"),
