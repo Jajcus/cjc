@@ -1,3 +1,14 @@
+2003-12-07  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/list_buffer.py:
+	- don't remove newlines etc. in list items, but replace them with spaces
+
+	* cjc/ui/status_bar.py:
+	- fix for long strings (eg. status descriptions) in status bar
+
+	* plugins/roster.py:
+	- don't show tracebacke when /rename argument is not in roster
+
 2003-12-03  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/roster.py:
