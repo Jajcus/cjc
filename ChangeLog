@@ -1,5 +1,8 @@
 2004-07-21  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/main.py:
+	- --config-directory command line option
+
 	* Makefile: *** Version: 0.5 ***
 
 	* plugins/muc.py, plugins/roster.py, plugins/xmlconsole.py:
