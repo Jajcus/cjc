@@ -106,7 +106,7 @@ global_theme_formats=(
 
 
 class Application(jabber.Client,tls.TLSHandler):
-    def __init__(self,base_dir,config_file="default",theme_file="theme",profile=False):
+    def __init__(self,base_dir,config_file="default",theme_file="theme",home_dir=None,profile=False):
         self.profile=profile
         jabber.Client.__init__(self)
         self.settings={
@@ -129,8 +129,11 @@ class Application(jabber.Client,tls.TLSHandler):
         self.base_dir=base_dir
         self.config_file=config_file
         self.theme_file=theme_file
-        home=os.environ.get("HOME","")
-        self.home_dir=os.path.join(home,".cjc")
+        if home_dir:
+            self.home_dir=home_dir
+        else:
+            home=os.environ.get("HOME","")
+            self.home_dir=os.path.join(home,".cjc")
         self.plugin_dirs=[os.path.join(base_dir,"plugins"),
                     os.path.join(self.home_dir,"plugins")]
         self.plugins={}
@@ -1486,8 +1489,13 @@ def usage():
     print "Options:"
     print "  -c filename"
     print "  --config-file=filename   Config file to load. If filename doesn't contain"
-    print "               slashes the file is assumed to be in ~/.cjc"
+    print "               slashes the file is assumed to be in ~/.cjc or wherever"
+    print "               --config-directory option points"
     print "               default: 'config'"
+    print "  -C dir"
+    print "  --config-directory=dir   Directory, where config files, themes, logs etc."
+    print "               will be stored"
+    print "               default: '~/.cjc'"
     print "  -t filename"
     print "  --theme-file=filename    Theme file to load. If filename doesn't contain"
     print "               slashes the file is assumed to be in ~/.cjc/themes"
@@ -1504,8 +1512,8 @@ def main(base_dir,profile=False):
     libxml2.debugMemory(1)
     locale.setlocale(locale.LC_ALL,"")
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hc:t:l:",
-                    ["help","config-file=","theme-file=","log-file="])
+        opts, args = getopt.getopt(sys.argv[1:], "hc:C:t:l:",
+                    ["help","config-file=","config-directory=","theme-file=","log-file="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -1516,9 +1524,12 @@ def main(base_dir,profile=False):
 
     config_file="default"
     theme_file="default"
+    config_dir=None
     for o,a in opts:
         if o in ("-c","--config-file"):
             config_file=a
+        elif o in ("-C","--config-directory"):
+            config_dir=a
         elif o in ("-t","--theme-file"):
             theme_file=a
         elif o in ("-l","--log-file"):
@@ -1535,7 +1546,7 @@ def main(base_dir,profile=False):
             usage()
             sys.exit(0)
 
-    app=Application(base_dir,config_file,theme_file,profile=profile)
+    app=Application(base_dir,config_file,theme_file,home_dir=config_dir,profile=profile)
     try:
         screen=ui.init()
         app.run(screen)
