@@ -746,6 +746,9 @@ class Application(jabber.Client,tls.TLSHandler):
             try:
                 if t is ListType:
                     val=val.split(",")
+                elif type(t) is not TypeType and type(typ) is TupleType:
+                    e="not one of: "+string.join(typ,",")
+                    continue
                 else:
                     val=t(val)
                 valid=1
