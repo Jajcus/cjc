@@ -242,6 +242,7 @@ class Plugin(PluginBase):
 		elif not self.cjc.get_bare_user_info(fr,"resources"):
 			self.cjc.set_bare_user_info(fr,"presence",stanza.copy())
 		self.cjc.send_event("presence changed",fr)
+		return 1
 		
 	def presence_available(self,stanza):
 		fr=stanza.get_from()
@@ -254,6 +255,7 @@ class Plugin(PluginBase):
 		self.cjc.set_user_info(fr,"presence",stanza.copy())
 		self.compute_current_resource(fr.bare())
 		self.cjc.send_event("presence changed",fr)
+		return 1
 		
 	def presence_unavailable(self,stanza):
 		fr=stanza.get_from()
@@ -265,6 +267,7 @@ class Plugin(PluginBase):
 		self.cjc.set_user_info(fr,"presence",stanza.copy())
 		self.compute_current_resource(fr.bare())
 		self.cjc.send_event("presence changed",fr)
+		return 1
 
 	def compute_current_resource(self,jid):
 		resources=self.cjc.get_bare_user_info(jid,"resources")

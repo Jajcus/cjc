@@ -1,8 +1,10 @@
 import string
+import curses
+
+import pyxmpp
 from cjc import ui
 from cjc.plugin import PluginBase
-import pyxmpp
-import curses
+from cjc import common
 
 theme_attrs=(
 	("chat.me", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -76,6 +78,18 @@ class Conversation:
 		self.add_sent(s)
 		return 1
 
+	def error(self,stanza):
+		err=stanza.get_error()
+		emsg=err.get_message()
+		msg="Error"
+		if emsg:
+			msg+=": %s" % emsg
+		etxt=err.get_text()
+		if etxt:
+			msg+=" ('%s')" % etxt
+		self.buffer.append_themed("error",msg)
+		self.buffer.update()
+
 	def cmd_me(self,args):
 		if not args:
 			return 1
@@ -140,7 +154,34 @@ class Plugin(PluginBase):
 
 	def session_started(self,stream):
 		self.cjc.stream.set_message_handler("chat",self.message_chat)
+		self.cjc.stream.set_message_handler("error",self.message_error,None,90)
 
+	def message_error(self,stanza):
+		fr=stanza.get_from()
+		thread=stanza.get_thread()
+		key=fr.bare().as_unicode()
+	
+		conv=None
+		if self.conversations.has_key(key):
+			convs=self.conversations[key]
+			for c in convs:
+				if not thread and (not c.thread or not c.thread_inuse):
+					conv=c
+					break
+				if thread and thread==c.thread:
+					conv=c
+					break
+			if conv and conv.thread and not thread:
+				conv.thread=None
+			elif conv and thread:
+				conv.thread_inuse=1
+
+		if not conv:
+			return 0
+
+		conv.error(stanza)
+		return 1
+	
 	def message_chat(self,stanza):
 		fr=stanza.get_from()
 		thread=stanza.get_thread()
@@ -177,3 +218,4 @@ class Plugin(PluginBase):
 			self.cjc.screen.display_buffer(conv.buffer)
 		
 		conv.add_received(body)
+		return 1

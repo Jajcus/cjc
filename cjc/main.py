@@ -354,13 +354,19 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 	def message_error(self,stanza):
 		self.warning(u"Message error from: "+stanza.get_from().as_unicode())
+		return 1
 		
 	def message_normal(self,stanza):
 		self.info(u"Message from: "+stanza.get_from().as_unicode())
 		self.message_buf.append_line(u"Message from: "+stanza.get_from().as_unicode())
-		self.message_buf.append_line("Subject: "+stanza.get_subject())
-		self.message_buf.append_line(stanza.get_body())
+		subject=stanza.get_subject()
+		if subject:
+			self.message_buf.append_line("Subject: "+subject)
+		body=stanza.get_body()
+		if body:
+			self.message_buf.append_line(body)
 		self.message_buf.update(1)
+		return 1
 	
 	def cmd_quit(self,args):
 		reason=args.all()
