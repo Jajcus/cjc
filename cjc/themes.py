@@ -104,8 +104,6 @@ class ThemeManager:
             else:
                 filename=os.path.join(self.app.home_dir,"themes",filename)
         f=open(filename,"r")
-        self.pairs={}
-        self.next_pair=1
         for l in f.xreadlines():
             command=CommandArgs(l.strip())
             self.command(command,1)
