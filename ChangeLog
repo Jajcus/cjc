@@ -1,3 +1,8 @@
+2004-09-13  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/chat.py, plugins/jogger_pl.py, plugins/message.py, plugins/presence.py, plugins/vcard.py, plugins/version.py:
+	- updated for recent PyXMPP changes
+
 2004-09-12  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py, plugins/presence.py, plugins/roster.py:
