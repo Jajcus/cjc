@@ -35,6 +35,9 @@ class Buffer:
         self.question_abort_handler=None
         self.question_handler_arg=None
         self.question=None
+        
+    def get_completion_words(self):
+        return []
 
     def set_window(self,win):
         self.lock.acquire()

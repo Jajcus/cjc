@@ -7,6 +7,7 @@ from cjc import common
 import buffer
 import cmdtable
 import keytable
+import complete
 
 class Screen:
     def __init__(self,screen):
@@ -26,6 +27,7 @@ class Screen:
             self.encoding="us-ascii"
         keytable.activate("screen",self,input_window=self.scr)
         cmdtable.activate("screen",self)
+        complete.ActiveBufferDefinedCompletion(self).register("text")
 
     def set_background(self,char,attr):
         self.lock.acquire()

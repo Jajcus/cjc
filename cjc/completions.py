@@ -96,4 +96,5 @@ class CommandCompletion(ui.Completion):
                     matches.append(cmd)
         matches=[[m,1] for m in matches]
         return self.make_result("",word,matches)
+
 # vi: sts=4 et sw=4

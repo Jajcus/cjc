@@ -42,6 +42,36 @@ class GenericCompletion(Completion):
                 matches.append([w,1])
         return self.make_result("",word,matches)
 
+class GenericCompletion(Completion):
+    def __init__(self,words=[]):
+        self.words=words
+    def complete(self,word):
+        matches=[]
+        for w in self.words:
+            if w.startswith(word):
+                matches.append([w,1])
+        return self.make_result("",word,matches)
+
+class ActiveBufferDefinedCompletion(Completion):
+    def __init__(self,screen):
+        self.screen=screen
+    def complete(self,word):
+        aw=self.screen.active_window
+        common.debug("Active window: "+`aw`)
+        if not aw:
+            return "",[]
+        ab=aw.buffer
+        common.debug("Active buffer: "+`ab`)
+        if not ab:
+            return "",[]
+        words=ab.get_completion_words()
+        common.debug("Words: "+`words`)
+        matches=[]
+        for w in words:
+            if w.startswith(word):
+                matches.append([w,1])
+        return self.make_result("",word,matches)
+
 GenericCompletion().register("text")
 
 unfinished_quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)',re.UNICODE)
@@ -172,13 +202,15 @@ def complete(s):
             if head is None:
                 return s,[]
     else:
-        head=""
         if s:
+            sp=s.split()
             word=s.split()[-1]
+            head=s[:-len(word)]
         else:
+            head=""
             word=""
         quote=0
-        compl=GenericCompletion()
+        compl=completions["text"]
 
     chead,cret=compl.complete(word)
 

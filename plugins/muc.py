@@ -50,6 +50,7 @@ class Room(muc.MucRoomHandler):
                 "muc.descr","muc buffer",self)
         self.buffer.preference=plugin.settings["buffer_preference"]
         self.buffer.user_input=self.user_input
+        self.buffer.get_completion_words=self.get_completion_words
         self.buffer.append_themed("muc.joining",self.fparams)
         self.buffer.update()
 
@@ -232,6 +233,9 @@ class Room(muc.MucRoomHandler):
         self.room_state.leave()
         self.buffer.close()
         return 1
+
+    def get_completion_words(self):
+        return [nick+u":" for nick in self.room_state.users.keys()]
 
 ui.CommandTable("muc buffer",51,(
     ui.Command("me",Room.cmd_me,
