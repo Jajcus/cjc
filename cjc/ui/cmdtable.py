@@ -90,7 +90,7 @@ class CommandArgs:
 		if self.args:
 			raise CommandError,"Too many arguments"
 
-	def shift(self):
+	def get(self,remove=0):
 		if not self.args:
 			return None
 		args=self.args.lstrip()
@@ -101,14 +101,19 @@ class CommandArgs:
 			if len(sp)>1:
 				ret,self.args=sp
 				return ret
-			self.args=None
+			if remove:
+				self.args=None
 			return sp[0]
 		m=quoted_arg_re.match(args)
 		if not m:
 			raise CommandError,"Command arguments syntax error"
 		arg=unquote(m.group("arg"))
-		self.args=m.group("rest").lstrip()
+		if remove:
+			self.args=m.group("rest").lstrip()
 		return arg
+	
+	def shift(self):
+		return self.get(1)
 		
 	def add_quoted(self,s):
 		if not self.args:
