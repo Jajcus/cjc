@@ -91,9 +91,12 @@ class Room(muc.MucRoomHandler):
         self.buffer.update()
         return
 
-    def other_joined(self,user,stanza):
+    def user_joined(self,user,stanza):
         fparams=dict(self.fparams)
-        fparams["msg"]=(u"%s has entered the room." % (user.nick,))
+        if user.same_as(self.room_state.me):
+            fparams["msg"]=u"You have entered the room."
+        else:
+            fparams["msg"]=(u"%s has entered the room." % (user.nick,))
         d=delay.get_delay(stanza)
         if d:
             fparams["timestamp"]=d.datetime_local()
@@ -101,9 +104,12 @@ class Room(muc.MucRoomHandler):
         self.buffer.update()
         return
  
-    def other_left(self,user,stanza):
+    def user_left(self,user,stanza):
         fparams=dict(self.fparams)
-        fparams["msg"]=(u"%s has left the room." % (user.nick,))
+        if user.same_as(self.room_state.me):
+            fparams["msg"]=u"You have left the room."
+        else:
+            fparams["msg"]=(u"%s has left the room." % (user.nick,))
         d=delay.get_delay(stanza)
         if d:
             fparams["timestamp"]=d.datetime_local()
@@ -140,17 +146,41 @@ class Room(muc.MucRoomHandler):
         self.user_input(u"/me "+args)
         return 1
 
+    def cmd_subject(self,args):
+        subj=args.all()
+        if not args:
+            subj=u""
+        self.room_state.set_subject(subj)
+        return 1
+
+    def cmd_leave(self,args):
+        a=args.get()
+        if a:
+            self.plugin.cmd_leave(args)
+        else:
+            args.finish()
+            self.room_state.leave()
+
     def cmd_close(self,args):
         args.finish()
         self.room_state.leave()
         self.buffer.close()
         return 1
 
-ui.CommandTable("muc buffer",50,(
+ui.CommandTable("muc buffer",51,(
     ui.Command("me",Room.cmd_me,
         "/me text",
         "Sends /me text",
         ("text",)),
+    ui.Command("subject",Room.cmd_subject,
+        "/subject text",
+        "Sets the subject of the room",
+        ("text",)),
+    ui.CommandAlias("topic","subject"),
+    ui.Command("leave",Room.cmd_leave,
+        "/leave [jid]",
+        "Leave the chat room",
+        ("jid",)),
     ui.Command("close",Room.cmd_close,
         "/close",
         "Closes current chat buffer"),
@@ -190,9 +220,28 @@ class Plugin(PluginBase):
             self.error("Connect first!")
             return
 
-        room_handler=Room(self,room_jid,self.cjc.stream.jid)
-        self.room_manager.join(room_jid,self.cjc.stream.jid.node,room_handler)
+        rs=self.room_manager.get_room_state(room_jid)
+        if rs:
+            room_handler=rs.handler
+        else:
+            room_handler=Room(self,room_jid,self.cjc.stream.jid)
+            self.room_manager.join(room_jid,self.cjc.stream.jid.node,room_handler)
         self.cjc.screen.display_buffer(room_handler.buffer)
+
+    def cmd_leave(self,args):
+        room_jid=args.shift()
+        if not room_jid:
+            self.error("/leave without arguments and current buffer is not a group chat")
+            return
+        room_jid=pyxmpp.JID(room_jid)
+        if room_jid.resource or not room_jid.node:
+            self.error("Bad room JID")
+            return
+        rs=self.room_manager.get_room_state(room_jid)
+        if rs:
+            rs.leave()
+        else:
+            self.error("Not in the room")
 
     def session_started(self,stream):
         if not self.room_manager:
@@ -231,10 +280,14 @@ class Plugin(PluginBase):
         except (IOError,OSError),e:
             self.cjc.error("Couldn't write chat log: "+str(e))
 
-ui.CommandTable("muc",51,(
+ui.CommandTable("muc",50,(
     ui.Command("join",Plugin.cmd_join,
-        "/chat room_jid",
+        "/join room_jid",
         "Join given Multi User Conference room",
+        ("jid")),
+    ui.Command("leave",Plugin.cmd_leave,
+        "/leave room_jid",
+        "Leave given Multi User Conference room",
         ("jid")),
     )).install()
 # vi: sts=4 et sw=4
