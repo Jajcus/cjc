@@ -1,3 +1,8 @@
+2003-12-03  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/roster.py:
+	- don't break when adding item already in roster
+
 2003-11-30  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/ui/complete.py, cjc/completions.py:
