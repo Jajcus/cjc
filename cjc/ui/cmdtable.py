@@ -61,7 +61,7 @@ class CommandHandler:
 				raise
 			except CommandError,e:
 				common.error(u"Command '%s' failed: %s" % (cmd,e))
-			except StandardError,e:
+			except common.standard_errors,e:
 				common.error("Comand execution failed: "+str(e))
 				common.print_exception()
 			return 1
