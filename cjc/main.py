@@ -547,7 +547,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			else:
 				obj=self.plugins[plugin]
 			for var in obj.available_settings:
-				descr,typ,location=obj.available_settings[var]
+				descr,typ,location=obj.available_settings[var][:3]
 				if location is None:
 					val=obj.settings.get(var)
 				elif location.startswith("."):
