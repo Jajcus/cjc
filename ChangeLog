@@ -1,3 +1,8 @@
+2004-01-24  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/message.py, plugins/presence.py, plugins/version.py:
+	- disco features fix ('message' and 'pressence' removed, 'jabber:iq:version' added)
+
 2004-01-18  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* Makefile:
