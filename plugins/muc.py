@@ -3,7 +3,7 @@ import curses
 import os
 
 import pyxmpp
-from pyxmpp.jabber import muc
+from pyxmpp.jabber import muc,delay
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
@@ -45,32 +45,35 @@ class Room(muc.MucRoomHandler):
                 "role": user.role, "affiliation": user.affiliation})
         return fparams
 
-    def add_msg(self,s,format,user):
-        fparams=self.user_format_params(user)
-        if s.startswith(u"/me "):
-            fparams["msg"]=s[4:]
-            self.buffer.append_themed("muc.action",fparams)
-            self.buffer.update()
-            return
-        fparams["msg"]=s
-        self.buffer.append_themed(format,fparams)
-        self.buffer.update()
-
     def message_received(self,user,stanza):
         body=stanza.get_body()
         if not body:
             return
+        if user:
+            fparams=self.user_format_params(user)
+        else:
+            fparams=dict(self.fparams)
+        d=delay.get_delay(stanza)
+        if d:
+            fparams["timestamp"]=d.timestamp
+        if body.startswith(u"/me "):
+            fparams["msg"]=body[4:]
+            self.buffer.append_themed("muc.action",fparams)
+            self.buffer.update()
+            return
+        else:
+            fparams["msg"]=body
         fr=stanza.get_from()
         if user is None:
-            fparams=dict(self.fparams)
-            fparams["msg"]=body
             self.buffer.append_themed("muc.info",fparams)
             self.buffer.update()
             return
         elif fr==self.room_state.room_jid:
-            self.add_msg(body,"muc.me",user)
+            format="muc.me"
         else:
-            self.add_msg(body,"muc.other",user)
+            format="muc.other"
+        self.buffer.append_themed(format,fparams)
+        self.buffer.update()
 
     def subject_changed(self,user,stanza):
         fparams=dict(self.fparams)
@@ -80,20 +83,29 @@ class Room(muc.MucRoomHandler):
         else:
             fparams["msg"]=(u"The subject has been changed to: %s" 
                     % (self.room_state.subject,))
+        d=delay.get_delay(stanza)
+        if d:
+            fparams["timestamp"]=d.timestamp
         self.buffer.append_themed("muc.info",fparams)
         self.buffer.update()
         return
 
-    def other_joined(self,user):
+    def other_joined(self,user,stanza):
         fparams=dict(self.fparams)
         fparams["msg"]=(u"%s has entered the room." % (user.nick,))
+        d=delay.get_delay(stanza)
+        if d:
+            fparams["timestamp"]=d.timestamp
         self.buffer.append_themed("muc.info",fparams)
         self.buffer.update()
         return
  
-    def other_left(self,user):
+    def other_left(self,user,stanza):
         fparams=dict(self.fparams)
         fparams["msg"]=(u"%s has left the room." % (user.nick,))
+        d=delay.get_delay(stanza)
+        if d:
+            fparams["timestamp"]=d.timestamp
         self.buffer.append_themed("muc.info",fparams)
         self.buffer.update()
         return
