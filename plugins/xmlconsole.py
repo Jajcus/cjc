@@ -138,6 +138,14 @@ class Plugin(PluginBase):
             self.saved_data_out_cb(data)
         self.show_data(data,"out")
 
+    def unload(self):
+        ui.uninstall_cmdtable("xmlconsole buffer")
+        ui.uninstall_cmdtable("xmlconsole")
+        self.cjc.remove_event_handler("stream created",self.ev_stream_created)
+        self.cjc.remove_event_handler("stream closed",self.ev_stream_closed)
+        self.cmd_close(None)
+        return True
+
 ui.CommandTable("xmlconsole buffer",51,(
     ui.Command("close",Plugin.cmd_close,
         "/close",
