@@ -41,8 +41,7 @@ from cjc.ui.complete import Completion
 
 def init():
     screen=curses.initscr()
-    if curses.has_colors():
-        curses.start_color()
+    curses.start_color()
     curses.cbreak()
     curses.meta(1)
     curses.noecho()
