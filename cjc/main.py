@@ -1238,7 +1238,11 @@ class Application(jabber.Client,tls.TLSHandler):
             except (KeyboardInterrupt,SystemExit),e:
                 self.exit_request(unicode(str(e)))
                 self.print_exception()
+            except common.non_errors:
+                raise
+            except:
                 self.error("Other error cought")
+                self.print_exception()
         if logfile:
             print >>logfile,"Stream loop exiting"
 
