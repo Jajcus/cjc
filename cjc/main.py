@@ -726,12 +726,24 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		return 0
 
 	def ui_loop(self):
+		last_active=time.time()
+		idle=0
 		while not self.exit_time():
 			try:
-				self.screen.keypressed()
+				act=self.screen.keypressed()
 			except (KeyboardInterrupt,SystemExit),e:
 				self.exit_request(str(e))
 				self.print_exception()
+				act=1
+			now=time.time()
+			if act:
+				self.send_event("keypressed")
+				last_active=now
+				idle=0
+			else:
+				if int(now-last_active)>idle:
+					idle=int(now-last_active)
+					self.send_event("idle",idle)
 		print >>logfile,"UI loop exiting"
 
 	def stream_loop(self):
@@ -851,10 +863,6 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.debug("Roster updated")
 		self.send_event("roster updated",jid)
 
-	def idle(self):
-		pyxmpp.Client.idle(self)
-		self.send_event("idle")
-			
 	def print_exception(self):
 		if logfile:
 			traceback.print_exc(file=logfile)
