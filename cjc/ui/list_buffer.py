@@ -101,10 +101,7 @@ class ListBuffer(Buffer):
 	def clean_item(self,view):
 		ret=[]
 		for attr,s in view:
-			s=s.replace("\n","")
-			s=s.replace("\r","")
-			s=s.replace("\f","")
-			s=s.replace("\t","")
+			s=s.replace("\n"," ").replace("\r"," ").replace("\f"," ").replace("\t"," ")
 			ret.append((attr,s))
 		return ret
 
