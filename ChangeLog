@@ -1,5 +1,11 @@
 2004-06-02  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/muc.py:
+	- MUC support is much better now, working on...
+
+	* cjc/themes.py:
+	- conditinal formatting
+
 	* cjc/completions.py:
 	- updated for the new roster API in PyXMPP
 
