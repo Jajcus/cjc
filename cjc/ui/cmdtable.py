@@ -5,7 +5,7 @@ import curses
 
 from cjc import common
 
-quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)"(?P<rest>.*)$',re.UNICODE)
+quoted_arg_re=re.compile(r'^"(?P<arg>.*?)(?<!\\)"(?P<rest>.*)$',re.UNICODE)
 need_quote_re=re.compile(r'[ \"\\\n\t]',re.UNICODE)
 quote_re=re.compile(r'\\(.)',re.UNICODE)
 
