@@ -38,7 +38,6 @@ class Buffer(CommandHandler):
 			self.window.update_status(self.info)
 
 	def close(self):
-		common.debug("Closing buffer "+self.name)
 		self.active=0
 		n=buffer_list.index(self)
 		if self.window:
