@@ -45,6 +45,7 @@ theme_formats=(
 """),
     ("message.descr-per-user","Messages from %(J:peer:full)s [%(J:peer:show)s] %(J:peer:status)s"),
     ("message.descr","Messages"),
+    ("message.day_change",""),
 )
 
 class MessageBuffer:
@@ -187,6 +188,7 @@ class Plugin(PluginBase):
                 "auto_popup": False,
                 }
         app.add_event_handler("presence changed",self.ev_presence_changed)
+        app.add_event_handler("day changed",self.ev_day_changed)
         ui.activate_cmdtable("message",self)
 
     def cmd_message(self,args):
@@ -239,6 +241,12 @@ class Plugin(PluginBase):
         for buff in self.buffers[key]:
             if buff.peer==arg or buff.peer==arg.bare():
                 buff.buffer.update()
+
+    def ev_day_changed(self,event,arg):
+        for buffers in self.buffers.values():
+            for buf in buffers:
+                buf.buffer.append_themed("message.day_change",{},activity_level=0)
+                buf.buffer.update()
 
     def session_started(self,stream):
         self.cjc.stream.set_message_handler("normal",self.message_normal)

@@ -20,6 +20,7 @@ theme_formats=(
     ("chat.peer","[%(T:timestamp)s] %[chat.peer]<%(J:peer:nick)s>%[] %(msg)s\n"),
     ("chat.action","[%(T:timestamp)s] %[chat.info]* %(J:jid:nick)s %(msg)s\n"),
     ("chat.descr","Chat with %(J:peer:full)s [%(J:peer:show)s] %(J:peer:status)s"),
+    ("chat.day_change","%{@day_change}"),
 )
 
 class Conversation:
@@ -145,6 +146,7 @@ class Plugin(PluginBase):
                 "auto_popup": True,
                 }
         app.add_event_handler("presence changed",self.ev_presence_changed)
+        app.add_event_handler("day changed",self.ev_day_changed)
         ui.activate_cmdtable("chat",self)
 
     def cmd_chat(self,args):
@@ -181,6 +183,12 @@ class Plugin(PluginBase):
         for conv in self.conversations[key]:
             if conv.peer==arg or conv.peer==arg.bare():
                 conv.buffer.update_info(conv.fparams)
+
+    def ev_day_changed(self,event,arg):
+        for convs in self.conversations.values():
+            for conv in convs:
+                conv.buffer.append_themed("chat.day_change",{},activity_level=0)
+                conv.buffer.update()
 
     def session_started(self,stream):
         self.cjc.stream.set_message_handler("chat",self.message_chat)

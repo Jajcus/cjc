@@ -37,6 +37,7 @@ theme_formats=(
     ("muc.presence_changed","[%(T:timestamp)s] %[muc.info]* %(nick)s is now: [%(show?%(show)s,online)s]%(status? %(status)s)s\n"),
     ("muc.info","[%(T:timestamp)s] %[muc.info]* %(msg)s\n"),
     ("muc.descr","Conference on %(J:room:bare)s"),
+    ("muc.day_change","%{@day_change}"),
 )
 
 class Room(muc.MucRoomHandler):
@@ -321,6 +322,7 @@ class Plugin(PluginBase):
                 "buffer_preference": 10,
                 "default_nick": None,
                 }
+        app.add_event_handler("day changed",self.ev_day_changed)
         ui.activate_cmdtable("muc",self)
         self.room_manager=None
 
@@ -379,6 +381,13 @@ class Plugin(PluginBase):
         else:
             self.room_manager.set_stream(stream)
         self.room_manager.set_handlers()
+
+    def ev_day_changed(self,event,arg):
+        if not self.room_manager:
+            return
+        for room in self.room_manager.rooms.values():
+            room.handler.buffer.append_themed("muc.day_change",{},activity_level=0)
+            room.handler.buffer.update()
 
     def log_message(self,dir,sender,recipient,subject,body,thread):
         #FIXME

@@ -18,6 +18,7 @@ theme_formats=(
     ("xmlconsole.out","%[xmlconsole.out][%(T:now)s] OUT: %(msg)s\n"),
     ("xmlconsole.in","%[xmlconsole.in][%(T:now)s] IN: %(msg)s\n"),
     ("xmlconsole.descr","Raw XML console"),
+    ("xmlconsole.day_change","%{@day_change}"),
 )
 
 class Plugin(PluginBase):
@@ -35,6 +36,7 @@ class Plugin(PluginBase):
             }
         app.add_event_handler("stream created",self.ev_stream_created)
         app.add_event_handler("stream closed",self.ev_stream_closed)
+        app.add_event_handler("day changed",self.ev_day_changed)
         ui.activate_cmdtable("xmlconsole",self)
         self.away_saved_presence=None
         self.buffer=None
@@ -51,6 +53,12 @@ class Plugin(PluginBase):
             return
         self.setup_stream_callbacks(None)
 
+    def ev_day_changed(self,event,arg):
+        if not self.buffer:
+            return
+        self.buffer.append_themed("xmlconsole.day_change",{},activity_level=0)
+        self.buffer.update()
+    
     def setup_stream_callbacks(self,stream):
         if stream:
             self.saved_data_in_cb=stream.data_in

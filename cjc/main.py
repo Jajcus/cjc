@@ -12,6 +12,7 @@ import threading
 import socket
 import signal
 import getopt
+import datetime
 
 import pyxmpp
 from pyxmpp import jabber
@@ -73,6 +74,7 @@ global_theme_formats=(
     ("warning",u"%[warning][%(T:now)s] %(msg)s\n"),
     ("info",u"%[info][%(T:now)s] %(msg)s\n"),
     ("debug",u"%[debug][%(T:now)s] %(msg)s\n"),
+    ("day_change",u"%[warning][%(T:now:%c)s] And here comes a brand new day...\n"),
     ("buffer_visible",""),
     ("buffer_inactive",""),
     ("buffer_active1","%[default]%(buffer_num)i"),
@@ -279,6 +281,9 @@ class Application(jabber.Client,tls.TLSHandler):
     def send_event(self,event,arg=None):
         if event=="presence changed" and arg==self.jid:
             self.update_status_bars()
+        if event=="day changed":
+            self.status_buf.append_themed("day_change",{})
+            self.status_buf.update(1)
         if not self.event_handlers.has_key(event):
             return
         for h in self.event_handlers[event]:
@@ -1131,7 +1136,8 @@ class Application(jabber.Client,tls.TLSHandler):
         p.dump_stats("cjc-ui.prof")
 
     def ui_loop(self):
-        last_active=time.time()
+        last_time=datetime.datetime.now()
+        last_active=last_time
         idle=0
         while not self.exit_time():
             try:
@@ -1145,15 +1151,19 @@ class Application(jabber.Client,tls.TLSHandler):
             except:
                 self.print_exception()
                 act=0
-            now=time.time()
+            now=datetime.datetime.now()
+            if now.day!=last_time.day:
+                self.send_event("day changed")
             if act:
                 self.send_event("keypressed")
                 last_active=now
                 idle=0
             else:
-                if int(now-last_active)>idle:
-                    idle=int(now-last_active)
+                dif=now-last_active
+                if dif>datetime.timedelta(seconds=idle):
+                    idle=dif.seconds+24L*60*60*dif.days
                     self.send_event("idle",idle)
+            last_time=now
         if logfile:
             print >>logfile,"UI loop exiting"
 
