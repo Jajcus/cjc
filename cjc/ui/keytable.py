@@ -14,7 +14,7 @@ class KeyBinding:
 	def __init__(self,fun,keys):
 		m=fun_re.match(fun)
 		if not m:
-			raise KeytableError,"Bad key function syntax"
+			raise KeytableError,"Bad key function syntax: "+`fun`
 		self.fun=m.group(1)
 		self.arg=m.group(3)
 		if keys is None:
@@ -28,7 +28,7 @@ class KeyFunction:
 	def __init__(self,name,handler,descr,default_keys=None):
 		m=fun_re.match(name)
 		if not m:
-			raise KeytableError,"Bad key function syntax"
+			raise KeytableError,"Bad key function syntax: "+`name`
 		arg=m.group(3)
 		if arg is not None:
 			if arg:
@@ -333,7 +333,7 @@ def keypressed():
 	return 1
 
 def bind(keyname,fun,table=None):
-	binding=KeyBinding(keyname,fun)
+	binding=KeyBinding(fun,keyname)
 	if table:
 		return table.bind(binding)
 	for t in keytables:

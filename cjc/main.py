@@ -905,11 +905,37 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		self.theme_manager.command(args)
 
 	def cmd_bind(self,args):
-		self.status_buf.append_themed("keybindings",{"tables":self.format_keytables})
-		self.status_buf.update()
+		function=args.shift()
+		if not function:
+			self.status_buf.append_themed("keybindings",
+						{"tables":self.format_keytables})
+			self.status_buf.update()
+			return
+		arg2=args.shift()
+		if arg2:
+			arg3=args.shift()
+			if arg3:
+				table,keyname=arg2,arg3
+			else:
+				table,keyname=None,arg2
+		else:
+			table=None
+			keyname=None
+		args.finish()
+		if not keyname:
+			self.error("Not implemented yet (you must give keyname argument).")
+			return
+		ui.keytable.bind(keyname,function,table)
 
-	def cmd_unbind(self):
-		pass
+	def cmd_unbind(self,args):
+		arg1=args.shift()
+		arg2=args.shift()
+		args.finish()
+		if arg2:
+			table,keyname=arg1,arg2
+		else:
+			table,keyname=None,arg1
+		ui.keytable.unbind(keyname,table)
 
 	def format_keytables(self,attr,params):
 		r=[]
