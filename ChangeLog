@@ -1,3 +1,8 @@
+2004-07-20  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/themes.py:
+	- /buffer_list command added
+
 2004-07-19  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/main.py:
