@@ -12,6 +12,7 @@ import curses
 import threading
 import socket
 import signal
+import getopt
 
 import pyxmpp
 
@@ -22,7 +23,7 @@ import commands
 import themes
 import common
 
-logfile=open("cjc.log","a")
+logfile=None
 
 class Exit(Exception):
 	pass
@@ -53,10 +54,10 @@ global_commands={
 		"Disconnect from a Jabber server"),
 	"save": ("cmd_save",
 		"/save [filename]",
-		"Save current settings to a file (default: .cjcrc)"),
+		"Save current settings to a file (default: ~/.cjc/config)"),
 	"load": ("cmd_load",
 		"/load [filename]",
-		"Load settings from a file (default: .cjcrc)"),
+		"Load settings from a file (default: ~/.cjc/config)"),
 	"redraw": ("cmd_redraw",
 		"/redraw",
 		"Redraw screen"),
@@ -68,7 +69,7 @@ global_commands={
 		"Show simple help"),
 	"theme": ("cmd_theme",
 		("/theme load [filename]","/theme save [filename]"),
-		"Theme management. Default theme filename is \".cjc-theme\""),
+		"Theme management. Default theme filename is \"~/.cjc/theme\""),
 	"alias": ("cmd_alias",
 		"/alias name command [arg...]",
 		"Defines an alias for command. When the alias is used $1, $2, etc."
@@ -118,7 +119,7 @@ global_theme_formats=(
 )
 
 class Application(pyxmpp.Client,commands.CommandHandler):
-	def __init__(self):
+	def __init__(self,base_dir,config_file="config",theme_file="theme"):
 		pyxmpp.Client.__init__(self)
 		commands.CommandHandler.__init__(self,global_commands)
 		self.settings={
@@ -131,7 +132,13 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			"autoconnect":0}
 		self.aliases={}
 		self.available_settings=global_settings
-		self.plugin_dirs=["cjc/plugins"]
+		self.base_dir=base_dir
+		self.config_file=config_file
+		self.theme_file=theme_file
+		home=os.environ.get("HOME","")
+		self.home_dir=os.path.join(home,".cjc")
+		self.plugin_dirs=[os.path.join(base_dir,"plugins"),
+					os.path.join(self.home_dir,"plugins")]
 		self.plugins={}
 		self.event_handlers={}
 		self.user_info={}
@@ -159,13 +166,14 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	def load_plugins(self):
 		sys_path=sys.path
 		for path in self.plugin_dirs:
-			self.info("Loading plugins from %s:" % (path,))
 			sys.path=[path]+sys_path
 			try:
 				d=os.listdir(path)
 			except (OSError,IOError),e:
-				self.error("Couldn't get plugin list: %s" % (e,))
+				self.debug("Couldn't get plugin list: %s" % (e,))
+				self.info("Skipping plugin directory %s" % (path,))
 				continue
+			self.info("Loading plugins from %s:" % (path,))
 			for f in d:
 				if f[0]=="." or not f.endswith(".py"):
 					continue
@@ -321,7 +329,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.screen=screen
 		self.theme_manager=themes.ThemeManager(self)
 		try:
-			self.theme_manager.load(".cjc-theme")
+			self.theme_manager.load()
 		except (IOError,OSError):
 			pass
 		self.theme_manager.set_default_attrs(global_theme_attrs)
@@ -339,8 +347,13 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		common.debug=self.debug
 		common.print_exception=self.print_exception
 		
+		if not os.path.exists(self.home_dir):
+			try:
+				os.makedirs(self.home_dir)
+			except (OSError,IOError),e:
+				self.info(e)
+				
 		self.load_plugins()
-
 		self.load()
 		if not self.settings["jid"]:
 			self.info("")
@@ -647,13 +660,15 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	
 	def save(self,filename=None):
 		if filename is None:
-			filename=".cjcrc"
+			filename=self.config_file
+		if not os.path.split(filename)[0]:
+			filename=os.path.join(self.home_dir,filename)
 		self.info(u"Saving settings to "+filename)
 		try:
 			f=file(filename,"w")
 		except IOError,e:
 			self.error(u"Couldn't open config file: "+str(e))
-			return
+			return 0
 
 		for plugin in [None]+self.plugins.keys():
 			if plugin is None:
@@ -680,6 +695,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				print >>f,"set",args.all()
 		for alias,value in self.aliases.items():
 			print >>f,"alias",alias,value
+		return 1
 				
 
 	def cmd_load(self,args):
@@ -689,12 +705,14 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		
 	def load(self,filename=None):
 		if filename is None:
-			filename=".cjcrc"
+			filename=self.config_file
+		if not os.path.split(filename)[0]:
+			filename=os.path.join(self.home_dir,filename)
 		try:
-			f=file(".cjcrc","r")
+			f=file(filename,"r")
 		except IOError,e:
 			self.warning("Couldn't open config file: "+str(e))
-			return
+			return 0
 		
 		for l in f.readlines():
 			if not l:
@@ -722,6 +740,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				self.warning(
 					"Invalid config directive %r ignored" % (l,))
 		f.close()
+		return 1
 
 	def cmd_redraw(self,args):
 		self.screen.redraw()
@@ -845,7 +864,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				if int(now-last_active)>idle:
 					idle=int(now-last_active)
 					self.send_event("idle",idle)
-		print >>logfile,"UI loop exiting"
+		if logfile:
+			print >>logfile,"UI loop exiting"
 
 	def stream_loop(self):
 		while not self.exit_time():
@@ -876,7 +896,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			except (KeyboardInterrupt,SystemExit),e:
 				self.exit_request(unicode(str(e)))
 				self.print_exception()
-		print >>logfile,"Stream loop exiting"
+		if logfile:
+			print >>logfile,"Stream loop exiting"
 
 	def main_loop(self):
 		while not self.exit_time():
@@ -887,7 +908,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			except (KeyboardInterrupt,SystemExit),e:
 				self.exit_request(unicode(str(e)))
 				self.print_exception()
-		print >>logfile,"Main loop exiting"
+		if logfile:
+			print >>logfile,"Main loop exiting"
 		
 	def get_user(self,name):
 		if name.find("@")>=0:
@@ -1008,14 +1030,62 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		#self.status_buf.append_themed("debug",s)
 		#self.status_buf.update(1)
 
+def usage():
+	print
+	print "Console Jabber Client (c) 2003 Jacek Konieczny <jajcus@bnet.pl>"
+	print
+	print "Usage:"
+	print "  %s [OPTIONS]" % (sys.argv[0],)
+	print 
+	print "Options:"
+	print "  -c filename"
+	print "  --config-file=filename   Config file to load. If filename doesn't contain"
+	print "                           slashes the file is assumed to be in ~/.cjc"
+	print "                           default: 'config'"
+	print "  -t filename"
+	print "  --theme-file=filename    Theme file to load. If filename doesn't contain"
+	print "                           slashes the file is assumed to be in ~/.cjc/themes"
+	print "                           default: 'default'"
+	print "  -l filename"
+	print "  --log-file=filename      File where debug log should be written"
 
-def main():
+def main(base_dir):
 	locale.setlocale(locale.LC_ALL,"")
-	app=Application()
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "hc:t:l:", 
+					["help","config-file=","theme-file=","log-file="])
+	except getopt.GetoptError:
+		usage()
+		sys.exit(2)
+
+	if args:
+		usage()
+		sys.exit(2)
+
+	config_file="config"
+	theme_file="default"
+	for o,a in opts:
+		if o in ("-c","--config-file"):
+			config_file=a
+		elif o in ("-t","--theme-file"):
+			theme_file=a
+		elif o in ("-l","--log-file"):
+			global logfile
+			if a=="-":
+				logfile=sys.stderr
+			else:
+				logfile=open(a,"a",1)
+		else:
+			usage()
+			sys.exit(0)
+
+	app=Application(base_dir,config_file,theme_file)
 	try:
 		screen=ui.init()
 		app.run(screen)
 	finally:
-		print >>logfile,"Cleaning up"
+		if logfile:
+			print >>logfile,"Cleaning up"
 		ui.deinit()
-		print >>logfile,"Cleaned up"
+		if logfile:
+			print >>logfile,"Cleaned up"

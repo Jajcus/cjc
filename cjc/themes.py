@@ -4,6 +4,7 @@ import re
 import time
 from types import UnicodeType,StringType
 import version
+import os
 
 import pyxmpp
 
@@ -60,7 +61,15 @@ class ThemeManager:
 		self.pairs={}
 		self.next_pair=1
 		self.app=app
-	def load(self,filename):
+	def load(self,filename=None):
+		if not filename:
+			filename=self.app.theme_file
+		if not os.path.split(filename)[0]:
+			fn=os.path.join(self.app.home_dir,"themes",filename)
+			if os.path.exists(fn):
+				filename=fn
+			else:
+				filename=os.path.join(self.app.home_dir,"themes",filename)
 		f=open(filename,"r")
 		for l in f.xreadlines():
 			command=CommandArgs(l.strip())
@@ -68,7 +77,14 @@ class ThemeManager:
 		f.close()
 		if self.app and self.app.screen:
 			self.app.screen.redraw()
-	def save(self,filename):
+	def save(self,filename=None):
+		if not filename:
+			filename=self.app.theme_file
+		if not os.path.split(filename)[0]:
+			theme_dir=os.path.join(self.app.home_dir,"themes")
+			if not os.path.exists(theme_dir):
+				os.makedirs(theme_dir)
+			filename=os.path.join(theme_dir,filename)
 		f=open(filename,"w")
 		attr_names=self.attr_defs.keys()
 		attr_names1=[n for n in attr_names if n.find(".")<0]
@@ -100,15 +116,11 @@ class ThemeManager:
 		cmd=args.shift()
 		if cmd=="save" and not safe:
 			filename=args.shift()
-			if not filename:
-				filename=".cjc-theme"
 			args.finish()
 			self.save(filename)
 			return
 		if cmd=="load" and not safe:
 			filename=args.shift()
-			if not filename:
-				filename=".cjc-theme"
 			args.finish()
 			self.load(filename)
 			return
