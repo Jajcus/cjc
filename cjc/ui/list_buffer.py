@@ -36,6 +36,7 @@ class ListBuffer(Buffer):
 			i=len(self.keys)
 			self.keys.append(key)
 			self.items.append(view)
+			self.activity(1)
 			self.display(i)
 		finally:
 			self.lock.release()
@@ -57,6 +58,7 @@ class ListBuffer(Buffer):
 				i=len(self.keys)
 				self.keys.append(key)
 				self.items.append(view)
+			self.activity(1)
 			self.display(i)
 		finally:
 			self.lock.release()
@@ -69,6 +71,7 @@ class ListBuffer(Buffer):
 			except ValueError:
 				raise ListBufferError,"Item not found"
 			self.items[i]=view
+			self.activity(1)
 			self.display(i)
 		finally:
 			self.lock.release()
