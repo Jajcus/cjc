@@ -34,11 +34,12 @@ class UserCompletion(ui.Completion):
         for jid in self.app.user_info.keys():
             if self.app.roster:
                 try:
-                    name=self.app.roster.item_by_jid(pyxmpp.JID(jid)).name
+                    name=self.app.roster.item_by_jid(jid).name
                     if name in matches:
                         continue
                 except KeyError:
                     pass
+            jid=jid.as_unicode()
             if jid.startswith(word) and jid not in matches:
                 matches.append(jid)
         common.debug("roster completion matches for %r: %r" % (word,matches))

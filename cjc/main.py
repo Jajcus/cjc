@@ -1233,12 +1233,11 @@ class Application(jabber.Client,tls.TLSHandler):
     def get_bare_user_info(self,jid,var=None):
         if jid.resource:
             jid=jid.bare()
-        ujid=jid.as_unicode()
-        if not self.user_info.has_key(ujid):
+        if not self.user_info.has_key(jid):
             return None
         if var is None:
-            return self.user_info[ujid]
-        return self.user_info[ujid].get(var)
+            return self.user_info[jid]
+        return self.user_info[jid].get(var)
 
     def get_user_info(self,jid,var=None):
         uinf=self.get_bare_user_info(jid)
@@ -1253,14 +1252,13 @@ class Application(jabber.Client,tls.TLSHandler):
 
     def set_user_info(self,jid,var,val):
         bare=jid.bare()
-        ubare=bare.as_unicode()
-        if self.user_info.has_key(ubare):
-            uinf=self.user_info[ubare]
+        if self.user_info.has_key(bare):
+            uinf=self.user_info[bare]
             if not uinf.has_key("resources"):
                 uinf["resources"]={}
         else:
             uinf={"resources":{},"jid":bare}
-            self.user_info[ubare]=uinf
+            self.user_info[bare]=uinf
 
         if uinf["resources"].has_key(jid.resource):
             fuinf=uinf["resources"][jid.resource]
@@ -1271,12 +1269,11 @@ class Application(jabber.Client,tls.TLSHandler):
 
     def set_bare_user_info(self,jid,var,val):
         bare=jid.bare()
-        ubare=bare.as_unicode()
-        if self.user_info.has_key(ubare):
-            uinf=self.user_info[ubare]
+        if self.user_info.has_key(bare):
+            uinf=self.user_info[bare]
         else:
             uinf={"jid":bare}
-            self.user_info[ubare]=uinf
+            self.user_info[bare]=uinf
         uinf[var]=val
 
     def roster_updated(self,jid=None):
