@@ -8,12 +8,23 @@ from cjc import commands
 import buffer
 
 screen_commands={
-	"next": ("focus_next",
+	"next": ("cmd_next",
 		"/next",
 		"Change active window to the next one"),
-	"prev": ("focus_prev",
+	"prev": ("cmd_prev",
 		"/previous",
 		"Change active window to the previous one"),
+	"nextbuf": ("cmd_nextbuf",
+		"/nextbuf",
+		"Change buffer in active window to next available"),
+	"nb": "nextbuf",
+	"prevbuf": ("cmd_prevbuf",
+		"/nextbuf",
+		"Change buffer in active window to next available"),
+	"pb": "prevbuf",
+	"move": ("cmd_move",
+		"/move [oldnumber] number",
+		"Change buffer order"), 
 }
 
 class Screen(commands.CommandHandler):
@@ -118,7 +129,7 @@ class Screen(commands.CommandHandler):
 		finally:
 			self.lock.release()
 				
-	def focus_next(self,args=None):
+	def cmd_next(self,args=None):
 		if len(self.windows)<=1:
 			return
 			
@@ -131,7 +142,7 @@ class Screen(commands.CommandHandler):
 				self.focus_window(win)
 				break
 
-	def focus_prev(self,args=None):
+	def cmd_prev(self,args=None):
 		if len(self.windows)<=1:
 			return
 			
@@ -144,6 +155,84 @@ class Screen(commands.CommandHandler):
 				self.focus_window(win)
 				break
 	
+	def cmd_nextbuf(self,args=None):
+		if args:
+			args.finish()
+		if not self.active_window:
+			curses.beep()
+			return
+		buf=self.active_window.buffer
+		next=None
+		wasbuf=0
+		for b in buffer.buffer_list:
+			if b is None:
+				continue
+			if b is buf:
+				wasbuf=1
+				continue
+			if b.window:
+				continue
+			if not wasbuf and not next:
+				next=b
+				continue
+			if wasbuf:
+				next=b
+				break
+		if next:
+			self.active_window.set_buffer(next)
+			self.active_window.update()
+		else:
+			curses.beep()
+
+	def cmd_prevbuf(self,args=None):
+		if args:
+			args.finish()
+		if args:
+			args.finish()
+		if not self.active_window:
+			curses.beep()
+			return
+		buf=self.active_window.buffer
+		next=None
+		wasbuf=0
+		lst=list(buffer.buffer_list)
+		lst.reverse()
+		for b in lst:
+			if b is None:
+				continue
+			if b is buf:
+				wasbuf=1
+				continue
+			if b.window:
+				continue
+			if not wasbuf and not next:
+				next=b
+				continue
+			if wasbuf:
+				next=b
+				break
+		if next:
+			self.active_window.set_buffer(next)
+			self.active_window.update()
+		else:
+			curses.beep()
+
+	def cmd_move(self,args):
+		num1=args.shift()
+		if not num1:
+			curses.beep()
+			return
+		num2=args.shift()
+		if num2:
+			oldnum,newnum=int(num1),int(num2)
+		else:
+			if not self.active_window or not self.active_window.buffer:
+				curses.beep()
+				return
+			newnum=int(num1)
+			oldnum=self.active_window.buffer.get_number()
+		buffer.move(oldnum,newnum)
+
 	def cursync(self):
 		if self.input_handler:
 			self.input_handler.cursync()

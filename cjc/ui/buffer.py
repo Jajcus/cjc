@@ -147,3 +147,12 @@ def get_by_number(n):
 		return buffer_list[n-1]
 	except IndexError:
 		return None
+
+def move(oldnum,newnum):
+	buffer_list[newnum-1],buffer_list[oldnum-1]=buffer_list[oldnum-1],buffer_list[newnum-1]
+	if buffer_list[newnum-1]:
+		buffer_list[newnum-1].update_info({"buffer_num":newnum})
+	if buffer_list[oldnum-1]:
+		buffer_list[oldnum-1].update_info({"buffer_num":oldnum})
+	for f in activity_handlers:
+		f()
