@@ -1,3 +1,8 @@
+2004-09-05  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/themes.py:
+	- theme switching fixed (CJC was lacking curses color pairs when loading new theme, because old pairs were not reused)
+
 2004-09-03  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/chat.py, cjc/ui/buffer.py, cjc/ui/cmdtable.py, cjc/main.py:
