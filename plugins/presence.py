@@ -28,6 +28,7 @@ class Plugin(PluginBase):
 			}
 		app.add_info_handler("resources",self.info_resources)
 		app.add_info_handler("presence",self.info_presence)
+		app.add_event_handler("disconnect request",self.ev_disconnect_request)
 
 	def info_resources(self,k,v):
 		if not v:
@@ -77,6 +78,10 @@ class Plugin(PluginBase):
 		self.cjc.stream.set_presence_handler("unavailable",self.presence_unavailable)
 		self.set_presence(pyxmpp.Presence(priotity=self.settings["priority"]))
 
+	def ev_disconnect_request(self,event,arg):
+		p=pyxmpp.Presence(type="unavailable",status=arg)
+		self.set_presence(p)
+		
 	def set_presence(self,p):
 		self.cjc.stream.send(p)
 		self.cjc.set_user_info(self.cjc.jid,"presence",p)
