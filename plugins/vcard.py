@@ -37,18 +37,17 @@ class Plugin(PluginBase):
         pass
 
     def cmd_whois(self,args):
-        target=args.shift()
-        if not target:
-            self.info(self.version_string())
-            return
-
         if not self.cjc.stream:
             self.error("Connect first!")
             return
 
-        jid=self.cjc.get_user(target)
-        if jid is None:
-            return
+        target=args.shift()
+        if target:
+            jid=self.cjc.get_user(target)
+            if jid is None:
+                return
+        else:
+            jid=self.cjc.jid.bare()
 
         iq=pyxmpp.Iq(to=jid,type="get")
         q=iq.new_query(VCARD_NS)
