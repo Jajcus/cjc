@@ -1,6 +1,9 @@
 2004-06-02  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py:
+	- timestamp handling
+
+	* plugins/muc.py:
 	- MUC support is much better now, working on...
 
 	* cjc/themes.py:
