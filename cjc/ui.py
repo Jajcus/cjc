@@ -491,6 +491,7 @@ class StatusBar(Widget):
 		self.win.clear()
 		self.win.move(0,0)
 		s=(self.format % self.dict).encode(self.screen.encoding,"replace")
+		s=s[:self.w]
 		self.win.addstr(s)
 		if now:
 			self.win.refresh()
