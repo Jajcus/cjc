@@ -195,6 +195,8 @@ def keyname_to_code(name):
 		meta=0
 	if hasattr(curses,"KEY_"+name.upper()):
 		return getattr(curses,"KEY_"+name.upper()),meta
+	if hasattr(curses,"key_"+name.lower()):
+		return getattr(curses,"key_"+name.upper()),meta
 	if name.upper()=="SPACE":
 		return 32,meta
 	if name.upper()=="ESCAPE":
@@ -222,6 +224,8 @@ def keycode_to_name(code,meta):
 		name=curses.keyname(code)
 		if name.startswith("KEY_"):
 			name=name[4:]
+		if name.startswith("key_"):
+			name=name[4:].upper()
 		if name.startswith("F("):
 			name="F"+name[2:-1]
 	elif code>=128:
