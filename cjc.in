@@ -1,0 +1,8 @@
+#!/usr/bin/python
+
+base_dir='BASE_DIR'
+
+import sys
+sys.path.insert(0,base_dir)
+from cjc import main
+main.main(base_dir)
