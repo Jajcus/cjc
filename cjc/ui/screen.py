@@ -28,7 +28,7 @@ class Screen(commands.CommandHandler):
 		self.active_window=None
 		self.windows=[]
 		self.input_handler=None
-		self.default_command_handler=None
+		self.command_handler=None
 		self.escape=0
 		self.lock=threading.RLock()
 		lc,self.encoding=locale.getlocale()
@@ -88,8 +88,8 @@ class Screen(commands.CommandHandler):
 	def set_input_handler(self,h):
 		self.input_handler=h
 
-	def set_default_command_handler(self,h):
-		self.default_command_handler=h
+	def set_command_handler(self,h):
+		self.command_handler=h
 
 	def add_window(self,win):
 		if not self.windows:
@@ -212,11 +212,7 @@ class Screen(commands.CommandHandler):
 			cmd,args=s[0],None
 		args=commands.CommandArgs(args)
 		cmd=cmd.lower()
-		if self.active_window and self.active_window.command(cmd,args):
-			return
-		if self.command(cmd,args):
-			return
-		if self.default_command_handler and self.default_command_handler.command(cmd,args):
+		if self.command_handler and self.command_handler.command(cmd,args):
 			return
 			
 	def display_buffer(self,buffer):

@@ -67,7 +67,15 @@ global_commands={
 		"Show simple help"),
 	"theme": ("cmd_theme",
 		("/theme load [filename]","/theme save [filename]"),
-		"Theme management. Default theme filename is \".cjc-theme\"")
+		"Theme management. Default theme filename is \".cjc-theme\""),
+	"alias": ("cmd_alias",
+		"/alias name command [arg...]",
+		"Defines an alias for command. When the alias is used $1, $2, etc."
+		" are replaced with alias arguments."),
+	"unalias": ("cmd_unalias",
+		"/unalias name",
+		"Undefines an alias for command."),
+
 }
 
 global_settings={
@@ -118,6 +126,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			"layout":"plain",
 			"disconnect_timeout":10.0,
 			"disconnect_delay":0.25}
+		self.aliases={}
 		self.available_settings=global_settings
 		self.plugin_dirs=["cjc/plugins"]
 		self.plugins={}
@@ -195,6 +204,24 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.info_handlers[var]=handler
 
 	def command(self,cmd,args):
+		if self.aliases.has_key(cmd):
+			newcommand=self.aliases[cmd]
+			if args.args:
+				newcommand=newcommand.replace(u"$*",args.args)
+				i=1
+				while 1:
+					var=u"$%i" % (i,)
+					val=args.shift()
+					if val is None:
+						break
+					newcommand=newcommand.replace(var,val)
+					i+=1
+			args=commands.CommandArgs(newcommand)
+			cmd=args.shift()
+		if self.screen.active_window and self.screen.active_window.command(cmd,args):
+			return
+		if self.screen.command(cmd,args):
+			return
 		if not commands.CommandHandler.command(self,cmd,args):
 			self.error(u"Unknown command: %s" % (cmd,))
 
@@ -294,7 +321,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			pass
 		self.theme_manager.set_default_attrs(global_theme_attrs)
 		self.theme_manager.set_default_formats(global_theme_formats)
-		screen.set_default_command_handler(self)
+		screen.set_command_handler(self)
 		
 		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
 
@@ -409,7 +436,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.disconnect()
 	
 	def cmd_set(self,args):
+		self.debug("args: "+`args.args`)
 		fvar=args.shift()
+		self.debug("fvar: "+`fvar`+" args:"+`args.args`)
 		if not fvar:
 			for plugin in [None]+self.plugins.keys():
 				if plugin is None:
@@ -442,6 +471,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			return
 
 		val=args.shift()
+		self.debug("val: "+`val`)
 		args.finish()
 
 		if fvar.find(".")>0:
@@ -567,7 +597,36 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		filename=args.shift()
 		args.finish()
 		self.save(filename)
-		
+
+	def cmd_alias(self,args):
+		name=args.shift()
+		if not name:
+			self.info("Aliases:")
+			for alias,value in self.aliases.items():
+				self.info(u"  /%s %s" % (alias,value))
+			return
+		value=args.all()
+		if not value:
+			if self.aliases.has_key(name):
+				self.info("%s is an alias for: %s" % (name,self.aliases[name]))
+			else:
+				self.info("There is no such alias")
+			return
+		self.aliases[name]=value
+
+	def cmd_unalias(self,args):
+		name=args.shift()
+		if not name:
+			self.info("Aliases:")
+			for alias,value in self.aliases.items():
+				self.info(u"  /%s %s" % (alias,value))
+			return
+		args.finish()
+		if self.aliases.has_key(name):
+			del self.aliases[name]
+		else:
+			self.info("There is no such alias")
+	
 	def save(self,filename=None):
 		if filename is None:
 			filename=".cjcrc"
@@ -600,7 +659,10 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				elif typ is unicode:
 					val=val.encode("utf-8")
 				args.add_quoted(str(val))
-				print >>f,args.all()
+				print >>f,"set",args.all()
+		for alias,value in self.aliases.items():
+			print >>f,"alias",alias,value
+				
 
 	def cmd_load(self,args):
 		filename=args.shift()
@@ -624,7 +686,20 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				continue
 			try:
 				args=commands.CommandArgs(unicode(l,"utf-8"))
-				self.cmd_set(args)
+				self.debug("args: "+`args.args`)
+				cmd=args.get()
+				self.debug("cmd: %r args: %r" % (cmd,args.args))
+				if cmd=="alias":
+					args.shift()
+					self.debug("alias %r" % (args.args,))
+					self.cmd_alias(args)
+				elif cmd=="set":
+					args.shift()
+					self.debug("set %r" % (args.args,))
+					self.cmd_set(args)
+				else:
+					self.debug("set %r" % (args.args,))
+					self.cmd_set(args)
 			except (ValueError,UnicodeError):
 				self.warning(
 					"Invalid config directive %r ignored" % (l,))

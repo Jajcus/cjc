@@ -139,8 +139,9 @@ class Plugin(PluginBase):
 		else:
 			self.conversations[key]=[conversation]
 
-		if args.all():
-			conversation.user_input(args.all())
+		text=args.all()
+		if text:
+			conversation.user_input(text)
 			
 		self.cjc.screen.display_buffer(conversation.buffer)
 

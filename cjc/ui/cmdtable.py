@@ -98,11 +98,11 @@ class CommandArgs:
 			return None
 		if not args.startswith('"'):
 			sp=self.args.split(None,1)
-			if len(sp)>1:
-				ret,self.args=sp
-				return ret
 			if remove:
-				self.args=None
+				if len(sp)>1:
+					self.args=sp[1]
+				else:
+					self.args=None
 			return sp[0]
 		m=quoted_arg_re.match(args)
 		if not m:
