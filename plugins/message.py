@@ -58,6 +58,7 @@ class MessageBuffer:
         else:
             self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},"message.descr",
                     "message buffer",self)
+        self.buffer.preference=plugin.settings["buffer_preference"]
         self.buffer.update()
         self.last_sender=None
         self.last_subject=None
@@ -170,6 +171,7 @@ class Plugin(PluginBase):
             "log_filename": ("Where messages should be logged to",(str,None)),
             "log_format_in": ("Format of incoming message log entries",(str,None)),
             "log_format_out": ("Format of outgoing message log entries",(str,None)),
+            "buffer_preference": ("Preference of message buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             }
         self.settings={
                 "buffer":"per-user",
@@ -180,6 +182,7 @@ class Plugin(PluginBase):
                 "log_format_out": "[%(T:now:%c)s] Outgoing message\n"
                         "To: %(recipient)s\n"
                         "Subject: %(subject)s\n%(body)s\n",
+                "buffer_preference": 50,
                 }
         app.add_event_handler("presence changed",self.ev_presence_changed)
         ui.activate_cmdtable("message",self)

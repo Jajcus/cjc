@@ -44,7 +44,7 @@ global_settings={
     "tls_ca_cert_file": ("Path to CA certificates file",(str,None)),
     "auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5,digest')",list),
     "layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,"set_layout"),
-    "ignore_activity": ("List of buffer numbers which activity should be ignored (not displayed in the status bar)",list),
+    "status_buffer_preference": ("Preference of status buffer when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
     "disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
     "disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
     "autoconnect": ("Automatically connect on startup.",int),
@@ -118,6 +118,7 @@ class Application(jabber.Client,tls.TLSHandler):
             "keepalive":15*60,
             "backup_config":0,
             "case_sensitive":1,
+            "status_buffer_preference":1,
             "debug":0}
         self.aliases={}
         self.available_settings=global_settings
@@ -335,6 +336,7 @@ class Application(jabber.Client,tls.TLSHandler):
         self.theme_manager.set_default_formats(global_theme_formats)
 
         self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
+        self.status_buf.preference=self.settings["status_buffer_preference"]
 
         self.set_layout(self.settings["layout"],"plain")
 

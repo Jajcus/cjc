@@ -12,6 +12,7 @@ activity_handlers=[]
 class Buffer:
     def __init__(self,info,descr_format="default_buffer_descr",
             command_table=None,command_table_object=None):
+        self.preference=10
         self.command_table=command_table
         self.command_table_object=command_table_object
         try:

@@ -37,8 +37,9 @@ class Plugin(PluginBase):
         self.available_settings={
             "show": ("Which items show - list of 'available','unavailable','chat',"
                     "'online','away','xa' or 'all'",list,self.set_show),
+            "buffer_preference": ("Preference of chat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             }
-        self.settings={"show":["all"]}
+        self.settings={"show":["all"],"buffer_preference":2}
         app.add_info_handler("rostername",self.info_rostername)
         app.add_info_handler("rostergroups",self.info_rostergroups)
         app.add_event_handler("roster updated",self.ev_roster_updated)
@@ -47,6 +48,7 @@ class Plugin(PluginBase):
         app.theme_manager.set_default_attrs(theme_attrs)
         app.theme_manager.set_default_formats(theme_formats)
         self.buffer=ListBuffer(app.theme_manager,"Roster")
+        self.buffer.preference=self.settings["buffer_preference"]
         self.extra_items=[]
         ui.activate_cmdtable("roster",self)
 

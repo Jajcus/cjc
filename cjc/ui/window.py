@@ -54,11 +54,14 @@ class Window(Widget):
         return 1
 
     def switch_to_active_buffer(self):
-        for b in buffer.buffer_list:
-            if b and b.active>0 and not b.window:
-                self.set_buffer(b)
-                self.update()
-                return 1
+        bl=[(-b.preference,b.active,b.get_number(),b) 
+                for b in buffer.buffer_list 
+                if b and b.preference>0 and b.active>0]
+        if not bl:
+            return 1
+        bl.sort()
+        self.set_buffer(bl[0][3])
+        self.update()
         return 1
 
     def cmd_clear(self,args):

@@ -35,6 +35,7 @@ class Room(muc.MucRoomHandler):
         }
         self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,self.fparams,
                 "muc.descr","muc buffer",self)
+        self.buffer.preference=plugin.settings["buffer_preference"]
         self.buffer.user_input=self.user_input
         self.buffer.append_themed("muc.joining",self.fparams)
         self.buffer.update()
@@ -164,11 +165,13 @@ class Plugin(PluginBase):
             "log_filename": ("Where messages should be logged to",(str,None)),
             "log_format_in": ("Format of incoming message log entries",(str,None)),
             "log_format_out": ("Format of outgoing message log entries",(str,None)),
+            "buffer_preference": ("Preference of groupchat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             }
         self.settings={
                 "log_filename": "%($HOME)s/.cjc/logs/chats/%(J:room:bare)s",
                 "log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
+                "buffer_preference": 10,
                 }
         ui.activate_cmdtable("muc",self)
         self.room_manager=None

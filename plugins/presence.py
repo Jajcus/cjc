@@ -34,6 +34,7 @@ class Plugin(PluginBase):
             "auto_xa_msg": ("Auto-away status description",(unicode,None)),
             "show_changes": ("Auto-away status description",(int,None)),
             "show_errors": ("Auto-away status description",(int,None)),
+            "buffer_preference": ("Preference of presence subscription buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             }
         self.settings={
             "priority": 1,
@@ -43,6 +44,7 @@ class Plugin(PluginBase):
             "auto_xa_msg": u"Automaticaly xa after %i minutes of inactivity",
             "show_changes": 1,
             "show_errors": 1,
+            "buffer_preference": 50,
             }
         app.add_info_handler("resources",self.info_resources)
         app.add_info_handler("presence",self.info_presence)
@@ -367,6 +369,7 @@ class Plugin(PluginBase):
             return
         reason=stanza.get_status()
         buf=ui.TextBuffer(self.cjc.theme_manager,{"user":fr},"presence.subscribe_buffer")
+        buf.preference=self.settings["buffer_preference"]
         buf.append_themed("presence.subscribe",{"user":fr,"reason":reason})
         buf.ask_question("Accept?","boolean",None,self.subscribe_decision,None,
                                     (stanza.copy(),buf),None,1)
