@@ -221,7 +221,7 @@ class Plugin(PluginBase):
             return
 
         rs=self.room_manager.get_room_state(room_jid)
-        if rs:
+        if rs and rs.joined:
             room_handler=rs.handler
         else:
             room_handler=Room(self,room_jid,self.cjc.stream.jid)
