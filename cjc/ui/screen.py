@@ -252,16 +252,24 @@ class Screen:
     def cmd_move(self,args):
         num1=args.shift()
         if not num1:
-            self.beep()
+            self.__logger.error("/move requires at least one argument")
             return
         num2=args.shift()
         if num2:
-            oldnum,newnum=int(num1),int(num2)
+            try:
+                oldnum,newnum=int(num1),int(num2)
+            except:
+                self.__logger.error("/move arguments must be numbers")
+                return
         else:
             if not self.active_window or not self.active_window.buffer:
                 self.self()
                 return
-            newnum=int(num1)
+            try:
+                newnum=int(num1)
+            except:
+                self.__logger.error("/move arguments must be numbers")
+                return
             oldnum=self.active_window.buffer.get_number()
         buffer.move(oldnum,newnum)
 
