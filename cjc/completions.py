@@ -33,6 +33,7 @@ class UserCompletion(ui.Completion):
 					pass
 			if jid.startswith(word) and jid not in matches:
 				matches.append(jid)
+		common.debug("roster completion matches for %r: %r" % (word,matches))
 		matches=[[m,1] for m in matches]
 		return self.make_result("",word,matches)
 

@@ -18,18 +18,19 @@ class Completion:
 			return head,matches
 		if not matches:
 			return "",[]
-		longest=min([len(m) for m in matches])
+		longest=min([len(m[0]) for m in matches])
 		l=len(word)
 		if longest==l:
 			return head,matches
 		longest_match=matches[0][0][:longest]
 		for m in matches[1:]:
+			common.debug("longest=%r longest_match=%r" % (longest,longest_match))
 			while longest>l and m[0][:longest]!=longest_match:
 				longest_match=longest_match[:-1]
 				longest-=1
 		if longest==l:
 			return head,matches
-		return head,[longest_match]
+		return head,[[longest_match,0]]
 
 class GenericCompletion(Completion):
 	def __init__(self,words=[]):
