@@ -282,6 +282,9 @@ class Plugin(PluginBase):
 
 	def cmd_group(self,args):
 		user=args.shift()
+		if user is None:
+			self.error(u"/group without arguments!")
+			return
 		user=self.cjc.get_user(user)
 		if user is None:
 			return
