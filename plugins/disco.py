@@ -22,6 +22,7 @@ from cjc.plugin import PluginBase
 from cjc import ui
 from pyxmpp import JID
 from pyxmpp.jabber import disco
+from pyxmpp.error import ErrorNode
 import sys
 
 indices=xrange(sys.maxint)
@@ -65,9 +66,13 @@ class DiscoBuffer:
             self.buffer.append_themed("error",
                     "No disco available for '%s','%s'. Maybe you should connect first?"
                     % (self.jid, self.node))
+            self.ask_question()
             self.buffer.update()
 
     def got_disco_items(self,address,items,state):
+        if self.address != (self.jid, self.node):
+            pass
+        self.buffer.unask_question()
         format_string=self.plugin.cjc.theme_manager.format_string
         if state=='new':
             cache_state=None
@@ -93,11 +98,30 @@ class DiscoBuffer:
         self.buffer.update()
 
     def disco_items_error(self,address,data):
-        self.buffer.append_themed("error",u"%r: %s" % (address,unicode(data)))
+        if not data:
+            message="Timeout"
+        elif isinstance(data,ErrorNode):
+            message=data.get_message()
+        else:
+            try:
+                message=unicode(data)
+            except:
+                message=str(data)
+        jid, node = address
+        if node:
+            node=u", node: '%s'" % (node,)
+        else:
+            node=u""
+        self.buffer.append_themed("error",
+                u"Error while discovering items on '%s'%s: %s" 
+                % (jid, node, message))
         self.ask_question()
         self.buffer.update()
 
     def got_disco_info(self,address,info,state):
+        if self.address != (self.jid, self.node):
+            pass
+        self.buffer.unask_question()
         format_string=self.plugin.cjc.theme_manager.format_string
         if state=='new':
             cache_state=None
@@ -128,7 +152,23 @@ class DiscoBuffer:
         self.buffer.update()
 
     def disco_info_error(self,address,data):
-        self.buffer.append_themed("error",u"%r: %s" % (address,unicode(data)))
+        if not data:
+            message=u"Timeout"
+        elif isinstance(data,ErrorNode):
+            message=data.get_message()
+        else:
+            try:
+                message=unicode(data)
+            except:
+                message=str(data)
+        jid, node = address
+        if node:
+            node=u", node: '%s'" % (node,)
+        else:
+            node=u""
+        self.buffer.append_themed("error",
+                u"Error while discovering information about '%s'%s: %s" 
+                % (jid,node,message))
         self.ask_question()
         self.buffer.update()
 
