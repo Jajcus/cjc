@@ -38,13 +38,14 @@ class StatusBar(Widget):
 			self.win.move(0,0)
 			x=0
 			for attr,s in content:
+				s=s.replace("\n"," ").replace("\r"," ").replace("\t"," ").replace("\f"," ")
 				x+=len(s)
 				if x>=self.w:
-					s=s[:x-self.w]
-					self.win.addstr(s,attr)
-					break
+					s=s[:-(x-self.w+1)]
 				s=s.encode(self.screen.encoding,"replace")
 				self.win.addstr(s,attr)
+				if x>=self.w:
+					break
 			self.win.clrtoeol()
 			if now:
 				self.win.refresh()
