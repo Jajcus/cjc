@@ -22,6 +22,7 @@ from types import UnicodeType,StringType,ListType
 import version
 import os
 import locale
+import logging
 
 import pyxmpp
 
@@ -91,6 +92,7 @@ class ThemeManager:
             self.encoding="us-ascii"
         if hasattr(curses, "use_default_colors"):
             curses.use_default_colors()
+        self.__logger=logging.getLogger("cjc.ThemeManager")
 
     def load(self,filename=None):
         if not filename:
@@ -102,6 +104,8 @@ class ThemeManager:
             else:
                 filename=os.path.join(self.app.home_dir,"themes",filename)
         f=open(filename,"r")
+        self.pairs={}
+        self.next_pair=1
         for l in f.xreadlines():
             command=CommandArgs(l.strip())
             self.command(command,1)
@@ -202,15 +206,21 @@ class ThemeManager:
             self.attrs[name]=attr
             self.attr_defs[name]=(fg,bg,attr,fallback)
             return
+        self.__logger.debug("for attr %r need pair: (%r,%r)",name,fg,bg)
         if self.pairs.has_key((fg,bg)):
-            pair=self.pair[fg,bg]
-        elif self.next_pair>curses.COLOR_PAIRS:
+            pair=self.pairs[fg,bg]
+            self.__logger.debug("already got it: %r",pair)
+        elif self.next_pair>=curses.COLOR_PAIRS:
             self.attrs[name]=fallback
+            self.__logger.debug("too many color pairs used, falling back to:"
+                    " %r",fallback)
             self.attr_defs[name]=(fg,bg,attr,fallback)
             return
         else:
+            self.__logger.debug("creating new pair #%i...",self.next_pair)
             curses.init_pair(self.next_pair,fg,bg)
             pair=self.next_pair
+            self.pairs[fg,bg]=pair
             self.next_pair+=1
         attr|=curses.color_pair(pair)
         self.attrs[name]=attr
