@@ -77,7 +77,12 @@ class CommandTable:
 	def get_commands(self):
 		l=self.commands.items()
 		l.sort()
-		return [i[1] for i in l if i[0]==i[1].name]
+		return [i[1] for i in l if isinstance(i[1],Command) and i[0]==i[1].name]
+
+	def get_command_names(self):
+		l=self.commands.keys()
+		l.sort()
+		return l
 
 	def install(self):
 		install(self)

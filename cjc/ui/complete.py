@@ -13,6 +13,10 @@ class Completion:
 	def complete(self,word):
 		return "",[]
 	def make_result(self,head,word,matches):
+		if len(matches)==1:
+			return "",matches
+		if not matches:
+			return "",[]
 		longest=min([len(m) for m in matches])
 		l=len(word)
 		if longest==l:
@@ -26,23 +30,6 @@ class Completion:
 			return head,matches
 		return head,[longest_match]
 
-class CommandCompletion(Completion):
-	def complete(self,word):
-		matches=[]
-		for t in cmdtable.command_tables:
-			if not t.active:
-				continue
-			for cmd in t.get_commands():
-				if cmd.name.startswith(word) and cmd not in matches:
-					matches.append(cmd)
-		if len(matches)==1:
-			return "",[matches[0].name+" "]
-		if not matches:
-			return "",[]
-		return self.make_result("",word,[cmd.name+" " for cmd in matches])
-
-CommandCompletion().register("command")
-
 class GenericCompletion(Completion):
 	def __init__(self,words=[]):
 		self.words=words
@@ -51,10 +38,6 @@ class GenericCompletion(Completion):
 		for w in self.words:
 			if w.startswith(word):
 				matches.append(w+" ")
-		if len(matches)==1:
-			return "",matches
-		if not matches:
-			return "",[]
 		return self.make_result("",word,matches)
 
 GenericCompletion().register("text")
@@ -165,11 +148,11 @@ def complete_command_args(s):
 	return head,word,compl
 
 def complete(s):
-	if s.startswith("/"):
+	if s.startswith("/") and completions.has_key("command"):
 		if " " not in s and "\t" not in s:
 			word=s[1:]
 			head=s[:1]
-			compl=CommandCompletion()
+			compl=completions["command"]
 		else:
 			head,word,compl=complete_command_args(s)
 			common.debug("head=%r word=%r compl=%r" % (head,word,compl))

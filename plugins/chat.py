@@ -103,7 +103,8 @@ class Conversation:
 ui.CommandTable("chat buffer",50,(
 	ui.Command("me",Conversation.cmd_me,
 		"/me text",
-		"Sends /me text"),
+		"Sends /me text",
+		("text",)),
 	ui.Command("close",Conversation.cmd_close,
 		"/close",
 		"Closes current chat buffer"),
@@ -264,5 +265,6 @@ class Plugin(PluginBase):
 ui.CommandTable("chat",51,(
 	ui.Command("chat",Plugin.cmd_chat,
 		"/chat nick|jid [text]",
-		"Start chat with given user"),
+		"Start chat with given user",
+		("user","text")),
 	)).install()

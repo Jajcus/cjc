@@ -95,5 +95,6 @@ ui.CommandTable("version",50,(
 	ui.Command("version",Plugin.cmd_version,
 		"/version [jid]",
 		"Queries software version of given entity"
-		" or displays version of the client"),
+		" or displays version of the client",
+		("user",)),
 	)).install()

@@ -144,7 +144,8 @@ ui.CommandTable("message buffer",50,(
 		"Closes current chat buffer"),
 	ui.Command("reply", MessageBuffer.cmd_reply,
 		"/reply [-subject subject] [text]",
-		"Reply to the last message in window"),
+		"Reply to the last message in window",
+		("-subject opaque","text")),
 	)).install()
 
 class Plugin(PluginBase):

@@ -25,6 +25,7 @@ import version
 import themes
 import common
 import tls
+import completions
 
 logfile=None
 
@@ -143,8 +144,9 @@ class Application(jabber.Client,tls.TLSHandler):
 		ui.activate_keytable("global",self)
 		ui.activate_cmdtable("global",self)
 		ui.set_default_command_handler(self.unknown_command)
-		SettingCompletion(self).register("setting")
-		UserCompletion(self).register("user")
+		completions.SettingCompletion(self).register("setting")
+		completions.UserCompletion(self).register("user")
+		completions.CommandCompletion(self).register("command")
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -1161,87 +1163,6 @@ class Application(jabber.Client,tls.TLSHandler):
 			self.status_buf.append_themed("debug",s)
 			self.status_buf.update(1)
 
-class UserCompletion(ui.Completion):
-	def __init__(self,app):
-		self.app=app
-	def complete(self,word):
-		common.debug("UserCompletion.complete(self,%r)" % (word,))
-		matches=[]
-		if self.app.roster:
-			if word:
-				try:
-					items=self.app.roster.items_by_name(word)
-				except KeyError:
-					try:
-						items=[self.app.roster.item_by_jid(word)]
-					except KeyError:
-						items=[]
-				if len(items)==1:
-					name=items[0].name()
-					if name is None:
-						name=items[0].jid()
-					return "",[name+" "]
-				elif len(items)>1:
-					return "",[i.jid().as_unicode()+" " for i in items]
-			for ri in self.app.roster.items():
-				name=ri.name()
-				if name is None:
-					name=ri.jid().as_unicode()
-				if name.startswith(word) and name not in matches:
-					matches.append(name)
-		for jid in self.app.user_info.keys():
-			if jid.startswith(word) and jid not in matches:
-				matches.append(jid)
-		common.debug("word=%r matches=%r" % (word,matches))
-		if len(matches)==1:
-			return "",[matches[0]+" "]
-		if not matches:
-			return "",[]
-		return self.make_result("",word,matches)
-
-class SettingCompletion(ui.Completion):
-	def __init__(self,app):
-		self.app=app
-	def complete(self,word):
-		common.debug("SettingCompletion.complete(self,%r)" % (word,))
-		if "." in word:
-			return self.complete_plugin(word)
-		matches=[]
-		for p in self.app.plugins.keys():
-			if p.startswith(word):
-				matches.append(p+".")
-		for s in self.app.settings.keys():
-			if s.startswith(word) and s not in matches:
-				matches.append(s+" ")
-		common.debug("word=%r matches=%r" % (word,matches))
-		if len(matches)==1:
-			return "",matches
-		if not matches:
-			return "",[]
-		return self.make_result("",word,matches)
-	def complete_plugin(self,word):
-		if word.startswith("."):
-			obj=self.app
-			head="."
-			word=word[1:]
-		else:
-			d=word.find(".")
-			plugin=word[0:d]
-			if not self.app.plugins.has_key(plugin):
-				return "",[]
-			obj=self.app.plugins[plugin]
-			head=plugin+"."
-			word=word[d+1:]
-		matches=[]
-		for s in obj.settings.keys():
-			if s.startswith(word) and s+" " not in matches:
-				matches.append(s+" ")
-		if len(matches)==1:
-			return head,matches
-		if not matches:
-			return head,[]
-		return self.make_result(head,word,matches)
-
 ui.KeyTable("default",0,(
 	ui.KeyFunction("command()",
 		Application.key_command,
@@ -1257,7 +1178,8 @@ ui.KeyTable("global",100,(
 ui.CommandTable("global",100,(
 	ui.Command("quit",Application.cmd_quit,
 		"/quit [reason]",
-		"Exit CJC"),
+		"Exit CJC",
+		("text",)),
 	ui.CommandAlias("exit","quit"),
 	ui.Command("set",Application.cmd_set,
 		"/set [setting] [value]",
@@ -1274,32 +1196,40 @@ ui.CommandTable("global",100,(
 		"Connect to a Jabber server"),
 	ui.Command("disconnect",Application.cmd_disconnect,
 		"/disconnect [reason]",
-		"Disconnect from a Jabber server"),
+		"Disconnect from a Jabber server",
+		("text",)),
 	ui.Command("save",Application.cmd_save,
 		"/save [filename]",
-		"Save current settings to a file (default: ~/.cjc/config)"),
+		"Save current settings to a file (default: ~/.cjc/config)",
+		("config",)),
 	ui.Command("load",Application.cmd_load,
 		"/load [filename]",
-		"Load settings from a file (default: ~/.cjc/config)"),
+		"Load settings from a file (default: ~/.cjc/config)",
+		("config",)),
 	ui.Command("redraw",Application.cmd_redraw,
 		"/redraw",
 		"Redraw screen"),
 	ui.Command("info",Application.cmd_info,
 		"/info jid",
-		"Show information known about given jid"),
+		"Show information known about given jid",
+		("user",)),
 	ui.Command("help",Application.cmd_help,
 		"/help [command]",
-		"Show simple help"),
+		"Show simple help",
+		("command",)),
 	ui.Command("theme",Application.cmd_theme,
 		("/theme load [filename]","/theme save [filename]"),
-		"Theme management. Default theme filename is \"~/.cjc/theme\""),
+		"Theme management. Default theme filename is \"~/.cjc/theme\"",
+		("load|save","theme")),
 	ui.Command("alias",Application.cmd_alias,
 		"/alias name command [arg...]",
 		"Defines an alias for command. When the alias is used $1, $2, etc."
-		" are replaced with alias arguments."),
+		" are replaced with alias arguments.",
+		("opaque","command","text")),
 	ui.Command("unalias",Application.cmd_unalias,
 		"/unalias name",
-		"Undefines an alias for command."),
+		"Undefines an alias for command.",
+		("alias",)),
 	ui.Command("bind",Application.cmd_bind,
 		"/bind [function [[table] keyname]]",
 		"Without arguments - shows current keybindings otherwise binds"
