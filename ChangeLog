@@ -1,5 +1,8 @@
 2003-11-30  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* doc/Makefile, Makefile:
+	- more portable Makefiles
+
 	* plugins/presence.py:
 	- don't fail on auto-away message without '%i'
 
