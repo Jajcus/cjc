@@ -83,11 +83,11 @@ class TextInput:
 
 	def left_scroll_mark(self):
 		if self.offset>0:
-			self.win.addstr(0,0,"<",self.theme_manager.attrs["scroll_mark"])
+			self.win.addch(0,0,curses.ACS_LARROW,self.theme_manager.attrs["scroll_mark"])
 		
 	def right_scroll_mark(self):
 		if len(self.content)-self.offset>=self.w:
-			self.win.insstr(0,self.w-1,">",self.theme_manager.attrs["scroll_mark"])
+			self.win.insch(0,self.w-1,curses.ACS_RARROW,self.theme_manager.attrs["scroll_mark"])
 
 	def scroll_right(self):
 		while self.pos>self.offset+self.w-2:

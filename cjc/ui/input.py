@@ -8,6 +8,7 @@ from cjc import common
 import text_input
 import bool_input
 import choice_input
+import list_input
 
 class InputError(StandardError):
 	pass
@@ -62,7 +63,8 @@ class Input(Widget):
 				if l<self.w/2:
 					prompt=self.prompt
 				else:
-					prompt=self.prompt[:l/2-2]+"(...)"+self.prompt[l/2+2:]
+					prompt=self.prompt[:self.w/4-3]+"(...)"+self.prompt[-self.w/4+4:]
+				common.debug("prompt="+`prompt`)
 				l=len(prompt)
 				self.prompt_win=curses.newwin(self.h,l+1,self.y,self.x)
 				self.prompt_win.addstr(prompt)
@@ -86,6 +88,8 @@ class Input(Widget):
 			if not values:
 				raise InputError,"Values required for 'choice' input."
 			self.input_widget=choice_input.ChoiceInput(self,1,default,values)
+		elif type=="list-single":
+			self.input_widget=list_input.ListInput(self,1,default,values)
 		else:
 			raise InputError,"Unknown input type: "+type
 		self.question_handler=handler
