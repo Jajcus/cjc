@@ -54,8 +54,8 @@ class Window(Widget):
         return 1
 
     def switch_to_active_buffer(self):
-        bl=[(-b.preference,b.active,b.get_number(),b) 
-                for b in buffer.buffer_list 
+        bl=[(-b.preference,b.active,b.get_number(),b)
+                for b in buffer.buffer_list
                 if b and b.preference>0 and b.active>0]
         if not bl:
             return 1

@@ -1129,7 +1129,7 @@ class Application(jabber.Client,tls.TLSHandler):
         p.runcall(self.ui_loop)
         p.create_stats()
         p.dump_stats("cjc-ui.prof")
-        
+
     def ui_loop(self):
         last_active=time.time()
         idle=0

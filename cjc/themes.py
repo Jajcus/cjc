@@ -149,7 +149,7 @@ class ThemeManager:
             arg1=args.shift()
             if arg1=="empty":
                 fg,bg,attr,fallback=(None,)*4
-            else:    
+            else:
                 try:
                     fg=name2color(arg1)
                     bg=name2color(args.shift())
@@ -199,27 +199,27 @@ class ThemeManager:
         attr|=curses.color_pair(pair)
         self.attrs[name]=attr
         self.attr_defs[name]=(fg,bg,attr,fallback)
-        
+
     def set_default_attr(self,name,fg,bg,attr,fallback):
         if not self.attrs.has_key(name):
             self.set_attr(name,fg,bg,attr,fallback)
-            
+
     def set_default_attrs(self,attrs):
         for name,fg,bg,attr,fallback in attrs:
             self.set_default_attr(name,fg,bg,attr,fallback)
-            
+
     def set_format(self,name,format):
         self.formats[name]=format
-        
+
     def set_default_format(self,name,format):
         if not self.formats.has_key(name):
             self.formats[name]=format
-            
+
     def set_default_formats(self,formats):
         for name,format in formats:
             if not self.formats.has_key(name):
                 self.formats[name]=format
-                
+
     def format_buffers(self,attr,params):
         ret=[]
         for num in range(0,len(ui.buffer.buffer_list)):
