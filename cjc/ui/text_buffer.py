@@ -267,15 +267,29 @@ class TextBuffer(Buffer):
 			formatted=self.format(self.window.iw,self.window.ih+1)
 			if len(formatted)<=self.window.ih:
 				self.pos=None
+			if self.pos:
+				self.window.update_status({"bufrow":self.pos[0],"bufcol":self.pos[1]})
+			else:
+				self.window.update_status({"bufrow":"","bufcol":""})
+			self.update_pos()
+			self.window.draw_buffer()
+			self.window.update()
 		finally:		
 			self.lock.release()
-		if self.pos:
-			self.window.update_status({"bufrow":self.pos[0],"bufcol":self.pos[1]})
-		else:
-			self.window.update_status({"bufrow":"","bufcol":""})
-		self.update_pos()
-		self.window.draw_buffer()
-		self.window.update()
+		
+	def as_string(self):
+		self.lock.acquire()
+		try:
+			ret=""
+			l=len(self.lines)
+			for i in range(0,l):
+				for a,s in self.lines[i]:
+					ret+=s
+				if i<l-1:
+					ret+="\n"
+		finally:		
+			self.lock.release()
+		return ret
 
 from keytable import KeyFunction
 ktb=keytable.KeyTable("text-buffer",30,(

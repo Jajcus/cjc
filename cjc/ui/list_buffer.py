@@ -207,16 +207,19 @@ class ListBuffer(Buffer):
 		finally:		
 			self.lock.release()
 
-	def keypressed(self,ch,escape):
-		if escape:
-			return 0
-		if ch==curses.KEY_PPAGE:
-			self.page_up()
-			return 1
-		if ch==curses.KEY_NPAGE:
-			self.page_down()
-			return 1
-		return 0
+	def as_string(self):
+		self.lock.acquire()
+		try:
+			ret=""
+			l=len(self.items)
+			for i in range(0,l):
+				for a,s in self.items[i]:
+					ret+=s
+				ret+="\n"
+		finally:		
+			self.lock.release()
+		return ret
+
 	
 from keytable import KeyFunction
 ktb=keytable.KeyTable("list-buffer",30,(
