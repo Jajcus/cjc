@@ -1017,6 +1017,11 @@ class Application(jabber.Client,tls.TLSHandler):
                 self.exit_request(str(e))
                 self.print_exception()
                 act=1
+            except common.non_errors:
+                raise
+            except:
+                self.print_exception()
+                act=0
             now=time.time()
             if act:
                 self.send_event("keypressed")
