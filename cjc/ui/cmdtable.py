@@ -57,11 +57,11 @@ class CommandHandler:
 		if self.command_info.has_key(cmd):
 			try:
 				self.command_info[cmd][0](args)
-			except KeyboardInterrupt:
+			except common.non_errors:
 				raise
 			except CommandError,e:
 				common.error(u"Command '%s' failed: %s" % (cmd,e))
-			except common.standard_errors,e:
+			except:
 				common.error("Comand execution failed: "+str(e))
 				common.print_exception()
 			return 1

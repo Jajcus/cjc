@@ -319,7 +319,9 @@ def keypressed():
 			meta=0
 			try:
 				process_key(27)
-			except common.standard_errors,e:
+			except common.non_errors:
+				raise
+			except:
 				common.print_exception()
 			return 1
 		else:
@@ -327,7 +329,9 @@ def keypressed():
 			return 1
 	try:
 		process_key(ch)
-	except common.standard_errors,e:
+	except common.non_errors:
+		raise
+	except:
 		common.print_exception()
 	meta=0
 	return 1

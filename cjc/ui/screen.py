@@ -243,9 +243,9 @@ class Screen(commands.CommandHandler):
 	def user_input(self,s):
 		try:
 			self.do_user_input(s)
-		except KeyboardInterrupt:
-			pass
-		except common.standard_errors,e:
+		except common.non_errors:
+			raise
+		except:
 			common.print_exception()
 
 	def do_user_input(self,s):
