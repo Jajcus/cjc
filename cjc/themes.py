@@ -136,10 +136,18 @@ class ThemeManager:
 			return
 		if cmd=="attr":
 			name=args.shift()
-			fg=name2color(args.shift())
-			bg=name2color(args.shift())
-			attr=name2attr(args.shift())
-			fallback=name2attr(args.shift())
+			try:
+				fg=name2color(args.shift())
+				bg=name2color(args.shift())
+			except KeyError,e:
+				common.error("Unknown color name: %s" % (e,))
+				return
+			try:
+				attr=name2attr(args.shift())
+				fallback=name2attr(args.shift())
+			except KeyError,e:
+				common.error("Unknown attribute name: %s" % (e,))
+				return
 			args.finish()
 			self.set_attr(name,fg,bg,attr,fallback)
 		if cmd=="format":
