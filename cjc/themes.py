@@ -9,10 +9,8 @@ import pyxmpp
 from command_args import CommandError,CommandArgs
 import ui
 
-attr_sel_re=re.compile(r"(?P<before>(^|(.*[^%])))\%\[(?P<attr>[^]]*)\](?P<after>.*)",
-			re.UNICODE|re.DOTALL)
-preparsed_re=re.compile(r"(?P<before>(^|(.*[^%])))\%\{(?P<name>[^]]*)\}(?P<after>.*)",
-			re.UNICODE|re.DOTALL)
+attr_sel_re=re.compile(r"(?<!\%)\%\[([^]]*)\]",re.UNICODE)
+preparsed_re=re.compile(r"(?<!\%)\%\{([^]]*)\}",re.UNICODE)
 
 attributes_by_name={}
 colors_by_val={}
@@ -159,28 +157,24 @@ class ThemeManager:
 		return ret
 		
 	def format_string(self,fname,params):
-		ui.debug("format_string%r" % ((fname,params),))
 		format=self.formats[fname]
 		return self.do_format_string(format,"default",params)
 		
 	def do_format_string(self,format,attr,params):
-		ui.debug("do_format_string%r" % ((format,attr,params),))
-		m=attr_sel_re.match(format)
-		if m:
-			format=m.group("before")
-			next_attr=m.group("attr")
+		l=attr_sel_re.split(format,1)
+		if len(l)==3:
+			format=l[0]
+			next_attr=l[1]
 			if next_attr.find("%")>=0:
 				next_attr=self.substitute(next_attr,params)
-			next=m.group("after")
+			next=l[2]
 		else: 
 			next=None
 
-		m=preparsed_re.match(format)
-		if m:
-			name=m.group("name")
+		l=preparsed_re.split(format,1)
+		if len(l)==3:
+			before,name,after=l
 			if name=="buffers":
-				before=m.group("before")
-				after=m.group("after")
 				ret=[]
 				if before:
 					ret+=self.do_format_string(before,attr,params)
@@ -206,17 +200,15 @@ class ThemeManager:
 			ret.append((attr,s))
 		if next:
 			ret+=self.do_format_string(next,next_attr,params)
-		ui.debug("do_format_string -> %r" % (ret,))
 		return ret
 
 	def substitute(self,format,params):
-		ui.debug("substitute%r" % ((format,params),))
 		while 1:
 			try:
 				s=format % params
 				break
-			except TypeError:
-				s=format
+			except (ValueError,TypeError),e:
+				s="[%s: %r, %r]" % (str(e),format,params)
 				break
 			except KeyError,key:
 				key=str(key)
@@ -229,11 +221,9 @@ class ThemeManager:
 		return s
 					
 	def quote_format_param(self,format,key):
-		ui.debug("quote_format_param%r" % ((format,key),))
 		return format.replace("%%(%s)" % key,"%%%%(%s)" % key)
 
 	def find_format_param(self,key,params):
-		ui.debug("find_format_param%r" % ((key,params),))
 		if key in ("now","timestamp"):
 			val=time.time()
 		else:
@@ -242,7 +232,6 @@ class ThemeManager:
 		return val
 	
 	def process_format_param(self,format,key,params):
-		ui.debug("process_format_param%r" % ((format,key,params),))
 		sp=key.split(":",2)
 		if len(sp)==2:
 			typ,param=sp
