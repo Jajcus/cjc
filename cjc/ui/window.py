@@ -22,6 +22,7 @@ class Window(Widget):
 		self.newline=0
 		self.locked=lock
 		self.active=0
+		self.scrollok=1
 
 	def keypressed(self,ch,escape):
 		if self.buffer and self.buffer.keypressed(ch,escape):
@@ -154,9 +155,15 @@ class Window(Widget):
 			for line in lines:
 				if self.newline:
 					self.win.addstr("\n")
+				x=0
 				for attr,s in line:
+					x+=len(s)
+					if x>self.w:
+						s=s[:-(x-self.w)]
 					s=s.encode(self.screen.encoding,"replace")
 					self.win.addstr(s,attr)
+					if x>self.w:
+						break
 				self.newline=1
 			if not has_eol:
 				self.newline=0
@@ -171,10 +178,20 @@ class Window(Widget):
 			return self._write(s,attr)
 		finally:
 			self.screen.lock.release()
+			
+	def write_at(self,x,y,s,attr):
+		if not s:
+			return
+		self.screen.lock.acquire()
+		try:
+			self.win.move(y,x)
+			return self._write(s,attr)
+		finally:
+			self.screen.lock.release()
 		
 	def _write(self,s,attr):
 		y,x=self.win.getyx()
-		if self.newline:
+		if self.newline and self.scrollok:
 			if y==self.h-2:
 				self.win.scroll(1)
 				self.win.move(y,0)
@@ -211,7 +228,7 @@ class Window(Widget):
 				lines.append(paras.pop(0))
 		
 		for s in lines:	
-			if y==self.h-2:
+			if y==self.h-2 and self.scrollok:
 				self.win.scroll(1)
 			else:
 				y+=1
