@@ -1,6 +1,10 @@
 2004-06-27  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py:
+	- use proper theme format for presence change notification
+	- do not display presence change notification when user goes offline
+
+	* plugins/muc.py:
 	- store MUC users presence in user_info
 	- handle MUC users presence changes
 	- show error when /join is used while disconnected
