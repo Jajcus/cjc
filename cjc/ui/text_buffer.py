@@ -10,7 +10,7 @@ class TextBuffer(Buffer):
 		Buffer.__init__(self,name)
 		self.theme_manager=theme_manager
 		self.length=length
-		self.lines=[[]]
+		self.lines=[]
 		self.pos=None
 		
 	def set_window(self,win):
@@ -26,7 +26,9 @@ class TextBuffer(Buffer):
 	def _append(self,s,attr):
 		if type(attr) is not IntType:
 			attr=self.theme_manager.attrs[attr]
-		if self.lines[-1]==[] and self.window:
+		if not self.lines:
+			self.lines=[[]]
+		elif self.lines[-1]==[] and self.window:
 			self.window.nl()
 		newl=0
 		s=s.split(u"\n")
@@ -97,6 +99,8 @@ class TextBuffer(Buffer):
 		return ret
 
 	def offset_back(self,width,back,l=None,c=0):
+		if not self.lines:
+			return 0,0
 		if l is None or l>=len(self.lines):
 			if self.lines[-1]==[]:
 				l=len(self.lines)-1
