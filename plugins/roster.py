@@ -386,14 +386,26 @@ class Plugin(PluginBase):
             if arg is None:
                 break
             if not arg.startswith("-"):
-                names.append(re.compile(arg))
+                try:
+                    names.append(re.compile(arg))
+                except re.error:
+                    self.cjc.error(u"Invalid regular expression: %r" % (arg,))
+                    return
                 continue
             if arg=="-group":
                 arg=args.shift()
-                groups.append(re.compile(arg))
+                try:
+                    groups.append(re.compile(arg))
+                except re.error:
+                    self.cjc.error(u"Invalid regular expression: %r" % (arg,))
+                    return
             elif arg=="-jid":
                 arg=args.shift()
-                jids.append(re.compile(arg))
+                try:
+                    jids.append(re.compile(arg))
+                except re.error:
+                    self.cjc.error(u"Invalid regular expression: %r" % (arg,))
+                    return
             elif arg=="-state" or arg=="-show":
                 arg=args.shift()
                 if "," in arg:
@@ -402,7 +414,11 @@ class Plugin(PluginBase):
                     filter.append(arg)
             elif arg=="-name":
                 arg=args.shift()
-                names.append(re.compile(arg))
+                try:
+                    names.append(re.compile(arg))
+                except re.error:
+                    self.cjc.error(u"Invalid regular expression: %r" % (arg,))
+                    return
             else:
                 self.cjc.error("Bad /list option: %r" % (arg,))
                 return
