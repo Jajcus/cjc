@@ -1,5 +1,11 @@
 2004-09-08  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/ui/choice_input.py:
+	- recently introduced bug fixed and prompt formating improved (include ' ' between the question and the prompt)
+
+	* cjc/ui/buffer.py:
+	- more arguments to ask_question() made optional
+
 	* cjc/themes.py:
 	- clearing the pair list was not a good idea -- the theme may be incomplete, some attributes would be lost then
 
