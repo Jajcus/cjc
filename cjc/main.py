@@ -90,6 +90,7 @@ global_settings={
 	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
 	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
 	"autoconnect": ("Automatically connect on startup.",int),
+	"keepalive": ("Keep-alive interval in seconds (0 to disable).",int),
 	"debug": ("Display some debuging information in status window.",int),
 }
 
@@ -131,6 +132,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			"disconnect_timeout":10.0,
 			"disconnect_delay":0.25,
 			"autoconnect":0,
+			"keepalive":15*60,
 			"debug":0}
 		self.aliases={}
 		self.available_settings=global_settings
@@ -461,6 +463,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.port=5222
 		self.server=self.settings.get("server")
 		self.auth_methods=self.settings.get("auth_methods")
+		self.keepalive=self.settings.get("keepalive")
 		self.info(u"Connecting...")
 		try:
 			self.connect()
@@ -468,6 +471,10 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.error("Connection failed: "+str(e))
 		except (socket.error),e:
 			self.error("Connection failed: "+e.args[1])
+		else:
+			self.disco_identity=DiscoIdentity(self.disco_info,
+								"Jabber client",
+								"client","console")
 	
 	def cmd_disconnect(self,args):
 		if not self.stream:
