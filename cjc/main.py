@@ -156,6 +156,17 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		self.load_plugins()
 
 		self.cmd_load()
+		if not self.jid:
+			self.info("")
+			self.info("Quickstart:")
+			self.info("/set jid your_username@your.domain/your_resource")
+			self.info("/set password your_password")
+			self.info("/save")
+			self.info("/connect")
+			self.info("/chat jajcus@jabber.bnet.pl CJC Rulez!")
+			self.info("")
+			self.info("press Alt-Tab (or Escape Tab) to change active window")
+			self.info("PgUp/PgDown to scroll window content")
 
 		try:
 			self.loop(1)
