@@ -337,13 +337,13 @@ meta=0
 
 def process_key(code):
     global default_handler
-    if not is_key_unhandled(code):
+    if not is_key_unhandled((code,meta)):
         for t in [t for t in keytables if t.active]:
             try:
                 return t.process_key(code,meta)
             except KeyError:
                 continue
-        unhandled_keys[code]=True
+        unhandled_keys[code,meta]=True
     if default_handler:
         return default_handler(code,meta)
     else:
