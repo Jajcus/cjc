@@ -478,10 +478,9 @@ class Application(jabber.Client,tls.TLSHandler):
 		except (socket.error),e:
 			self.error("Connection failed: "+e.args[1])
 		else:
-			self.disco_identity=jabber.DiscoIdentity(self.disco_info,
-								"Jabber client",
-								"client","console",
-								replace=1)
+			self.disco_identity.set_name("CJC Jabber client")
+			self.disco_identity.set_category("client")
+			self.disco_identity.set_type("console")
 	
 	def cmd_disconnect(self,args):
 		if not self.stream:
