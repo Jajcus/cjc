@@ -58,7 +58,7 @@ class Plugin(PluginBase):
         self.available_settings={
             "show": ("Which items show - list of 'available','unavailable','chat',"
                     "'online','away','xa' or 'all'",list,self.set_show),
-            "buffer_preference": ("Preference of chat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
+            "buffer_preference": ("Preference of roster buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             }
         self.settings={"show":["all"],"buffer_preference":2}
         app.add_info_handler("rostername",self.info_rostername)
