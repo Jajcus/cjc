@@ -62,20 +62,16 @@ class InputTest(Test):
 	def __init__(self,plugin):
 		Test.__init__(self,plugin,"Input")
 		self.questions=[
-			("What is your name?","text-single",u"",None,
-				u"Your name is %s.",u"You don't seem to know your own name"),
-			("Do you like me?","boolean",1,None,
-				u"Your answer is %s.",u"Are you afraid to answer?"),
-			("How old are you?","choice",1,[xrange(1,100)],
-				u"Your answer is %s.",u"Are you afraid to answer?"),
-			("Male or Female?","choice",1,["m","f"],
-				u"Your answer is %s.",u"Are you afraid to answer?"),
+			("What is your name?","text-single",u"",None,0)
+			("Do you like me?","boolean",1,None,0)
+			("How old are you?","choice",1,[xrange(1,100)],0)
+			("Male or Female?","choice",1,["m","f"],0)
 			("Your favorite animal?","list-single",None,
-				{1:"dog",2:"cat",3:"turtle",100:"Tux, the penguin with atitude, logo of the Linux operating system. What can I write more, to make this entry big enough?"},
-				u"Your answer is %s.",u"Are you afraid to answer?"),
+				{1:"dog",2:"cat",3:"turtle",100:"Tux, the penguin with atitude, logo of the Linux operating system. What can I write more, to make this entry big enough?"},0)
+			("Your favorite animals?","list-multi",[100],
+				{1:"dog",2:"cat",3:"turtle",100:"Tux, the penguin with atitude, logo of the Linux operating system. What can I write more, to make this entry big enough?"},0)
 			("Do you like very, very long questions which make no sense beside being very long?",
-				"boolean",1,None,
-				u"Your answer is %s.",u"Are you afraid to answer?"),
+				"boolean",1,None,0)
 			]
 		
 	def run(self):
@@ -84,9 +80,9 @@ class InputTest(Test):
 	def ask_next_question(self):
 		if not self.questions:
 			return
-		q,t,d,v,m1,m2=self.questions.pop(0)
+		q,t,d,v,r=self.questions.pop(0)
 		self.plugin.cjc.command_line.ask_question(q,t,d,self.input_handler,
-								self.abort_handler,(m1,m2),v)
+								self.abort_handler,(t,v),v,r)
 	
 	def input_handler(self,arg,answer):
 		self.buffer.append_line(arg[0] % answer)

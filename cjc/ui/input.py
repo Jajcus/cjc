@@ -90,6 +90,8 @@ class Input(Widget):
 			self.input_widget=choice_input.ChoiceInput(self,1,default,values)
 		elif type=="list-single":
 			self.input_widget=list_input.ListInput(self,1,default,values)
+		elif type=="list-multi":
+			self.input_widget=list_input.ListInput(self,1,default,values,1)
 		else:
 			raise InputError,"Unknown input type: "+type
 		self.question_handler=handler

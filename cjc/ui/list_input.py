@@ -8,18 +8,29 @@ from cjc import common
 
 
 class ListInput:
-	def __init__(self,parent,abortable,default,values):
+	def __init__(self,parent,abortable,default,values,multi=0):
 		self.parent=parent
 		self.abortable=abortable
 		self.win=None
 		self.capture_rest=0
+		self.multi=multi
 		self.keys=values.keys()
 		self.keys.sort()
 		self.values=values
-		try:
-			self.choice=self.keys.index(default)
-		except ValueError:
-			self.choice=-1
+		if not multi:
+			try:
+				self.choice=self.keys.index(default)
+			except ValueError:
+				self.choice=-1
+		else:
+			self.choice=0
+			self.selected=[0]*len(self.keys)
+			for k in default:
+				try:
+					i=self.keys.index(k)
+				except ValueError:
+					continue
+				self.selected[i]=1
 		self.theme_manager=parent.theme_manager
 		
 	def set_window(self,win):
@@ -66,10 +77,16 @@ class ListInput:
 			curses.beep()
 
 	def key_enter(self):
-		if self.choice<0:
-			ans=None
+		if self.multi:
+			ans=[]
+			for i in range(0,len(self.selected)):
+				if self.selected[i]:
+					ans.append(self.keys[i])
 		else:
-			ans=self.keys[self.choice]
+			if self.choice<0:
+				ans=None
+			else:
+				ans=self.keys[self.choice]
 		self.parent.input_handler(ans)
 
 	def key_up(self):
@@ -86,6 +103,12 @@ class ListInput:
 			self.choice=0
 		self.redraw()
 
+	def key_space(self):
+		if not self.multi:
+			return curses.beep()
+		self.selected[self.choice]=not self.selected[self.choice]
+		self.redraw()
+
 	def update(self,now=1,refresh=0):
 		self.screen.lock.acquire()
 		try:
@@ -94,6 +117,11 @@ class ListInput:
 					s=u""
 				else:
 					s=self.values[self.keys[self.choice]]
+				if self.multi:
+					if self.selected[self.choice]:
+						s="+"+s
+					else:
+						s=" "+s
 				if len(s)>self.w-2:
 					s=s[:self.w/2-3]+"(...)"+s[-self.w/2+4:]
 				s=s.encode(self.screen.encoding,"replace")
