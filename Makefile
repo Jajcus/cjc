@@ -40,7 +40,7 @@ cjc.inst: cjc.in
 	sed -e 's,BASE_DIR,$(pkg_datadir),' < cjc.in > cjc.inst 
 
 ChangeLog: 
-	test -f .svn/entries && make cl-stamp
+	test -f .svn/entries && make cl-stamp || :
 	
 cl-stamp: .svn/entries
 	TZ=UTC svn log -v --xml \
