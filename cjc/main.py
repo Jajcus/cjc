@@ -19,42 +19,76 @@ class Exit(Exception):
 	pass
 
 global_commands={
-	"exit": "cmd_quit",
-	"quit": "cmd_quit",
-	"set": "cmd_set",
-	"connect": "cmd_connect",
-	"disconnect": "cmd_disconnect",
-	"save": "cmd_save",
-	"load": "cmd_load",
-	"redraw": "cmd_redraw",
-	"info": "cmd_info",
+	# command: alias
+	#    or
+	# command: (handler, usage, description)
+	#
+	# handler may be method name or any callable
+	"exit": ("cmd_quit",
+		"/exit",
+		"Exit from CJC"),
+	"quit": "exit",
+	"set": ("cmd_set",
+		"/set [setting] [value]",
+		"Change settings"),
+	"connect": ("cmd_connect",
+		"/connect",
+		"Connect to a Jabber server"),
+	"disconnect": ("cmd_disconnect",
+		"/disconnect",
+		"Disconnect from a Jabber server"),
+	"save": ("cmd_save",
+		"/save [filename]",
+		"Save current settings to a file (default: .cjcrc)"),
+	"load": ("cmd_load",
+		"/load [filename]",
+		"Load settings from a file (default: .cjcrc)"),
+	"redraw": ("cmd_redraw",
+		"/redraw",
+		"Redraw screen"),
+	"info": ("cmd_info",
+		"/info jid",
+		"Show information known about given jid"),
+	"help": ("cmd_help",
+		"/help [command]",
+		"Show simple help"),
+}
+
+global_settings={
+	"jid": ("Jabber ID to use.",pyxmpp.JID,".jid"),
+	"password": ("Jabber ID to use.",unicode,".password"),
+	"port": ("Port number to connect to",int,".port"),
+	"server": ("Server address to connect to",str,".server"),
+	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5 digest')",list,".auth_methods"),
 }
 
 class Application(pyxmpp.Client,ui.CommandHandler):
 	def __init__(self):
 		pyxmpp.Client.__init__(self)
 		ui.CommandHandler.__init__(self,global_commands)
+		self.settings={}
+		self.available_settings=global_settings
 		self.plugin_dirs=["cjc/plugins"]
-		self.plugins=[]
+		self.plugins={}
 		self.event_handlers={}
 		self.user_info={}
 		self.info_handlers={}
 
-	def load_plugin(self,path):
-		self.info("Loading plugin: %s" % (path,))
+	def load_plugin(self,name):
+		self.info("  %s" % (name,))
 		try:
-			from plugin import PluginBase
-			gl={"PluginBase":PluginBase}
-			mod=execfile(path,gl)
-			plugin=gl["Plugin"](self)
-			self.plugins.append(plugin)
+			mod=__import__(name)
+			plugin=mod.Plugin(self)
+			self.plugins[name]=plugin
 		except:
 			self.print_exception()
 			self.info("Plugin load failed")
 
 	def load_plugins(self):
+		sys_path=sys.path
 		for path in self.plugin_dirs:
-			self.info("Loading plugins from %s" % (path,))
+			self.info("Loading plugins from %s:" % (path,))
+			sys.path=[path]+sys_path
 			try:
 				d=os.listdir(path)
 			except (OSError,IOError),e:
@@ -63,7 +97,8 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			for f in d:
 				if f[0]=="." or not f.endswith(".py"):
 					continue
-				self.load_plugin(os.path.join(path,f))
+				self.load_plugin(os.path.join(f[:-3]))
+		sys.path=sys_path
 
 	def add_event_handler(self,event,handler):
 		if not self.event_handlers.has_key(event):
@@ -129,7 +164,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 
 	def session_started(self):
 		pyxmpp.Client.session_started(self)
-		for p in self.plugins:
+		for p in self.plugins.values():
 			try:
 				p.session_started(self.stream)
 			except:
@@ -200,57 +235,79 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 	def cmd_set(self,args):
 		if not args:
 			return
-		var,val=args.split(None,1)
-		if var.find("=")>0:
-			var,val=args.split(" ",1)
-		if var=="jid":
-			self.jid=pyxmpp.JID(val)
-		elif var=="server":
-			self.server=str(val)
-		elif var=="password":
-			self.password=val
-		elif var=="port":
-			self.port=int(val)
-		elif var=="auth_methods":
-			self.auth_methods=val.split()
-		elif var=="node":
-			if not self.jid:
-				if self.server:
-					self.jid=pyxmpp.JID(val,self.server,"CJC")
-				else:
-					self.jid=pyxmpp.JID(val,"unknown","CJC")
-			else:
-				self.jid.set_node(val)
-		elif var=="domain":
-			if not self.jid:
-				self.jid=pyxmpp.JID("unknown",val,"CJC")
-			else:
-				self.jid.set_domain(val)
-		elif var=="resource":
-			if not self.jid:
-				self.jid=pyxmpp.JID("unknown",self.server,val)
-			else:
-				self.jid.set_resource(val)
-		self.screen.update()
 
-	def cmd_save(self,filename=".cjcrc"):
+		fvar,val=args.split(None,1)
+		if fvar.find("=")>0:
+			fvar,val=args.split("=",1)
+
+		if fvar.find(".")>0:
+			plugin,var=var.split(".",1)
+			try:
+				obj=self.plugins[plugin]
+			except KeyError:
+				self.error("Unknown category: "+plugin)
+				return
+		else:
+			obj=self
+			var=fvar
+
 		try:
-			f=file(".cjcrc","w")
-		except IOError,e:
-			self.status_buf.append("Couldn't open config file: "+str(e))
+			descr,type,location=obj.available_settings[var]
+		except KeyError:
+			self.error("Unknown setting: "+fvar)
 			return
 		
-		if self.jid:
-			print >>f,"jid",self.jid.as_string()
-		if self.server:
-			print >>f,"server",self.server
-		if self.password:
-			print >>f,"password",self.password.encode("utf-8")
-		if self.port:
-			print >>f,"port",self.port
-		if self.auth_methods:
-			print >>f,"auth_methods",string.join(self.auth_methods)
+		try:
+			if type is unicode:
+				pass
+			if type is list:
+				val=val.split()
+			else:
+				val=type(val)
+		except Exception,e:
+			self.error("Bad value: "+str(e))
+			return
+		
+		if location is None:
+			obj.settings[var]=val
+		elif location.startswith("."):
+			setattr(obj,location[1:],val)
 			
+		self.screen.update()
+
+	def cmd_save(self,filename=None):
+		if filename is None:
+			filename=".cjcrc"
+		self.info(u"Saving settings to "+filename)
+		try:
+			f=file(filename,"w")
+		except IOError,e:
+			self.error(u"Couldn't open config file: "+str(e))
+			return
+
+		for plugin in [None]+self.plugins.keys():
+			if plugin is None:
+				obj=self
+			else:
+				obj=self.plugins[plugin]
+			for var in obj.available_settings:
+				descr,type,location=obj.available_settings[var]
+				if location is None:
+					val=obj.settings.get(var)
+				elif location.startswith("."):
+					val=getattr(obj,location[1:],None)
+				else:
+					continue
+				if val is None:
+					continue
+				if plugin is not None:
+					var="%s.%s" % (plugin,var)
+				if type is list:
+					print >>f,var,string.join(val," ")
+				elif type is pyxmpp.JID:
+					print >>f,var,val.as_string()
+				else:
+					print >>f,var,val
 
 	def cmd_load(self,filename=".cjcrc"):
 		try:
@@ -292,6 +349,52 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			if not r:
 				continue
 			self.info(u"  %s: %s" % r)
+
+	def cmd_help(self,args):
+		if not args:
+			self.info("Available commands:")
+			commands=self.commands()
+			if commands:
+				self.info("  Global commands:")
+				for cmd in commands:
+					self.info(u"    /"+cmd)
+			commands=self.screen.commands()
+			if commands:
+				self.info("  Screen commands:")
+				for cmd in commands:
+					self.info(u"    /"+cmd)
+			win=self.screen.active_window
+			if not win:
+				return
+			commands=win.commands()
+			if commands:
+				self.info(u"  commands for window '%s':" % (win.description(),))
+				for cmd in commands:
+					self.info(u"    /"+cmd)
+			return
+
+		if args[0]=="/":
+			args=args[1:]
+		try:
+			handler,usage,descr=self.get_command_info(args)
+		except KeyError:
+			try:
+				handler,usage,descr=self.screen.get_command_info(args)
+			except KeyError:
+				if self.screen.active_window:
+					win=self.screen.active_window
+					try:
+						handler,usage,descr=win.get_command_info(args)
+					except KeyError:
+						self.error(u"Unknown command: "+`args`)
+						return
+				else:
+					self.error(u"Unknown command: "+`args`)
+					return
+		
+		self.info("Usage:")
+		self.info(u"   "+usage)
+		self.info(u"  "+descr)
 	
 	def loop(self,timeout):
 		while 1:

@@ -1,5 +1,6 @@
 import string
 from cjc import ui
+from cjc.plugin import PluginBase
 import pyxmpp
 
 class Conversation:
@@ -18,7 +19,10 @@ class Conversation:
 		self.buffer=ui.TextBuffer(u"Chat with %s" % (peer.as_unicode(),))
 		self.buffer.user_input=self.user_input
 		self.add_info(u"Chat with %s started" % (peer.as_unicode(),))
-		self.buffer.register_commands({"me": self.cmd_me})
+		self.buffer.register_commands({"me": (self.cmd_me,
+							"/me text",
+							"Sends /me text")
+						})
 		
 	def add_received(self,s):
 		if s.startswith(u"/me "):
@@ -59,7 +63,10 @@ class Plugin(PluginBase):
 		PluginBase.__init__(self,app)
 		self.conversations={}
 		self.last_thread=0
-		app.register_commands({"chat": self.cmd_chat})
+		app.register_commands({"chat": (self.cmd_chat,
+					"/chat nick|jid [text]",
+					"Start chat with given user")
+					})
 
 	def cmd_chat(self,args):
 		if not args:

@@ -17,27 +17,40 @@ def print_exception():
 	
 class CommandHandler:
 	def __init__(self,d=None,object=None):
-		self.command_handlers={}
+		self.command_info={}
+		self.command_aliases={}
 		if d:
 			self.register_commands(d,object)
 
 	def register_commands(self,d,object=None):
 		if object is None:
 			object=self
-		for name,handler in d.items():
+		for name,info in d.items():
+			if type(info) is StringType: # alias
+				self.command_aliases[name]=info
+				continue
+			handler,usage,descr=info
 			if type(handler) is StringType:
 				handler=getattr(object,handler)
 			if not callable(handler):
 				raise TypeError,"Bad command handler"
-			self.command_handlers[name]=handler
+			self.command_info[name]=(handler,usage,descr)
 
 	def commands(self):
-		return self.commands.keys()
+		return self.command_info.keys()+self.command_aliases.keys()
+
+	def get_command_info(self,cmd):
+		if self.command_aliases.has_key(cmd):
+			cmd=self.command_aliases[cmd]
+		return self.command_info[cmd]
 
 	def command(self,cmd,args):
-		if self.command_handlers.has_key(cmd):
+		if self.command_aliases.has_key(cmd):
+			cmd=self.command_aliases[cmd]
+
+		if self.command_info.has_key(cmd):
 			try:
-				self.command_handlers[cmd](args)
+				self.command_info[cmd][0](args)
 			except KeyboardInterrupt:
 				raise
 			except StandardError,e:
@@ -518,11 +531,22 @@ class Window(Widget):
 			return 1
 		return 0
 
+	def description(self):
+		if self.buffer: 
+			return self.buffer.name
+		else:
+			return "Empty window"
+
 	def commands(self):
 		if self.buffer:
-			return self.bufffer.commands()
+			return self.buffer.commands()
 		else:
 			return []
+		
+	def get_command_info(self,cmd):
+		if self.buffer:
+			return self.buffer.get_command_info(cmd)
+		raise KeyError,cmd
 
 	def command(self,cmd,args):
 		if self.buffer:
@@ -706,8 +730,12 @@ class EditLine(Widget):
 			self.win.noutrefresh()
 
 screen_commands={
-	"next": "focus_next",
-	"prev": "focus_prev",
+	"next": ("focus_next",
+		"/next",
+		"Change active window to the next one"),
+	"prev": ("focus_prev",
+		"/previous",
+		"Change active window to the previous one"),
 }
 
 class Screen(CommandHandler):
@@ -740,7 +768,7 @@ class Screen(CommandHandler):
 				curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD,
 				curses.A_UNDERLINE)
 		self.make_attr("info",
-				curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL,
+				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL,
 				curses.A_NORMAL)
 		self.make_attr("debug",
 				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL,
@@ -875,13 +903,6 @@ class Screen(CommandHandler):
 				return 1
 		self.process_key(ch)
 		self.escape=0
-
-	def commands(self):
-		ret=CommandHandler.commands(self)
-		if self.active_window:
-			ret+=self.active_window.commands()
-		if self.default_command_handler:
-			ret+=self.default_command_handler.commands()
 
 	def user_input(self,s):
 		try:

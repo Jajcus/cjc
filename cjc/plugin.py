@@ -1,6 +1,8 @@
 
 class PluginBase:
 	def __init__(self,cjc):
+		self.settings={}
+		self.available_settings={}
 		self.cjc=cjc
 		self.info=cjc.info
 		self.debug=cjc.debug

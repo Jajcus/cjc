@@ -1,4 +1,5 @@
 import string
+from cjc.plugin import PluginBase
 
 class Plugin(PluginBase):
 	def __init__(self,app):
