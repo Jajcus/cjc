@@ -121,9 +121,10 @@ global_theme_formats=(
 )
 
 
-class Application(jabber.Client,tls.TLSHandler):
+class Application(tls.TLSMixIn,jabber.Client):
     def __init__(self,base_dir,config_file="default",theme_file="theme",home_dir=None,profile=False):
         self.profile=profile
+        tls.TLSMixIn.__init__(self)
         jabber.Client.__init__(self)
         self.__logger=logging.getLogger("cjc.Application")
         self.settings={

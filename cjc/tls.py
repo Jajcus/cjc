@@ -91,10 +91,10 @@ class CertVerifyState:
     def get_cert(self,depth):
         return self.certs[depth]
 
-class TLSHandler:
-    """ Add-on class with utility classes for TLS support in the Client. """
+class TLSMixIn:
+    """ Mix-in class with utility classes for TLS support in the Client. """
     def __init__(self):
-        raise "This is virtual class"
+        self.__logger=logging.getLogger("cjc.Application")
 
     def tls_init(self):
         if self.settings.get("tls_enable"):
@@ -121,8 +121,8 @@ class TLSHandler:
 
     def tls_connected(self,tls):
         cipher=tls.get_cipher()
-        self.info("Encrypted connection to %s established using cipher %s."
-                            % (self.stream.peer,cipher.name()))
+        self.__logger.info("Encrypted connection to %s established using cipher %s.",
+                            self.stream.peer,cipher.name())
         if not self.cert_verify_state.has_errors():
             return
         cert=self.cert_verify_state.get_cert(0)
