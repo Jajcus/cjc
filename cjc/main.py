@@ -37,8 +37,8 @@ global_settings={
     "password": ("Jabber ID to use.",unicode),
     "port": ("Port number to connect to",int),
     "server": ("Server address to connect to",str),
-    "tls_enable": ("Enable TLS (encrypted) connections",int),
-    "tls_require": ("Require TLS (encrypted) connections",int),
+    "tls_enable": ("Enable TLS (encrypted) connections",bool),
+    "tls_require": ("Require TLS (encrypted) connections",bool),
     "tls_cert_file": ("Path to user certificate file",(str,None)),
     "tls_key_file": ("Path to user private key file (default: same to tls_cert_file)",(str,None)),
     "tls_ca_cert_file": ("Path to CA certificates file",(str,None)),
@@ -47,11 +47,11 @@ global_settings={
     "status_buffer_preference": ("Preference of status buffer when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
     "disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
     "disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
-    "autoconnect": ("Automatically connect on startup.",int),
-    "keepalive": ("Keep-alive interval in seconds (0 to disable).",int),
-    "case_sensitive": ("Should roster name matches be case sensitive?",int),
-    "backup_config": ("Save backup of previous config file when saving.",int),
-    "debug": ("Display some debuging information in status window.",int),
+    "autoconnect": ("Automatically connect on startup.",bool),
+    "keepalive": ("Keep-alive interval in seconds (0 to disable).",bool),
+    "case_sensitive": ("Should roster name matches be case sensitive?",bool),
+    "backup_config": ("Save backup of previous config file when saving.",bool),
+    "debug": ("Display some debuging information in status window.",bool),
 }
 
 global_theme_attrs=(
@@ -112,14 +112,14 @@ class Application(jabber.Client,tls.TLSHandler):
             "layout":"plain",
             "disconnect_timeout":10.0,
             "disconnect_delay":0.25,
-            "autoconnect":0,
-            "tls_enable":1,
-            "tls_require":0,
+            "autoconnect":False,
+            "tls_enable":True,
+            "tls_require":False,
             "keepalive":15*60,
-            "backup_config":0,
-            "case_sensitive":1,
+            "backup_config":False,
+            "case_sensitive":True,
             "status_buffer_preference":1,
-            "debug":0}
+            "debug":False}
         self.aliases={}
         self.available_settings=global_settings
         self.base_dir=base_dir
@@ -696,6 +696,23 @@ class Application(jabber.Client,tls.TLSHandler):
             if t is UnicodeType:
                 valid=1
                 break
+            if t is bool:
+                if val.lower() in ("t","true","yes","y","on"):
+                    valid=1
+                    val=True
+                    break
+                elif val.lower() in ("f","false","no","n","off"):
+                    valid=1
+                    val=False
+                    break
+                else:
+                    try:
+                        val=int(val)
+                    except ValueError:
+                        continue
+                    val=bool(val)
+                    valid=1
+                    break
             try:
                 if t is ListType:
                     val=val.split(",")
