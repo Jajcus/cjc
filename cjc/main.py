@@ -320,6 +320,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 		self.ui_thread=threading.Thread(None,self.ui_loop,"UI")
 		self.stream_thread=threading.Thread(None,self.stream_loop,"Stream")
+		self.screen.redraw()
 
 		self.ui_thread.start()
 		self.stream_thread.start()
