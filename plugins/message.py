@@ -64,6 +64,7 @@ theme_formats=(
 """),
     ("message.descr-per-user","Messages from %(J:peer:full)s [%(J:peer:show)s] %(J:peer:status)s"),
     ("message.descr","Messages"),
+    ("message.composer_descr","Composed message"),
     ("message.day_change",""),
 )
 
