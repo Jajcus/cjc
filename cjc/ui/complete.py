@@ -1,3 +1,4 @@
+import re
 
 import cmdtable
 from cjc import common
@@ -147,12 +148,15 @@ def complete_command_args(s):
 	compl=completions[hint]
 	return head,word,compl
 
+need_quote_re=re.compile('[ \t\\"]')
+
 def complete(s):
 	if s.startswith("/") and completions.has_key("command"):
 		if " " not in s and "\t" not in s:
 			word=s[1:]
 			head=s[:1]
 			compl=completions["command"]
+			quote=0
 		else:
 			head,word,compl=complete_command_args(s)
 			common.debug("head=%r word=%r compl=%r" % (head,word,compl))
@@ -165,6 +169,6 @@ def complete(s):
 		else:
 			word=""
 		compl=GenericCompletion()
-		
+	
 	chead,ret=compl.complete(word)
 	return head+chead,ret

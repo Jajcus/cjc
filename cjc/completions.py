@@ -9,31 +9,30 @@ class UserCompletion(ui.Completion):
 		common.debug("UserCompletion.complete(self,%r)" % (word,))
 		matches=[]
 		if self.app.roster:
-			if word:
-				try:
-					items=self.app.roster.items_by_name(word)
-				except KeyError:
-					try:
-						items=[self.app.roster.item_by_jid(word)]
-					except KeyError:
-						items=[]
-				if len(items)==1:
-					name=items[0].name()
-					if name is None:
-						name=items[0].jid()
-					return "",[name+" "]
-				elif len(items)>1:
-					return "",[i.jid().as_unicode()+" " for i in items]
 			for ri in self.app.roster.items():
 				name=ri.name()
+				if word==name:
+					items=self.app.roster.items_by_name(name)
+					if len(items)>1:
+						for i in items:
+							matches.append(i.jid().as_unicode())
+						continue
 				if name is None:
 					name=ri.jid().as_unicode()
-				if name.startswith(word) and name not in matches:
-					matches.append(name)
+				if (name.startswith(word) 
+						and name not in matches 
+						and ri.jid().as_unicode() not in matches): 
+					matches.append(name+" ")
 		for jid in self.app.user_info.keys():
+			if self.app.roster:
+				try:
+					name=self.app.roster.item_by_jid(jid)
+					if name in matches:
+						continue
+				except KeyError:
+					pass
 			if jid.startswith(word) and jid not in matches:
-				matches.append(jid)
-		common.debug("word=%r matches=%r" % (word,matches))
+				matches.append(jid+" ")
 		return self.make_result("",word,matches)
 
 class SettingCompletion(ui.Completion):
