@@ -64,6 +64,10 @@ class Conversation:
 	def user_input(self,s):
 		if not s:
 			return 0
+		if not self.plugin.cjc.stream:
+			self.buffer.append_themed("error","Not connected")
+			self.buffer.update()
+			return 0
 		m=pyxmpp.Message(to=self.peer,type="chat",body=s,thread=self.thread)
 		self.plugin.cjc.stream.send(m)
 		self.add_sent(s)
