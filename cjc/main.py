@@ -15,104 +15,30 @@ import ui
 
 logfile=open("cjc.log","a")
 
-class Exit(StandardError):
+class Exit(Exception):
 	pass
 
-class Buffer:
-	def __init__(self,length=200):
-		self.length=length
-		self.lines=[[]]
-		self.pos=0
-		self.window=None
-		
-	def append(self,s,attr="default"):
-		if self.window:
-			self.window.write(s,attr)
-		newl=0
-		s=s.split(u"\n")
-		for l in s:
-			if newl:
-				self.lines.append([])
-			if l:
-				self.lines[-1].append((attr,l))
-			newl=1
-		self.lines=self.lines[-self.length:]
-	
-	def append_line(self,s,attr="default"):
-		self.append(s,attr)
-		self.lines.append([])
-		if self.window:
-			self.window.write(u"\n",attr)
+global_commands={
+	"exit": "cmd_quit",
+	"quit": "cmd_quit",
+	"set": "cmd_set",
+	"connect": "cmd_connect",
+	"disconnect": "cmd_disconnect",
+	"save": "cmd_save",
+	"load": "cmd_load",
+	"redraw": "cmd_redraw",
+	"info": "cmd_info",
+}
 
-	def write(self,s):
-		self.append(s)
-		self.update()
-
-	def clear(self):
-		self.lines=[[]]
-
-	def line_length(self,n):
-		ret=0
-		for attr,s in self.lines[n]:
-			ret+=len(s)
-		return ret
-
-	def format(self,offset,width,height):
-		if self.lines[-1]==[]:
-			i=2
-		else:
-			i=1
-		ret=[]
-		while height>0 and i<=len(self.lines):
-			l=self.line_length(-i)
-			h=l/width+1
-			ret.insert(0,self.lines[-i])
-			height-=h
-			i+=1
-			
-		if height<0:
-			cut=(-height)*width
-			i=0
-			n=0
-			for attr,s in ret[0]:
-				l=len(s)
-				i+=l
-				if i==cut:
-					ret[0]=ret[0][n+1:]
-					break
-				elif i>cut:
-					ret[0]=[(attr,s[-(cut-i):])]+ret[0][n+1:]
-					break
-				n+=1
-		return ret
-
-	def update(self,now=1):
-		if self.window:
-			self.window.update(now)
-
-	def redraw(self,now=1):
-		if self.window:
-			self.window.redraw(now)
-
-class Application(pyxmpp.Client):
+class Application(pyxmpp.Client,ui.CommandHandler):
 	def __init__(self):
 		pyxmpp.Client.__init__(self)
+		ui.CommandHandler.__init__(self,global_commands)
 		self.plugin_dirs=["cjc/plugins"]
 		self.plugins=[]
 		self.event_handlers={}
 		self.user_info={}
 		self.info_handlers={}
-		self.commands={
-			"exit": self.cmd_quit,
-			"quit": self.cmd_quit,
-			"set": self.cmd_set,
-			"connect": self.cmd_connect,
-			"disconnect": self.cmd_disconnect,
-			"save": self.cmd_save,
-			"load": self.cmd_load,
-			"redraw": self.cmd_redraw,
-			"info": self.cmd_info,
-		}
 
 	def load_plugin(self,path):
 		self.info("Loading plugin: %s" % (path,))
@@ -123,7 +49,7 @@ class Application(pyxmpp.Client):
 			plugin=gl["Plugin"](self)
 			self.plugins.append(plugin)
 		except:
-			traceback.print_exc(file=self.status_buf)
+			self.print_exception()
 			self.info("Plugin load failed")
 
 	def load_plugins(self):
@@ -151,36 +77,47 @@ class Application(pyxmpp.Client):
 			try:
 				h(event,arg)
 			except:
-				traceback.print_exc(file=self.status_buf)
+				self.print_exception()
 				self.info("Event handler failed")
 
 	def add_info_handler(self,var,handler):
 		self.info_handlers[var]=handler
 
+	def command(self,cmd,args):
+		if not ui.CommandHandler.command(self,cmd,args):
+			self.error(u"Unknown command: %s" % (cmd,))
+
 	def run(self,screen):
 		self.screen=screen
+		screen.set_default_command_handler(self)
 		
-		self.status_buf=Buffer()
-		self.message_buf=Buffer()
-		self.roster_buf=Buffer()
+		self.status_buf=ui.TextBuffer("Status")
+		self.message_buf=ui.TextBuffer("Messages")
+		self.roster_buf=ui.TextBuffer("Roster")
+		self.test_buf=ui.TextBuffer("Test")
 
-		self.top_bar=ui.StatusBar(["CJC"])
-		self.status_window=ui.Window(["Status"])
-		self.main_window=ui.Window(["Main"])
-		self.command_line=ui.EditLine(self.user_input)
-		self.bottom_bar=ui.StatusBar(["CJC"])
-		self.roster_window=ui.Window(["Roster"])
+		self.top_bar=ui.StatusBar("CJC",{})
+		self.status_window=ui.Window("Status",1)
+		self.main_window=ui.Window("Main")
+		self.command_line=ui.EditLine()
+		self.bottom_bar=ui.StatusBar("CJC",{})
+		self.roster_window=ui.Window("Roster",1)
 
 		sp=ui.VerticalSplit(self.main_window,self.roster_window)
 		sp=ui.HorizontalSplit(self.top_bar,self.status_window,
 					sp,self.bottom_bar,
 					self.command_line)
 		screen.set_content(sp)
+		screen.focus_window(self.main_window)
 		
 		self.status_window.set_buffer(self.status_buf)
 		self.main_window.set_buffer(self.message_buf)
 		self.roster_window.set_buffer(self.roster_buf)
 		self.screen.update()
+		
+		ui.error=self.error
+		ui.debug=self.debug
+		ui.print_exception=self.print_exception
 		
 		self.load_plugins()
 
@@ -197,11 +134,10 @@ class Application(pyxmpp.Client):
 			try:
 				p.session_started(self.stream)
 			except:
-				traceback.print_exc(file=self.status_buf)
+				self.print_exception()
 				self.info("Plugin call failed")
 		self.stream.set_message_handler("error",self.message_error)
 		self.stream.set_message_handler("normal",self.message_normal)
-		self.stream.set_message_handler("chat",self.message_chat)
 
 	def presence_error(self,stanza):
 		fr=stanza.get_from()
@@ -243,11 +179,6 @@ class Application(pyxmpp.Client):
 		self.message_buf.append_line(stanza.get_body())
 		self.message_buf.update(1)
 	
-	def message_chat(self,stanza):
-		self.message_buf.append_line(u"%s: %s" %
-				(stanza.get_from().as_unicode(),stanza.get_body()))
-		self.message_buf.update(1)
-		
 	def cmd_quit(self,args):
 		raise Exit
 
@@ -363,33 +294,6 @@ class Application(pyxmpp.Client):
 				continue
 			self.info(u"  %s: %s" % r)
 	
-	def command(self,cmd):
-		if not cmd:
-			return
-		s=cmd.split(None,1)
-		if len(s)>1:
-			cmd,args=s
-		else:
-			cmd,args=s[0],None
-		cmd=cmd.lower()
-		if self.commands.has_key(cmd):
-			try:
-				self.commands[cmd](args)
-			except (KeyboardInterrupt,SystemExit,Exit),e:
-				raise
-			except Exception,e:
-				self.error("Comand execution failed: "+str(e))
-				traceback.print_exc(file=self.status_buf)
-		else:
-			self.error("Unknown command: "+cmd)
-
-	def user_input(self,s):
-		if s.startswith(u"/"):
-			self.command(s[1:])
-		else:
-			self.message_buf.append_line(s)
-			self.message_buf.update()
-
 	def loop(self,timeout):
 		while 1:
 			fdlist=[sys.stdin.fileno()]
@@ -397,10 +301,11 @@ class Application(pyxmpp.Client):
 				fdlist.append(self.stream.socket)
 			id,od,ed=select.select(fdlist,[],fdlist,timeout)
 			if sys.stdin.fileno() in id:
-				self.command_line.process()
+				while self.screen.keypressed():
+					pass
 			if self.stream and self.stream.socket in id:
 				self.stream.process()
-			else:
+			if len(id)==0:
 				self.idle()
 
 	def get_bare_user_info(self,jid,var=None):
@@ -453,10 +358,13 @@ class Application(pyxmpp.Client):
 		self.info("Got roster")
 		self.roster_buf.clear()
 		for group in self.roster.groups():
-			self.roster_buf.append(group+u":\n","default")
+			if group:
+				self.roster_buf.append(group+u":\n","default")
 			for item in self.roster.items_by_group(group):
 				jid=item.jid()
 				name=item.name()
+				if not name:
+					name=jid.as_unicode()
 				if jid.resource:
 					self.set_user_info(jid,"rostername",name)
 				else:
@@ -468,7 +376,10 @@ class Application(pyxmpp.Client):
 	def idle(self):
 		pyxmpp.Client.idle(self)
 		self.send_event("idle")
-				
+			
+	def print_exception(self):
+		traceback.print_exc(file=self.status_buf)
+			
 	def error(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"ERROR",s.encode("utf-8","replace")
