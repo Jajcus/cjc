@@ -4,7 +4,6 @@ Important:
 - new Jabber account registration
 - registration and search in Jabber services and gateways
 - message composition (in external editor)
-- /whois (vCard + last activity etc.)
 - storing root CA certificates presented by server and accepted by user
 
 Less important:
