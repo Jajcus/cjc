@@ -3,12 +3,13 @@ from types import StringType,IntType,UnicodeType
 import curses
 
 from buffer import Buffer
+from cjc import common
 
 class ListBufferError(StandardError):
 	pass
 
 class ListBuffer(Buffer):
-	def __init__(self,theme_manager,name,length=200):
+	def __init__(self,theme_manager,name):
 		Buffer.__init__(self,name)
 		self.theme_manager=theme_manager
 		self.keys=[]
@@ -16,8 +17,9 @@ class ListBuffer(Buffer):
 		self.pos=0
 		
 	def set_window(self,win):
-		Buffer.set_window(win)
-		self.window.scrollok=0
+		Buffer.set_window(self,win)
+		if win:
+			self.window.scroll_and_wrap=0
 
 	def has_key(self,key):
 		return key in self.keys;
@@ -44,33 +46,51 @@ class ListBuffer(Buffer):
 			if key in self.keys:
 				raise ListBufferError,"Item already exists"
 			view=self.clean_item(view)
-			for i in range(0,len(keys)):
-				if keys[i]>key:
-					keys.insert(i,key)
-					items.insert(i,value)
+			last=1
+			for i in range(0,len(self.keys)):
+				if self.keys[i]>key:
+					self.keys.insert(i,key)
+					self.items.insert(i,view)
+					last=0
 					break
-			if i==len(keys):
-				keys.append(key)
-				items.append(value)
+			if last:
+				i=len(self.keys)
+				self.keys.append(key)
+				self.items.append(view)
 			self.display(i)
 		finally:
 			self.lock.release()
 
-	def clean(self,view):
+	def update_item(self,key,view):
+		self.lock.acquire()
+		try:
+			try:
+				i=self.keys.index(key)
+			except ValueError:
+				raise ListBufferError,"Item not found"
+			self.items[i]=view
+			self.display(i)
+		finally:
+			self.lock.release()
+
+	def clean_item(self,view):
 		ret=[]
-		for s,attr in view:
-			s.replace("\n"," ")
-			s.replace("\r"," ")
-			s.replace("\f"," ")
-			s.replace("\t"," ")
-			ret.append(s,attr)
+		for attr,s in view:
+			s=s.replace("\n","")
+			s=s.replace("\r","")
+			s=s.replace("\f","")
+			s=s.replace("\t","")
+			ret.append((attr,s))
 		return ret
 
 	def insert_themed(self,key,format,params):
 		view=[]
 		for attr,s in self.theme_manager.format_string(format,params):
-			view.append(s,attr)
-		self.insert_sorted(key,view)
+			view.append((attr,s))
+		if self.has_key(key):
+			self.update_item(key,view)
+		else:
+			self.insert_sorted(key,view)
 
 	def clear(self):
 		self.lock.acquire()
@@ -90,17 +110,22 @@ class ListBuffer(Buffer):
 	def _format(self,width,height):
 		ret=[]
 		for i in range(self.pos,min(self.pos+height,len(self.keys))):
-			ret.append(items[i])	
+			ret.append(self.items[i])
 		return ret
 	
 	def display(self,i):
+		if not self.window:
+			return
 		if i<self.pos:
 			return
 		if i>=self.pos+self.window.h:
 			return
+		common.debug("Updating item #%i" % (i,))
 		view=self.items[i]
-		self.window.write_at(0,i-self.pos,view[0][0],view[0][1])
-		for s,attr in view[1:]:
+		attr,s=view[0]
+		common.debug("Item: %r" % (view,))
+		self.window.write_at(0,i-self.pos,s,attr)
+		for attr,s in view[1:]:
 			self.window.write(s,attr)
 
 	def page_up(self):
