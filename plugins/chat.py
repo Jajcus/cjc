@@ -78,7 +78,7 @@ class Plugin(PluginBase):
 			return
 			
 		args=args.split(None,1)
-		if args[0].find("*")>=0:
+		if args[0].find("@")>=0:
 			try:
 				peer=pyxmpp.JID(args[0])
 			except pyxmpp.JIDError:
