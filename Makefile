@@ -16,7 +16,7 @@ UNINSTALL_DIR=rm -r
 pkg_datadir=$(datadir)/cjc
 pkg_docdir=$(docdir)/cjc
 
-VERSION=0.2
+VERSION=0.3
 
 PY_DIRS=cjc cjc/ui plugins
 DOCS=doc/manual.html COPYING ChangeLog README TODO
@@ -61,6 +61,7 @@ uninstall:
 	$(UNINSTALL) $(DESTDIR)$(bindir)/cjc || :
 
 dist: all
+	echo "version='$(VERSION)'" > cjc/version.py ; \
 	version=`python -c "import cjc.version; print cjc.version.version"` ; \
 	distname=cjc-$$version ; \
 	for d in $(PY_DIRS) ; do \
