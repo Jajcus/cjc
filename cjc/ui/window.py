@@ -270,7 +270,7 @@ class Window(Widget,CommandHandler):
 
 from keytable import KeyFunction,KeyBinding
 ktb=keytable.KeyTable("window",60,(
-		KeyFunction("switch-to-buffer()",Window.switch_to_buffer,"Switch to buffer n"),
+		KeyFunction("switch-to-buffer()",Window.switch_to_buffer,"Switch to buffer <arg>"),
 		KeyBinding("switch-to-buffer(1)","M-1"),
 		KeyBinding("switch-to-buffer(2)","M-2"),
 		KeyBinding("switch-to-buffer(3)","M-3"),
