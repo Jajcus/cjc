@@ -4,6 +4,7 @@ import curses
 from cjc import commands
 from screen import Screen
 from text_buffer import TextBuffer
+from list_buffer import ListBuffer
 from window import Window
 from status_bar import StatusBar
 from edit_line import EditLine
