@@ -98,9 +98,13 @@ def install(command_table):
             break
     command_tables.insert(pos,command_table)
 
-def uninstall(name,object=None):
-    deactivate(name,object)
-    table=lookup_table(name)
+def uninstall(name):
+    try:
+        table=lookup_table(name)
+    except KeyError:
+        return
+    table.active=0
+    table.object=None
     if table:
         try:
             command_tables.remove(table)
@@ -119,7 +123,10 @@ def activate(name,object):
     table.object=object
 
 def deactivate(name,object=None):
-    table=lookup_table(name)
+    try:
+        table=lookup_table(name)
+    except KeyError:
+        return
     if object and table.object!=object:
         return
     table.active=0

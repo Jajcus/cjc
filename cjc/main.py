@@ -130,6 +130,7 @@ class Application(jabber.Client,tls.TLSHandler):
         self.plugin_dirs=[os.path.join(base_dir,"plugins"),
                     os.path.join(self.home_dir,"plugins")]
         self.plugins={}
+        self.plugin_modules={}
         self.event_handlers={}
         self.user_info={}
         self.info_handlers={}
@@ -153,11 +154,16 @@ class Application(jabber.Client,tls.TLSHandler):
 
     def _load_plugin(self,name):
         try:
-            mod=__import__(name)
+            mod=self.plugin_modules.get(name)
+            if mod:
+                mod=reload(mod)
+            else:
+                mod=__import__(name)
             plugin=mod.Plugin(self)
             plugin.module=mod
             plugin.sys_path=sys.path
             self.plugins[name]=plugin
+            self.plugin_modules[name]=mod
         except:
             self.print_exception()
             self.info("Plugin load failed")
@@ -187,7 +193,11 @@ class Application(jabber.Client,tls.TLSHandler):
             self.error("Plugin %s is not loaded" % (name,))
             return False
         self.info("Unloading plugin %s..." % (name,))
-        r=plugin.unload()
+        try:
+            r=plugin.unload()
+        except:
+            self.print_exception()
+            r=None
         if not r:
             self.error("Plugin %s cannot be unloaded" % (name,))
             return False
@@ -201,7 +211,10 @@ class Application(jabber.Client,tls.TLSHandler):
             self.error("Plugin %s is not loaded" % (name,))
             return False
         self.info("Reloading plugin %s..." % (name,))
-        r=plugin.unload()
+        try:
+            r=plugin.unload()
+        except:
+            self.print_exception()
         if not r:
             self.error("Plugin %s cannot be reloaded" % (name,))
             return False
