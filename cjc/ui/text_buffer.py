@@ -31,7 +31,7 @@ class TextBuffer(Buffer):
             self.lock.release()
 
     def _append(self,s,attr):
-        if type(attr) is not IntType:
+        if attr is not None and type(attr) is not IntType:
             attr=self.theme_manager.attrs[attr]
         if not self.lines:
             self.lines=[[]]

@@ -49,11 +49,15 @@ def attr2name(attr):
     return string.join(names,"+")
 
 def name2color(name):
+    if name=="none":
+        return None
     if (name == "default" and hasattr(curses, "use_default_colors")):
         return -1
     return colors_by_name[name.lower()]
 
 def color2name(color):
+    if color is None:
+        return "none"
     if (color == -1 and hasattr(curses, "use_default_colors")):
         return "default"
     return colors_by_val[color]
@@ -71,6 +75,7 @@ class ThemeManager:
             self.encoding="us-ascii"
         if hasattr(curses, "use_default_colors"):
             curses.use_default_colors()
+
     def load(self,filename=None):
         if not filename:
             filename=self.app.theme_file
@@ -87,6 +92,7 @@ class ThemeManager:
         f.close()
         if self.app and self.app.screen:
             self.app.screen.redraw()
+
     def save(self,filename=None):
         if not filename:
             filename=self.app.theme_file
@@ -105,10 +111,13 @@ class ThemeManager:
             (fg,bg,attr,fallback)=self.attr_defs[name]
             cmd=CommandArgs("attr")
             cmd.add_quoted(name)
-            cmd.add_quoted(color2name(fg))
-            cmd.add_quoted(color2name(bg))
-            cmd.add_quoted(attr2name(attr))
-            cmd.add_quoted(attr2name(fallback))
+            if attr is None:
+                cmd.add_quoted("empty")
+            else:
+                cmd.add_quoted(color2name(fg))
+                cmd.add_quoted(color2name(bg))
+                cmd.add_quoted(attr2name(attr))
+                cmd.add_quoted(attr2name(fallback))
             print >>f,cmd.all()
         format_names=self.formats.keys()
         format_names1=[n for n in format_names if n.find(".")<0]
@@ -122,6 +131,7 @@ class ThemeManager:
             cmd.add_quoted(format)
             print >>f,cmd.all()
         f.close()
+
     def command(self,args,safe=0):
         cmd=args.shift()
         if cmd=="save" and not safe:
@@ -136,18 +146,25 @@ class ThemeManager:
             return
         if cmd=="attr":
             name=args.shift()
-            try:
-                fg=name2color(args.shift())
-                bg=name2color(args.shift())
-            except KeyError,e:
-                common.error("Unknown color name: %s" % (e,))
-                return
-            try:
-                attr=name2attr(args.shift())
-                fallback=name2attr(args.shift())
-            except KeyError,e:
-                common.error("Unknown attribute name: %s" % (e,))
-                return
+            arg1=args.shift()
+            if arg1=="empty":
+                fg,bg,attr,fallback=(None,)*4
+            else:    
+                try:
+                    fg=name2color(arg1)
+                    bg=name2color(args.shift())
+                except KeyError,e:
+                    common.error("Unknown color name: %s" % (e,))
+                    return
+                if None in (fg,bg) and fg!=bg:
+                    common.error("Both foreground and background colors must be 'none' or none of them." % (e,))
+                    return
+                try:
+                    attr=name2attr(args.shift())
+                    fallback=name2attr(args.shift())
+                except KeyError,e:
+                    common.error("Unknown attribute name: %s" % (e,))
+                    return
             args.finish()
             self.set_attr(name,fg,bg,attr,fallback)
         if cmd=="format":
@@ -157,8 +174,16 @@ class ThemeManager:
             self.set_format(name,format)
 
     def set_attr(self,name,fg,bg,attr,fallback):
+        if attr is None:
+            self.attrs[name]=None
+            self.attr_defs[name]=(None,)*4
+            return
         if not curses.has_colors():
             self.attrs[name]=fallback
+            self.attr_defs[name]=(fg,bg,attr,fallback)
+            return
+        if fg is None:
+            self.attrs[name]=attr
             self.attr_defs[name]=(fg,bg,attr,fallback)
             return
         if self.pairs.has_key((fg,bg)):
@@ -174,21 +199,27 @@ class ThemeManager:
         attr|=curses.color_pair(pair)
         self.attrs[name]=attr
         self.attr_defs[name]=(fg,bg,attr,fallback)
+        
     def set_default_attr(self,name,fg,bg,attr,fallback):
         if not self.attrs.has_key(name):
             self.set_attr(name,fg,bg,attr,fallback)
+            
     def set_default_attrs(self,attrs):
         for name,fg,bg,attr,fallback in attrs:
             self.set_default_attr(name,fg,bg,attr,fallback)
+            
     def set_format(self,name,format):
         self.formats[name]=format
+        
     def set_default_format(self,name,format):
         if not self.formats.has_key(name):
             self.formats[name]=format
+            
     def set_default_formats(self,formats):
         for name,format in formats:
             if not self.formats.has_key(name):
                 self.formats[name]=format
+                
     def format_buffers(self,attr,params):
         ignore=self.app.settings.get("ignore_activity",[])
         self.app.debug("Buffers to ignore: "+`ignore`)

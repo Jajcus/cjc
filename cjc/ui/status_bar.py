@@ -24,7 +24,9 @@ class StatusBar(Widget):
         try:
             self.win=curses.newwin(self.h,self.w,self.y,self.x)
             self.win.leaveok(1)
-            self.win.bkgdset(ord(" "),self.theme_manager.attrs["bar"])
+            attr=self.theme_manager.attrs["bar"]
+            if attr is not None:
+                self.win.bkgdset(ord(" "),attr)
         finally:
             self.screen.lock.release()
 
@@ -43,7 +45,10 @@ class StatusBar(Widget):
                 if x>=self.w:
                     s=s[:-(x-self.w+1)]
                 s=s.encode(self.screen.encoding,"replace")
-                self.win.addstr(s,attr)
+                if attr is not None:
+                    self.win.addstr(s,attr)
+                else:
+                    self.win.addstr(s)
                 if x>=self.w:
                     break
             self.win.clrtoeol()

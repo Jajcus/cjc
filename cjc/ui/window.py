@@ -161,7 +161,10 @@ class Window(Widget):
                     if x>self.iw:
                         s=s[:-(x-self.iw)]
                     s=s.encode(self.screen.encoding,"replace")
-                    self.win.addstr(s,attr)
+                    if attr is not None:
+                        self.win.addstr(s,attr)
+                    else:
+                        self.win.addstr(s)
                     if x>=self.iw:
                         break
                 if x<self.iw:
@@ -234,7 +237,10 @@ class Window(Widget):
         if len(s)+x>self.iw:
             s=s[:self.iw-x]
         s=s.encode(self.screen.encoding,"replace")
-        self.win.addstr(s,attr)
+        if attr is not None:
+            self.win.addstr(s,attr)
+        else:
+            self.win.addstr(s)
 
     def update(self,now=1,redraw=0):
         self.status_bar.update(now)

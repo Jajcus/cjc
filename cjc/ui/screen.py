@@ -30,7 +30,10 @@ class Screen:
     def set_background(self,char,attr):
         self.lock.acquire()
         try:
-            self.scr.bkgdset(ord(char),attr)
+            if attr is not None:
+                self.scr.bkgdset(ord(char),attr)
+            else:
+                self.scr.bkgdset(ord(char))
         finally:
             self.lock.release()
 
