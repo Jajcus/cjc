@@ -93,8 +93,8 @@ global_theme_attrs=(
 
 global_theme_formats=(
 	("window_status",u"%[bar] %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s) [%(bufcol)s,%(bufrow)s]"),
-	("title_bar",u"%[bar]%(name)s ver. %(version)s by %(author)s"),
-	("status_bar",u"%[bar]%(name)-40s Active buffers: [%{buffers}]"),
+	("title_bar",u"%[bar]%(program_name)s ver. %(program_version)s by %(program_author)s"),
+	("status_bar",u"%[bar][%(J:me:show)s] (%(J:me:status)s) Active buffers: [%{buffers}]"),
 	("error",u"%[error][%(T:now)s] %(msg)s\n"),
 	("warning",u"%[warning][%(T:now)s] %(msg)s\n"),
 	("info",u"%[info][%(T:now)s] %(msg)s\n"),
@@ -129,6 +129,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.roster_window=None
 		self.status_window=None
 		self.main_window=None
+		self.top_bar=None
+		self.bottom_bar=None
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -157,11 +159,31 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		sys.path=sys_path
 
 	def add_event_handler(self,event,handler):
-		if not self.event_handlers.has_key(event):
-			self.event_handlers[event]=[]
-		self.event_handlers[event].append(handler)
+		self.lock.acquire()
+		try:
+			if not self.event_handlers.has_key(event):
+				self.event_handlers[event]=[]
+			if handler not in self.event_handlers[event]:
+				self.event_handlers[event].append(handler)
+		finally:
+			self.lock.release()
+
+	def remove_event_handler(self,event,handler):
+		self.lock.acquire()
+		try:
+			if not self.event_handlers.has_key(event):
+				return
+			if handler not in self.event_handlers[event]:
+				self.event_handlers[event].remove(handler)
+		finally:
+			self.lock.release()
 
 	def send_event(self,event,arg=None):
+		if event=="presence changed" and arg==self.jid:
+			if self.top_bar:
+				self.top_bar.update()
+			if self.bottom_bar:
+				self.bottom_bar.update()
 		if not self.event_handlers.has_key(event):
 			return
 		for h in self.event_handlers[event]:
@@ -179,63 +201,48 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.error(u"Unknown command: %s" % (cmd,))
 
 	def layout_plain(self):
-		status_bar_params={
-			"name": "CJC",
-			"version": version.version,
-			"author": "Jacek Konieczny <jajcus@bnet.pl>",
-			}
 		ui.buffer.activity_handlers=[]
-		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(top_bar.update)
+		self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+		ui.buffer.activity_handlers.append(self.top_bar.update)
 		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
-		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(bottom_bar.update)
-		sp=ui.HorizontalSplit(top_bar,self.main_window,bottom_bar,command_line)
+		self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+		ui.buffer.activity_handlers.append(self.bottom_bar.update)
+		sp=ui.HorizontalSplit(self.top_bar,self.main_window,self.bottom_bar,command_line)
 		self.screen.set_content(sp)
 		self.screen.focus_window(self.main_window)
 		self.status_window=None
 		self.roster_window=None
 
 	def layout_icr(self):
-		status_bar_params={
-			"name": "CJC",
-			"version": version.version,
-			"author": "Jacek Konieczny <jajcus@bnet.pl>",
-			}
 		ui.buffer.activity_handlers=[]
-		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(top_bar.update)
+		self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+		ui.buffer.activity_handlers.append(self.top_bar.update)
 		self.status_window=ui.Window(self.theme_manager,"Status",1)
 		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
-		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(bottom_bar.update)
+		self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+		ui.buffer.activity_handlers.append(self.bottom_bar.update)
 		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
 		sp=ui.VerticalSplit(self.main_window,self.roster_window)
-		sp=ui.HorizontalSplit(top_bar,self.status_window,sp,bottom_bar,command_line)
+		sp=ui.HorizontalSplit(self.top_bar,self.status_window,sp,self.bottom_bar,command_line)
 		self.screen.set_content(sp)
 		self.screen.focus_window(self.main_window)
 	
 	def layout_irc(self):
-		status_bar_params={
-			"name": "CJC",
-			"version": version.version,
-			"author": "Jacek Konieczny <jajcus@bnet.pl>",
-			}
 		ui.buffer.activity_handlers=[]
-		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(top_bar.update)
+		self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+		ui.buffer.activity_handlers.append(self.top_bar.update)
 		self.status_window=ui.Window(self.theme_manager,"Status",1)
 		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
-		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(bottom_bar.update)
+		self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+		ui.buffer.activity_handlers.append(self.bottom_bar.update)
 		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
 		sp=ui.VerticalSplit(self.status_window,self.roster_window)
-		sp=ui.HorizontalSplit(top_bar,sp,self.main_window,bottom_bar,command_line)
+		sp=ui.HorizontalSplit(self.top_bar,sp,self.main_window,self.bottom_bar,command_line)
 		self.screen.set_content(sp)
 		self.screen.focus_window(self.main_window)
 
@@ -246,35 +253,30 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			"author": "Jacek Konieczny <jajcus@bnet.pl>",
 			}
 		ui.buffer.activity_handlers=[]
-		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(top_bar.update)
+		self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+		ui.buffer.activity_handlers.append(self.top_bar.update)
 		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
-		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(bottom_bar.update)
+		self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+		ui.buffer.activity_handlers.append(self.bottom_bar.update)
 		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
 		sp=ui.VerticalSplit(self.main_window,self.roster_window)
-		sp=ui.HorizontalSplit(top_bar,sp,bottom_bar,command_line)
+		sp=ui.HorizontalSplit(self.top_bar,sp,self.bottom_bar,command_line)
 		self.screen.set_content(sp)
 		self.screen.focus_window(self.main_window)
 		self.status_window=None
 
 	def layout_horizontal(self):
-		status_bar_params={
-			"name": "CJC",
-			"version": version.version,
-			"author": "Jacek Konieczny <jajcus@bnet.pl>",
-			}
 		ui.buffer.activity_handlers=[]
-		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(top_bar.update)
+		self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+		ui.buffer.activity_handlers.append(self.top_bar.update)
 		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
-		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer.activity_handlers.append(bottom_bar.update)
+		self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+		ui.buffer.activity_handlers.append(self.bottom_bar.update)
 		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
-		sp=ui.HorizontalSplit(top_bar,self.roster_window,self.main_window,bottom_bar,command_line)
+		sp=ui.HorizontalSplit(self.top_bar,self.roster_window,self.main_window,self.bottom_bar,{})
 		self.screen.set_content(sp)
 		self.screen.focus_window(self.main_window)
 		self.status_window=None
@@ -819,9 +821,10 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		return self.user_info[ujid].get(var)
 
 	def get_user_info(self,jid,var=None):
-		uinf=self.get_bare_user_info(jid).copy()
+		uinf=self.get_bare_user_info(jid)
 		if uinf is None:
 			return None
+		uinf=uinf.copy()
 		if uinf.has_key("resources") and uinf["resources"].has_key(jid.resource):
 			uinf.update(uinf["resources"][jid.resource])
 		if var is None:
