@@ -172,6 +172,7 @@ class Plugin(PluginBase):
             "log_format_in": ("Format of incoming message log entries",(str,None)),
             "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of message buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
+            "auto_popup": ("When enabled each new message buffer is automaticaly made active.",bool),
             }
         self.settings={
                 "buffer":"per-user",
@@ -183,6 +184,7 @@ class Plugin(PluginBase):
                         "To: %(recipient)s\n"
                         "Subject: %(subject)s\n%(body)s\n",
                 "buffer_preference": 50,
+                "auto_popup": False,
                 }
         app.add_event_handler("presence changed",self.ev_presence_changed)
         ui.activate_cmdtable("message",self)
@@ -284,6 +286,8 @@ class Plugin(PluginBase):
             self.buffers[key]=[buff]
         else:
             self.buffers[key].append(buff)
+        if self.settings.get("auto_popup"):
+            self.cjc.screen.display_buffer(buff)
         return buff
 
     def message_error(self,stanza):

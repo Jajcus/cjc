@@ -135,12 +135,14 @@ class Plugin(PluginBase):
             "log_format_in": ("Format of incoming message log entries",(str,None)),
             "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of chat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
+            "auto_popup": ("When enabled each new chat buffer is automaticaly made active.",bool),
             }
         self.settings={
                 "log_filename": "%($HOME)s/.cjc/logs/chats/%(J:peer:bare)s",
                 "log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "buffer_preference": 100,
+                "auto_popup": True,
                 }
         app.add_event_handler("presence changed",self.ev_presence_changed)
         ui.activate_cmdtable("chat",self)
@@ -250,7 +252,10 @@ class Plugin(PluginBase):
                 self.conversations[key].append(conv)
             else:
                 self.conversations[key]=[conv]
-            self.cjc.screen.display_buffer(conv.buffer)
+            if self.settings.get("auto_popup"):
+                self.cjc.screen.display_buffer(conv.buffer)
+            else:
+                conv.buffer.update()
         else:
             if fr!=conv.peer:
                 conv.change_peer(fr)
