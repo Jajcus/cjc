@@ -1,3 +1,8 @@
+2004-09-07  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/presence.py:
+	- fixed problem with empty auto_away_msg  and keep_description set
+
 2004-09-05  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/themes.py:
