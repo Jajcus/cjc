@@ -64,7 +64,7 @@ class Plugin(PluginBase):
                     " when switching to the next active buffer. If 0 then"
                     " the buffer is not even shown in active buffer list.",int),
             "auto_popup": ("When enabled each new presence subscription buffer"
-                    " is automaticaly made active.",bool),
+                    " is automatically made active.",bool),
             "keep_description": ("When changing status (online,away,etc.) keep"
                     " status description (reason).",bool),
             "no_auto_away_when": ("Modes in which now auto-away or auto-xa"
@@ -74,8 +74,8 @@ class Plugin(PluginBase):
             "priority": 1,
             "auto_away": 5,
             "auto_xa": 15,
-            "auto_away_msg": u"Automaticaly away after %i minutes of inactivity",
-            "auto_xa_msg": u"Automaticaly xa after %i minutes of inactivity",
+            "auto_away_msg": u"Automatically away after %i minutes of inactivity",
+            "auto_xa_msg": u"Automatically xa after %i minutes of inactivity",
             "show_changes": 1,
             "show_errors": 1,
             "buffer_preference": 50,
