@@ -103,10 +103,13 @@ class Room(muc.MucRoomHandler):
             self.buffer.update()
             return
         elif fr==self.room_state.room_jid:
+            self.cjc.send_event("own groupchat message received",body)
             format="muc.me"
         elif self.room_state.me.nick.lower() in body.lower():
+            self.cjc.send_event("groupchat message to me received",body)
             format="muc.to_me"
         else:
+            self.cjc.send_event("groupchat message to other received",body)
             format="muc.other"
         self.buffer.append_themed(format,fparams)
         self.buffer.update()
@@ -125,6 +128,7 @@ class Room(muc.MucRoomHandler):
         d=delay.get_delay(stanza)
         if d:
             fparams["timestamp"]=d.datetime_local()
+        self.cjc.send_event("groupchat subject changed",self.room_state.subject)
         self.buffer.append_themed("muc.info",fparams)
         self.buffer.update()
         return
@@ -134,6 +138,7 @@ class Room(muc.MucRoomHandler):
         d=delay.get_delay(stanza)
         if d:
             fparams["timestamp"]=d.datetime_local()
+        self.cjc.send_event("groupchat user joined",user.nick)
         if user.same_as(self.room_state.me):
             self.buffer.append_themed("muc.me_joined",fparams)
         else:
@@ -147,6 +152,7 @@ class Room(muc.MucRoomHandler):
             d=delay.get_delay(stanza)
             if d:
                 fparams["timestamp"]=d.datetime_local()
+        self.cjc.send_event("groupchat user left",user.nick)
         if user.same_as(self.room_state.me):
             self.buffer.append_themed("muc.me_left",fparams)
         else:

@@ -229,6 +229,8 @@ class Plugin(PluginBase):
             body=u""
         if subject:
             body=u"%s: %s" % (subject,body)
+        elif not body:
+            return
 
         d=delay.get_delay(stanza)
         if d:
@@ -268,6 +270,7 @@ class Plugin(PluginBase):
             if fr!=conv.peer:
                 conv.change_peer(fr)
 
+        self.cjc.send_event("chat message received",body)
         conv.add_received(body,timestamp)
         return 1
 

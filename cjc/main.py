@@ -289,9 +289,16 @@ class Application(jabber.Client,tls.TLSHandler):
         if event=="day changed":
             self.status_buf.append_themed("day_change",{})
             self.status_buf.update(1)
-        if not self.event_handlers.has_key(event):
+        if self.event_handlers.has_key(event):
+            for h in self.event_handlers[event]:
+                try:
+                    h(event,arg)
+                except:
+                    self.print_exception()
+                    self.info("Event handler failed")
+        if not self.event_handlers.has_key("*"):
             return
-        for h in self.event_handlers[event]:
+        for h in self.event_handlers["*"]:
             try:
                 h(event,arg)
             except:

@@ -322,6 +322,8 @@ class Plugin(PluginBase):
         thread=stanza.get_thread()
         subject=stanza.get_subject()
         body=stanza.get_body()
+        if not subject and not body:
+            return
         if body is None:
             body=u""
         d=delay.get_delay(stanza)
@@ -332,6 +334,7 @@ class Plugin(PluginBase):
         if self.settings.get("log_filename"):
             self.log_message("in",fr,self.cjc.jid,subject,body,thread,timestamp)
         buff=self.find_or_make(fr,thread)
+        self.cjc.send_event("message received",body)
         buff.add_received(fr,subject,body,thread,timestamp)
         return 1
 
