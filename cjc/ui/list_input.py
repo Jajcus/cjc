@@ -127,11 +127,11 @@ from keytable import KeyFunction
 ktb=keytable.KeyTable("list-input",50,(
 		KeyFunction("accept-input",
 				ListInput.key_enter,
-				"Enter",
+				"Accept input",
 				("ENTER","\n","\r")),
 		KeyFunction("abort-input",
 				ListInput.key_abort,
-				"Abort",
+				"Abort input",
 				"ESCAPE"),
 		KeyFunction("next-option",
 				ListInput.key_down,

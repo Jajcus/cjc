@@ -298,7 +298,7 @@ from keytable import KeyFunction
 ktb=keytable.KeyTable("text-input",50,(
 		KeyFunction("accept-line",
 				TextInput.key_enter,
-				"Enter",
+				"Accept input",
 				("ENTER","\n","\r")),
 		KeyFunction("beginning-of-line",
 				TextInput.key_home,

@@ -163,11 +163,11 @@ from keytable import KeyFunction
 ktb=keytable.KeyTable("choice-input",50,(
 		KeyFunction("accept-input",
 				ChoiceInput.key_enter,
-				"Enter",
+				"Accept input",
 				("ENTER","\n","\r")),
 		KeyFunction("abort-input",
 				ChoiceInput.key_abort,
-				"Abort",
+				"Abort input",
 				"ESCAPE"),
 		KeyFunction("backward-delete-char",
 				ChoiceInput.key_bs,

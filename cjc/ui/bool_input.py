@@ -92,11 +92,11 @@ from keytable import KeyFunction
 ktb=keytable.KeyTable("bool-input",50,(
 		KeyFunction("accept-input",
 				BooleanInput.key_enter,
-				"Enter",
+				"Accept input",
 				("ENTER","\n","\r")),
 		KeyFunction("abort-input",
 				BooleanInput.key_abort,
-				"Abort",
+				"Abort input",
 				"ESCAPE"),
 		KeyFunction("answer-yes",
 				BooleanInput.answer_yes,
