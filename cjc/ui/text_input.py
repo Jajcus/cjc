@@ -2,6 +2,7 @@
 import curses
 import curses.textpad
 import string
+import keytable
 
 from cjc import common
 from input_widget import InputWidget
@@ -17,7 +18,14 @@ class TextInput(InputWidget):
 		self.history=[]
 		self.history_pos=0
 		self.saved_content=None
-		
+
+	def set_parent(self,parent):
+		InputWidget.set_parent(self,parent)
+		if parent:
+			keytable.activate("text-input",self,self.keypressed,self.win)
+		else:
+			keytable.deactivate("text-input",self)
+
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
 		try:
@@ -25,7 +33,7 @@ class TextInput(InputWidget):
 		finally:
 			self.screen.lock.release()
 		
-	def _keypressed(self,c,escape):
+	def _keypressed(self,c,meta):
 		if c==27:
 			if self.abortable:
 				self.parent.abort_handler()
@@ -33,55 +41,11 @@ class TextInput(InputWidget):
 			else:
 				curses.beep()
 				return
-		elif c==curses.KEY_ENTER:
-			return self.key_enter()
-		elif c==curses.KEY_HOME:
-			return self.key_home()
-		elif c==curses.KEY_END:
-			return self.key_end()
-		elif c==curses.KEY_LEFT:
-			return self.key_left()
-		elif c==curses.KEY_RIGHT:
-			return self.key_right()
-		elif c==curses.KEY_UP:
-			return self.key_up()
-		elif c==curses.KEY_DOWN:
-			return self.key_down()
-		elif c==curses.KEY_BACKSPACE:
-			return self.key_bs()
-		elif c==curses.KEY_DC:
-			return self.key_del()
-		elif c>255 or c<0:
+		elif c>255 or c<0 or meta:
 			curses.beep()
 			return
 		c=chr(c)
-		if c in ("\n\r"):
-			self.key_enter()
-		elif c=="\x01": # ^A
-			self.key_home()
-		elif c=="\x02": # ^B
-			self.key_left()
-		elif c=="\x04": # ^D
-			self.key_del()
-		elif c=="\x05": # ^E
-			self.key_end()
-		elif c=="\x06": # ^F
-			self.key_right()
-		elif c=="\b":   # ^H
-			self.key_bs()
-		elif c=="\x0b": # ^K
-			self.key_kill()
-		elif c=="\x0e": # ^N
-			self.key_down()
-		elif c=="\x10": # ^P
-			self.key_up()
-		elif c=="\x17": # ^W
-			self.key_wrubout()
-		elif c=="\x15": # ^U
-			self.key_uclean()
-		elif c=="\x7f":
-			self.key_del()
-		elif c in self.printable:
+		if c in self.printable:
 			self.key_char(c)
 		else:
 			curses.beep()
@@ -263,7 +227,7 @@ class TextInput(InputWidget):
 				self.win.move(0,self.pos-self.offset)
 		self.win.refresh()
 
-	def key_up(self):
+	def history_prev(self):
 		if not self.history_len or self.history_pos>=len(self.history):
 			curses.beep()
 			return
@@ -278,7 +242,7 @@ class TextInput(InputWidget):
 		else:
 			self.redraw()
 
-	def key_down(self):
+	def history_next(self):
 		if not self.history_len or self.history_pos<=0:
 			curses.beep()
 			return
@@ -329,3 +293,57 @@ class TextInput(InputWidget):
 				self.win.noutrefresh()
 		finally:
 			self.screen.lock.release()
+
+from keytable import KeyFunction
+ktb=keytable.KeyTable("text-input",50,(
+		KeyFunction("accept-line",
+				TextInput.key_enter,
+				"Enter",
+				("ENTER","\n","\r")),
+		KeyFunction("beginning-of-line",
+				TextInput.key_home,
+				"Move to the begining",
+				("HOME","^A")),
+		KeyFunction("end-of-line",
+				TextInput.key_end,
+				"Move to the end",
+				("END","^E")),
+		KeyFunction("forward-char",
+				TextInput.key_right,
+				"Move right",
+				("RIGHT","^F")),
+		KeyFunction("backward-char",
+				TextInput.key_left,
+				"Move left",
+				("LEFT","^B")),
+		KeyFunction("previous-history",
+				TextInput.history_prev,
+				"Previous history item",
+				("UP","^P")),
+		KeyFunction("next-history",
+				TextInput.history_next,
+				"Next history item",
+				("DOWN","^N")),
+		KeyFunction("backward-delete-char",
+				TextInput.key_bs,
+				"Delete previous character",
+				("BACKSPACE","^H")),
+		KeyFunction("delete-char",
+				TextInput.key_del,
+				"Delete current character",
+				("DC","^D","\x7f")),
+		KeyFunction("kill-line",
+				TextInput.key_kill,
+				"Erase whole text",
+				"^K"),
+		KeyFunction("unix-word-rubout",
+				TextInput.key_kill,
+				"Kill the word behind cursor",
+				"^W"),
+		KeyFunction("unix-line-discard",
+				TextInput.key_kill,
+				"Kill backward from cursor to the beginning of the line",
+				"^U"),
+		))
+
+keytable.install(ktb)

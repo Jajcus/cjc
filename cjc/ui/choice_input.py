@@ -4,6 +4,7 @@ import curses.textpad
 import string
 from types import StringType,UnicodeType,IntType,XRangeType
 
+import keytable
 from cjc import common
 from input_widget import InputWidget
 
@@ -40,6 +41,13 @@ class ChoiceInput(InputWidget):
 		self.content=u""
 		self.default=default
 		self.pos=0
+	
+	def set_parent(self,parent):
+		InputWidget.set_parent(self,parent)
+		if parent:
+			keytable.activate("choice-input",self,self.keypressed,self.win)
+		else:
+			keytable.deactivate("choice-input",self)
 		
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
@@ -49,29 +57,22 @@ class ChoiceInput(InputWidget):
 			self.screen.lock.release()
 		
 	def _keypressed(self,c,escape):
-		if c==27:
-			if self.abortable:
-				self.parent.abort_handler()
-				return
-			else:
-				curses.beep()
-				return
-		elif c==curses.KEY_ENTER:
-			return self.key_enter()
-		elif c==curses.KEY_BACKSPACE:
-			return self.key_bs()
-		elif c>255 or c<0:
+		if c>255 or c<0:
 			curses.beep()
 			return
 		c=chr(c)
-		if c in ("\n\r"):
-			self.key_enter()
-		elif c=="\b":
-			self.key_bs()
-		elif c in self.printable:
+		if c in self.printable:
 			self.key_char(c)
 		else:
 			curses.beep()
+
+	def key_abort(self):
+		if self.abortable:
+			self.parent.abort_handler()
+			return
+		else:
+			curses.beep()
+			return
 
 	def key_enter(self):
 		if self.content:
@@ -157,3 +158,20 @@ class ChoiceInput(InputWidget):
 				self.win.noutrefresh()
 		finally:
 			self.screen.lock.release()
+
+from keytable import KeyFunction
+ktb=keytable.KeyTable("choice-input",50,(
+		KeyFunction("accept-input",
+				ChoiceInput.key_enter,
+				"Enter",
+				("ENTER","\n","\r")),
+		KeyFunction("abort-input",
+				ChoiceInput.key_abort,
+				"Abort",
+				"\e"),
+		KeyFunction("backward-delete-char",
+				ChoiceInput.key_bs,
+				"Delete previous character",
+				("BACKSPACE","^H")),
+		))
+keytable.install(ktb)

@@ -30,7 +30,7 @@ if os.path.exists(os.path.join(base_dir,"CVS/Entries")):
 		cwd=os.getcwd()
 		try:
 			os.chdir(base_dir)
-			if os.system("make version"):
+			if os.system("make version >&2"):
 				raise OSError,"make failed"
 		finally:
 			os.chdir(cwd)

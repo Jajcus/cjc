@@ -88,14 +88,16 @@ class InputTest(Test):
 			type,values=arg
 			if type=="boolean":
 				if answer:
-					answer="yes"
+					ans="yes"
 				else:
-					answer="no"
+					ans="no"
 			elif type=="list-single":
-				answer=values[answer]
+				ans=values[answer]
 			elif type=="list-multi":
-				answer=[values[a] for a in answer]
-			self.buffer.append_line("Your answer is %r" % (answer,))
+				ans=[values[a] for a in answer]
+			else:
+				ans=answer
+			self.buffer.append_line("Your answer is %r (%r)" % (answer,ans))
 		self.buffer.update()
 		self.ask_next_question()
 

@@ -3,6 +3,7 @@ import curses
 import curses.textpad
 import string
 
+import keytable
 from cjc import common
 from input_widget import InputWidget
 
@@ -30,37 +31,24 @@ class ListInput(InputWidget):
 						continue
 					self.selected[i]=1
 		
-	def keypressed(self,c,escape):
-		self.screen.lock.acquire()
-		try:
-			return self._keypressed(c,escape)
-		finally:
-			self.screen.lock.release()
-		
-	def _keypressed(self,c,escape):
-		if c==27:
-			if self.abortable:
-				self.parent.abort_handler()
-				return
-			else:
-				curses.beep()
-				return
-		elif c==curses.KEY_ENTER:
-			return self.key_enter()
-		elif c==curses.KEY_UP:
-			return self.key_up()
-		elif c==curses.KEY_DOWN:
-			return self.key_down()
-		elif c>255 or c<0:
-			curses.beep()
-			return
-		c=chr(c)
-		if c in ("\n\r"):
-			self.key_enter()
-		elif c==" ":
-			self.key_space()
+	def set_parent(self,parent):
+		InputWidget.set_parent(self,parent)
+		if parent:
+			keytable.activate("list-input",self,input_window=self.win)
 		else:
-			curses.beep()
+			keytable.deactivate("list-input",self)
+		
+	def key_abort(self):
+		if self.abortable:
+			self.parent.abort_handler()
+			return
+		else:
+			self.screen.lock.acquire()
+			try:
+				curses.beep()
+			finally:
+				self.screen.lock.release()
+				return
 
 	def key_enter(self):
 		if self.multi:
@@ -98,7 +86,7 @@ class ListInput(InputWidget):
 			self.choice=-1
 		self.redraw()
 
-	def key_space(self):
+	def key_select(self):
 		if not self.multi:
 			return curses.beep()
 		self.selected[self.choice]=not self.selected[self.choice]
@@ -133,3 +121,29 @@ class ListInput(InputWidget):
 				self.win.noutrefresh()
 		finally:
 			self.screen.lock.release()
+
+
+from keytable import KeyFunction
+ktb=keytable.KeyTable("list-input",50,(
+		KeyFunction("accept-input",
+				ListInput.key_enter,
+				"Enter",
+				("ENTER","\n","\r")),
+		KeyFunction("abort-input",
+				ListInput.key_abort,
+				"Abort",
+				"\e"),
+		KeyFunction("next-option",
+				ListInput.key_down,
+				"Select the next option",
+				"DOWN"),
+		KeyFunction("previous-option",
+				ListInput.key_up,
+				"Select the previous option",
+				"UP"),
+		KeyFunction("select-option",
+				ListInput.key_select,
+				"Select current option",
+				" "),
+		))
+keytable.install(ktb)

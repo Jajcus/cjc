@@ -7,6 +7,8 @@ from cjc import common
 from cjc import commands
 import buffer
 
+import keytable
+
 screen_commands={
 	"next": ("cmd_next",
 		"/next",
@@ -45,6 +47,7 @@ class Screen(commands.CommandHandler):
 		lc,self.encoding=locale.getlocale()
 		if self.encoding is None:
 			self.encoding="us-ascii"
+		keytable.activate("screen",self,input_window=self.scr)
 
 	def set_background(self,char,attr):
 		self.lock.acquire()
@@ -237,53 +240,6 @@ class Screen(commands.CommandHandler):
 		if self.input_handler:
 			self.input_handler.cursync()
 
-	def process_key(self,ch):
-		if ch==curses.KEY_RESIZE and self.resize_handler:
-			self.resize_handler()
-			
-		if self.active_window:
-			if self.active_window.keypressed(ch,self.escape):
-				return
-				
-		if self.escape:
-			if ch==ord("\t"):
-				self.cmd_next()
-				return
-		else:
-			if ch==0x0c:
-				self.redraw()
-				return
-		
-		if self.input_handler:
-			if self.input_handler.keypressed(ch,self.escape):
-				return
-
-	def keypressed(self):
-		ch=self.input_handler.getch()
-		if ch==-1:
-			return 0
-		if ch==27:
-			if self.escape:
-				self.escape=0
-				try:
-					self.process_key(27)
-				except KeyboardInterrupt:
-					pass
-				except common.standard_errors,e:
-					common.print_exception()
-				return 1
-			else:
-				self.escape=1
-				return 1
-		try:
-			self.process_key(ch)
-		except KeyboardInterrupt:
-			pass
-		except common.standard_errors,e:
-			common.print_exception()
-		self.escape=0
-		return 1
-
 	def user_input(self,s):
 		try:
 			self.do_user_input(s)
@@ -324,3 +280,9 @@ class Screen(commands.CommandHandler):
 				return w
 		return None
 
+from keytable import KeyFunction,KeyBinding
+ktb=keytable.KeyTable("screen",20,(
+			KeyBinding("command(next)","M-^I"),
+			KeyFunction("redraw-screen",Screen.redraw,"Redraw the screen","^L"),
+		))
+keytable.install(ktb)

@@ -26,16 +26,15 @@ class InputWidget:
 			self.win=None
 
 	def redraw(self,now=1):
-		if not self.screen:
+		if not self.screen or not self.win:
 			return
 		self.update(now,1)
 
 	def cursync(self,now=1):
-		if not self.screen:
+		if not self.screen or not self.win:
 			return
 		self.screen.lock.acquire()
 		try:
-			self.win.cursyncup()
 			if now:
 				self.win.refresh()
 			else:

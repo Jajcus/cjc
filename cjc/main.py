@@ -19,6 +19,7 @@ from pyxmpp import jabber
 
 import ui
 import ui.buffer
+import ui.keytable
 import version
 import commands
 import themes
@@ -186,6 +187,8 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		self.top_bar=None
 		self.bottom_bar=None
 		self.resize_request=0
+		ui.keytable.activate("default",self)
+		ui.keytable.activate("global",self)
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -248,6 +251,11 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 
 	def add_info_handler(self,var,handler):
 		self.info_handlers[var]=handler
+
+	def key_command(self,arg):
+		args=commands.CommandArgs(arg)
+		cmd=args.shift()
+		self.do_command(cmd,args)
 
 	def do_command(self,cmd,args):
 		if self.aliases.has_key(cmd):
@@ -369,7 +377,6 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		self.theme_manager.set_default_attrs(global_theme_attrs)
 		self.theme_manager.set_default_formats(global_theme_formats)
 		screen.set_command_handler(self.do_command)
-		screen.set_resize_handler(self.resize_handler)
 		
 		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
 
@@ -914,7 +921,7 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		idle=0
 		while not self.exit_time():
 			try:
-				act=self.screen.keypressed()
+				act=ui.keytable.keypressed()
 			except (KeyboardInterrupt,SystemExit),e:
 				self.exit_request(str(e))
 				self.print_exception()
@@ -1095,6 +1102,21 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 			self.status_buf.append_themed("debug",s)
 			self.status_buf.update(1)
 
+from ui.keytable import KeyFunction
+default_ktb=ui.keytable.KeyTable("default",0,(
+			KeyFunction("command()",
+				Application.key_command,
+				"Execute command"),
+		))
+global_ktb=ui.keytable.KeyTable("global",100,(
+			KeyFunction("resize",
+				Application.resize_handler,
+				"Proces terminal resize request",
+				"RESIZE"),
+		))
+
+ui.keytable.install(default_ktb)
+ui.keytable.install(global_ktb)
 		
 def usage():
 	print
@@ -1118,6 +1140,7 @@ def usage():
 	print "  --append-log-file=filename  File where debug log should be appended"
 
 def main(base_dir):
+	global logfile
 	libxml2.debugMemory(1)
 	locale.setlocale(locale.LC_ALL,"")
 	try:
@@ -1139,13 +1162,11 @@ def main(base_dir):
 		elif o in ("-t","--theme-file"):
 			theme_file=a
 		elif o in ("-l","--log-file"):
-			global logfile
 			if a=="-":
 				logfile=sys.stderr
 			else:
 				logfile=open(a,"w",1)
 		elif o in ("-L","--append-log-file"):
-			global logfile
 			if a=="-":
 				logfile=sys.stderr
 			else:

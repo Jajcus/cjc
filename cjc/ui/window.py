@@ -2,6 +2,7 @@ import curses
 import re
 
 import buffer
+import keytable
 from widget import Widget
 from status_bar import StatusBar
 from cjc import common
@@ -34,32 +35,25 @@ class Window(Widget,CommandHandler):
 		
 		d={"active":a,"winname":self.title,"locked":l}
 		if self.buffer:
-			common.debug("get_status_dict: buffer.info="+`self.buffer.info`)
 			d.update(self.buffer.info)
 		else:
 			d["buffer_descr"]="default_buffer_descr"
 			d["bufname"]=""
-		common.debug("get_status_dict: d="+`d`)
 		return d
 
-	def keypressed(self,ch,escape):
-		if self.buffer and self.buffer.keypressed(ch,escape):
+	def switch_to_buffer(self,n):
+		n=int(n)
+		b=buffer.get_by_number(n)
+		if b is None:
 			return 1
-		if self.locked:
-			return 0
-		if escape and ch in range(ord("0"),ord("9")+1):
-			b=buffer.get_by_number(ch-ord("0"))
-			if b is None:
-				return 1
-			old=b.window
-			if old and old.locked:
-				return 1
-			self.set_buffer(b)
-			self.update()
-			if old:
-				old.update()
+		old=b.window
+		if old and old.locked:
 			return 1
-		return 0
+		self.set_buffer(b)
+		self.update()
+		if old:
+			old.update()
+		return 1
 
 	def commands(self):
 		if self.buffer:
@@ -128,9 +122,11 @@ class Window(Widget,CommandHandler):
 		if yes:
 			self.active=1
 			a="*"
+			keytable.activate("window",self)
 		else:
 			self.active=0
 			a=""
+			keytable.deactivate("window")
 		d=self.status_bar.get_dict()
 		d["active"]=a
 		if self.screen:
@@ -271,3 +267,19 @@ class Window(Widget,CommandHandler):
 				self.win.noutrefresh()
 		finally:
 			self.screen.lock.release()
+
+from keytable import KeyFunction,KeyBinding
+ktb=keytable.KeyTable("window",60,(
+		KeyFunction("switch-to-buffer()",Window.switch_to_buffer,"Switch to buffer n"),
+		KeyBinding("switch-to-buffer(1)","M-1"),
+		KeyBinding("switch-to-buffer(2)","M-2"),
+		KeyBinding("switch-to-buffer(3)","M-3"),
+		KeyBinding("switch-to-buffer(4)","M-4"),
+		KeyBinding("switch-to-buffer(5)","M-5"),
+		KeyBinding("switch-to-buffer(6)","M-6"),
+		KeyBinding("switch-to-buffer(7)","M-7"),
+		KeyBinding("switch-to-buffer(8)","M-8"),
+		KeyBinding("switch-to-buffer(9)","M-9"),
+		KeyBinding("switch-to-buffer(0)","M-0"),
+	))
+keytable.install(ktb)

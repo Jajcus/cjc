@@ -85,6 +85,8 @@ class Input(Widget):
 			self.current_buffer.unask_question()
 
 	def current_buffer_changed(self,buffer):
+		if self.input_widget:
+			self.input_widget.set_parent(None)
 		if buffer and buffer.question:
 			self.question_handler=buffer.question_handler
 			self.question_abort_handler=buffer.question_abort_handler
@@ -120,7 +122,3 @@ class Input(Widget):
 	def getch(self):
 		if self.input_widget:
 			return self.input_widget.win.getch()
-
-	def keypressed(self,ch,escape):
-		if self.input_widget:
-			return self.input_widget.keypressed(ch,escape)

@@ -4,6 +4,7 @@ import curses
 
 from buffer import Buffer
 from cjc import common
+import keytable
 
 class TextBuffer(Buffer):
 	def __init__(self,theme_manager,info,descr_format="default_buffer_descr",length=200):
@@ -16,6 +17,10 @@ class TextBuffer(Buffer):
 		
 	def set_window(self,win):
 		Buffer.set_window(self,win)
+		if win:
+			keytable.activate("text-buffer",self)
+		else:
+			keytable.deactivate("text-buffer",self)
 		
 	def append(self,s,attr="default"):
 		self.lock.acquire()
@@ -217,7 +222,6 @@ class TextBuffer(Buffer):
 				ret.append(part)
 				height-=1
 			l+=1
-		common.debug("format returning: "+`ret`)	
 		return ret
 
 	def update_pos(self):
@@ -273,14 +277,16 @@ class TextBuffer(Buffer):
 		self.window.draw_buffer()
 		self.window.update()
 
-	def keypressed(self,ch,escape):
-		if escape:
-			return 0
-		if ch==curses.KEY_PPAGE:
-			self.page_up()
-			return 1
-		if ch==curses.KEY_NPAGE:
-			self.page_down()
-			return 1
-		return 0
-			
+from keytable import KeyFunction
+ktb=keytable.KeyTable("text-buffer",30,(
+		KeyFunction("page-up",
+				TextBuffer.page_up,
+				"Scroll buffer one page up",
+				"PPAGE"),
+		KeyFunction("page-down",
+				TextBuffer.page_down,
+				"Scroll buffer one page down",
+				"NPAGE"),
+		))
+
+keytable.install(ktb)

@@ -2,6 +2,7 @@
 import curses
 import curses.textpad
 import string
+import keytable
 
 from cjc import common
 from input_widget import InputWidget
@@ -18,51 +19,56 @@ class BooleanInput(InputWidget):
 			self.prompt="[y/n]: "
 			default=None
 		self.default=default
+
+	def set_parent(self,parent):
+		InputWidget.set_parent(self,parent)
+		if parent:
+			keytable.activate("bool-input",self,input_window=self.win)
+		else:
+			keytable.deactivate("bool-input",self)
 		
-	def keypressed(self,c,escape):
+	def key_abort(self):
+		if self.abortable:
+			self.parent.abort_handler()
+		else:
+			self.screen.lock.acquire()
+			try:
+				curses.beep()
+			finally:
+				self.screen.lock.release()
+	
+	def key_enter(self):
 		self.screen.lock.acquire()
 		try:
-			return self._keypressed(c,escape)
-		finally:
-			self.screen.lock.release()
-		
-	def _keypressed(self,c,escape):
-		if c==27:
-			if self.abortable:
-				self.parent.abort_handler()
-				return
-			else:
+			if self.default is None and self.required:
 				curses.beep()
 				return
-		elif c==curses.KEY_ENTER:
-			return self.key_enter()
-		elif c>255 or c<0:
-			curses.beep()
-			return
-		c=chr(c)
-		if c in "\n\r":
-			self.key_enter()
-		elif c in "Yy":
-			self.answer(1)
-		elif c in "Nn":
-			self.answer(0)
-		else:
-			curses.beep()
+			if self.default:
+				self.answer_yes()
+			else:
+				self.answer_no()
+		finally:
+			self.screen.lock.release()
 
-	def key_enter(self):
-		if self.default is None and self.required:
-			curses.beep()
-			return
-		self.answer(self.default)
-
-	def answer(self,ans):
-		if ans:
+	def answer_yes(self):
+		self.screen.lock.acquire()
+		try:
 			self.content=u"y"
-		else:
+			self.win.addstr(self.content)
+			self.update()
+			self.parent.input_handler(1)
+		finally:
+			self.screen.lock.release()
+
+	def answer_no(self):
+		self.screen.lock.acquire()
+		try:
 			self.content=u"n"
-		self.win.addstr(self.content)
-		self.update()
-		self.parent.input_handler(ans)
+			self.win.addstr(self.content)
+			self.update()
+			self.parent.input_handler(0)
+		finally:
+			self.screen.lock.release()
 
 	def update(self,now=1,refresh=0):
 		self.screen.lock.acquire()
@@ -81,3 +87,25 @@ class BooleanInput(InputWidget):
 				self.win.noutrefresh()
 		finally:
 			self.screen.lock.release()
+
+from keytable import KeyFunction
+ktb=keytable.KeyTable("bool-input",50,(
+		KeyFunction("accept-input",
+				BooleanInput.key_enter,
+				"Enter",
+				("ENTER","\n","\r")),
+		KeyFunction("abort-input",
+				BooleanInput.key_abort,
+				"Abort",
+				"\e"),
+		KeyFunction("answer-yes",
+				BooleanInput.answer_yes,
+				"Answer 'yes'",
+				"y"),
+		KeyFunction("answer-no",
+				BooleanInput.answer_no,
+				"Answer 'no'",
+				"n"),
+		))
+
+keytable.install(ktb)
