@@ -1,3 +1,11 @@
+2004-07-21  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* doc/Makefile:
+	- Makefile for the manual made more failproof
+
+	* TODO:
+	- updates
+
 2004-07-20  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/ui/__init__.py, plugins/roster.py:
