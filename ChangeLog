@@ -1,3 +1,11 @@
+2004-06-20  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/chat.py, plugins/message.py, plugins/presence.py:
+	- auto_popup settings
+
+	* cjc/main.py:
+	- 'bool' setting type
+
 2004-06-17  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/ui/text_buffer.py:
