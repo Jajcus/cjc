@@ -4,6 +4,7 @@ import curses
 
 from buffer import Buffer
 from cjc import common
+import keytable
 
 class ListBufferError(StandardError):
 	pass
@@ -15,9 +16,13 @@ class ListBuffer(Buffer):
 		self.keys=[]
 		self.items=[]
 		self.pos=0
-		
+				
 	def set_window(self,win):
 		Buffer.set_window(self,win)
+		if win:
+			keytable.activate("list-buffer",self)
+		else:
+			keytable.deactivate("list-buffer",self)
 
 	def get_keys(self):
 		return self.keys
@@ -212,4 +217,17 @@ class ListBuffer(Buffer):
 			self.page_down()
 			return 1
 		return 0
-			
+	
+from keytable import KeyFunction
+ktb=keytable.KeyTable("list-buffer",30,(
+		KeyFunction("page-up",
+				ListBuffer.page_up,
+				"Scroll buffer one page up",
+				"PPAGE"),
+		KeyFunction("page-down",
+				ListBuffer.page_down,
+				"Scroll buffer one page down",
+				"NPAGE"),
+		))
+
+keytable.install(ktb)
