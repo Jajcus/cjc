@@ -4,6 +4,8 @@ import buffer
 from widget import Widget
 from status_bar import StatusBar
 
+from cjc import common
+
 class Window(Widget):
 	def __init__(self,theme_manager,title,lock=0):
 		Widget.__init__(self)
@@ -22,7 +24,7 @@ class Window(Widget):
 		self.newline=0
 		self.locked=lock
 		self.active=0
-		self.scrollok=1
+		self.scroll_and_wrap=1
 
 	def keypressed(self,ch,escape):
 		if self.buffer and self.buffer.keypressed(ch,escape):
@@ -191,7 +193,7 @@ class Window(Widget):
 		
 	def _write(self,s,attr):
 		y,x=self.win.getyx()
-		if self.newline and self.scrollok:
+		if self.newline and self.scroll_and_wrap:
 			if y==self.h-2:
 				self.win.scroll(1)
 				self.win.move(y,0)
@@ -200,7 +202,7 @@ class Window(Widget):
 				self.win.addstr("\n")
 			self.newline=0
 			x=0
-			
+		
 		if s[-1]==u"\n":
 			s=s[:-1]
 			self.newline=1
@@ -228,7 +230,7 @@ class Window(Widget):
 				lines.append(paras.pop(0))
 		
 		for s in lines:	
-			if y==self.h-2 and self.scrollok:
+			if y==self.h-2 and self.scroll_and_wrap:
 				self.win.scroll(1)
 			else:
 				y+=1
