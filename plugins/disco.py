@@ -30,12 +30,12 @@ indices1=xrange(1,sys.maxint)
 theme_attrs={}
 
 theme_formats=(
-    ("disco.info",u"[%(T:timestamp)s] Disco information for %(J:jid:full)s%(node? node: %(node)s)s %(cache_state?(%(cache_state)s))s\n%{disco_identities}%{disco_features}\n"),
+    ("disco.info",u"[%(T:timestamp)s] Disco information for %(J:jid:full)s%(node? node\\: %(node)s)s %(cache_state?(%(cache_state)s))s\n%{disco_identities}%{disco_features}\n"),
     ("disco.identity",u"        %(category)s/%(type)s %(name)s\n"),
     ("disco.feature",u"        Feature: %(feature)s\n"),
-    ("disco.items",u"[%(T:timestamp)s] Disco items for %(J:jid:full)s%(node? node: %(node)s)s %(cache_state?(%(cache_state)s))s\n%{disco_items}\n"),
-    ("disco.item",u" %(index)6i. %(J:jid:full)s%(node? node: %(node)s)s%(name? '%(name)s')s\n"),
-    ("disco.descr",u"Disco for %(J:jid:full)s%(node? node: %(node)s)s"),
+    ("disco.items",u"[%(T:timestamp)s] Disco items for %(J:jid:full)s%(node? node\\: %(node)s)s %(cache_state?(%(cache_state)s))s\n%{disco_items}\n"),
+    ("disco.item",u" %(index)6i. %(J:jid:full)s%(node? node\\: %(node)s)s%(name? '%(name)s')s\n"),
+    ("disco.descr",u"Disco for %(J:jid:full)s%(node? node\\: %(node)s)s"),
 )
 
 class DiscoBuffer:
