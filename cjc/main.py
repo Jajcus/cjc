@@ -117,6 +117,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.exiting=0
 		self.ui_thread=None
 		self.stream_thread=None
+		self.roster_window=None
+		self.status_window=None
+		self.main_window=None
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -175,14 +178,15 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(top_bar.update)
-		main_window=ui.Window(self.theme_manager,"Main")
+		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
-		sp=ui.HorizontalSplit(top_bar,main_window,bottom_bar,command_line)
+		sp=ui.HorizontalSplit(top_bar,self.main_window,bottom_bar,command_line)
 		self.screen.set_content(sp)
-		main_window.set_buffer(self.status_buf)
-		self.screen.focus_window(main_window)
+		self.screen.focus_window(self.main_window)
+		self.status_window=None
+		self.roster_window=None
 
 	def layout_icr(self):
 		status_bar_params={
@@ -193,20 +197,17 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(top_bar.update)
-		status_window=ui.Window(self.theme_manager,"Status",1)
-		main_window=ui.Window(self.theme_manager,"Main")
+		self.status_window=ui.Window(self.theme_manager,"Status",1)
+		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
-		roster_window=ui.Window(self.theme_manager,"Roster",1)
+		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
-		sp=ui.VerticalSplit(main_window,roster_window)
-		sp=ui.HorizontalSplit(top_bar,status_window,sp,bottom_bar,command_line)
+		sp=ui.VerticalSplit(self.main_window,self.roster_window)
+		sp=ui.HorizontalSplit(top_bar,self.status_window,sp,bottom_bar,command_line)
 		self.screen.set_content(sp)
-		status_window.set_buffer(self.status_buf)
-		main_window.set_buffer(self.message_buf)
-		roster_window.set_buffer(self.roster_buf)
-		self.screen.focus_window(main_window)
+		self.screen.focus_window(self.main_window)
 	
 	def layout_irc(self):
 		status_bar_params={
@@ -217,20 +218,17 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(top_bar.update)
-		status_window=ui.Window(self.theme_manager,"Status",1)
-		main_window=ui.Window(self.theme_manager,"Main")
+		self.status_window=ui.Window(self.theme_manager,"Status",1)
+		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
-		roster_window=ui.Window(self.theme_manager,"Roster",1)
+		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
-		sp=ui.VerticalSplit(status_window,roster_window)
-		sp=ui.HorizontalSplit(top_bar,sp,main_window,bottom_bar,command_line)
+		sp=ui.VerticalSplit(self.status_window,self.roster_window)
+		sp=ui.HorizontalSplit(top_bar,sp,self.main_window,bottom_bar,command_line)
 		self.screen.set_content(sp)
-		status_window.set_buffer(self.status_buf)
-		main_window.set_buffer(self.message_buf)
-		roster_window.set_buffer(self.roster_buf)
-		self.screen.focus_window(main_window)
+		self.screen.focus_window(self.main_window)
 
 	def layout_vertical(self):
 		status_bar_params={
@@ -241,18 +239,17 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(top_bar.update)
-		main_window=ui.Window(self.theme_manager,"Main")
+		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
-		roster_window=ui.Window(self.theme_manager,"Roster",1)
+		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
-		sp=ui.VerticalSplit(main_window,roster_window)
+		sp=ui.VerticalSplit(self.main_window,self.roster_window)
 		sp=ui.HorizontalSplit(top_bar,sp,bottom_bar,command_line)
 		self.screen.set_content(sp)
-		main_window.set_buffer(self.status_buf)
-		roster_window.set_buffer(self.roster_buf)
-		self.screen.focus_window(main_window)
+		self.screen.focus_window(self.main_window)
+		self.status_window=None
 
 	def layout_horizontal(self):
 		status_bar_params={
@@ -263,16 +260,15 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(top_bar.update)
-		main_window=ui.Window(self.theme_manager,"Main")
+		self.main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine(self.theme_manager)
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
 		ui.buffer.activity_handlers.append(bottom_bar.update)
-		roster_window=ui.Window(self.theme_manager,"Roster",1)
-		sp=ui.HorizontalSplit(top_bar,roster_window,main_window,bottom_bar,command_line)
+		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
+		sp=ui.HorizontalSplit(top_bar,self.roster_window,self.main_window,bottom_bar,command_line)
 		self.screen.set_content(sp)
-		main_window.set_buffer(self.status_buf)
-		roster_window.set_buffer(self.roster_buf)
-		self.screen.focus_window(main_window)
+		self.screen.focus_window(self.main_window)
+		self.status_window=None
 
 	def run(self,screen):
 		self.screen=screen
@@ -282,10 +278,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		screen.set_default_command_handler(self)
 		
 		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
-		self.roster_buf=ui.TextBuffer(self.theme_manager,"Roster")
 		self.message_buf=ui.TextBuffer(self.theme_manager,"Messages")
 
-		self.layout_plain()
+		self.set_layout(self.settings["layout"],"plain")
 		
 		self.screen.update()
 		
@@ -514,6 +509,11 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.settings["layout"]=oldval
 			return
 		getattr(self,"layout_"+newval)()
+		if self.status_window:
+			self.status_window.set_buffer(self.status_buf)
+		elif self.main_window:
+			self.main_window.set_buffer(self.status_buf)
+		self.send_event("layout changed",newval)
 		self.screen.redraw()
 			
 	def cmd_save(self,args):
