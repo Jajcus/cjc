@@ -30,7 +30,7 @@ class Conversation:
 			self.thread_inuse=1
 		else:
 			plugin.last_thread+=1
-			self.thread="thread-%i" % (plugin.last_thread,)
+			self.thread="chat-thread-%i" % (plugin.last_thread,)
 			self.thread_inuse=0
 		self.fparams={
 			"peer":self.peer,
