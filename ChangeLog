@@ -1,3 +1,11 @@
+2004-07-02  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/chat.py, plugins/message.py, plugins/muc.py, plugins/xmlconsole.py, cjc/main.py:
+	- day change notifications
+
+	* cjc/ui/text_buffer.py:
+	- 'activity_level' optional argument to append* functions
+
 2004-06-27  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/themes.py:
