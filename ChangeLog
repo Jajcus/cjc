@@ -1,3 +1,8 @@
+2004-07-27  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/muc.py:
+	- don't panic if user_left() is called with stanza=None
+
 2004-07-26  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/main.py:
