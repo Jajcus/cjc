@@ -153,8 +153,8 @@ class Buffer:
         for f in activity_handlers:
             f()
 
-    def ask_question(self,question,type,default,handler,abort_handler,arg,
-                                values=None,required=1):
+    def ask_question(self,question,type,default,handler,abort_handler=None,
+            arg=None,values=None,required=1):
         import text_input
         import bool_input
         import choice_input
