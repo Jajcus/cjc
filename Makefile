@@ -39,7 +39,7 @@ version:
 cjc.inst: cjc.in
 	sed -e 's,BASE_DIR,$(pkg_datadir),' < cjc.in > cjc.inst 
 
-ChangeLog: .svn/entries
+ChangeLog: 
 	TZ=UTC svn log -v --xml | aux/svn2log.py -p '/(branches/[^/]+|trunk)' -x ChangeLog -u aux/users
 
 cosmetics:
