@@ -68,10 +68,10 @@ class Plugin(PluginBase):
 		q=iq.new_query("jabber:iq:version")
 		d=self.defaults.copy()
 		d.update(self.settings)
-		q.newChild(q.ns(),"name",d["name"])
-		q.newChild(q.ns(),"version",d["version"])
+		q.newTextChild(q.ns(),"name",d["name"])
+		q.newTextChild(q.ns(),"version",d["version"])
 		if d["os"]:
-			q.newChild(q.ns(),"os",d["os"])
+			q.newTextChild(q.ns(),"os",d["os"])
 		self.cjc.stream.send(iq)
 
 	def version_response(self,stanza):
