@@ -1,5 +1,8 @@
 2004-09-03  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/xmlconsole.py:
+	- use 'logging' module for displaying stream data in xmlconsole
+
 	* plugins/vcard.py:
 	- /whois without arguments should display users own vCard
 
