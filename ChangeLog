@@ -1,5 +1,11 @@
 2004-04-25  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/chat.py:
+	- don't panic on /me without arguments
+
+	* cjc/ui/keytable.py:
+	- when using keyfunction from other keytable use the function's table object
+
 	* plugins/presence.py, plugins/roster.py:
 	- don't allow self presence subscription requests or adding own JID to the roster (own JID presence notification is automatic)
 
