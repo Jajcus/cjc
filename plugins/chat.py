@@ -259,7 +259,7 @@ class Plugin(PluginBase):
         else:
             if fr!=conv.peer:
                 conv.change_peer(fr)
-                
+
         conv.add_received(body,timestamp)
         return 1
 

@@ -66,7 +66,7 @@ class MessageBuffer:
         self.last_thread=None
 
     def add_received(self,sender,subject,body,thread,timestamp):
-        d={ 
+        d={
                 "from": sender,
                 "subject": subject,
                 "thread": thread,

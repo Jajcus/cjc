@@ -100,10 +100,10 @@ class Room(muc.MucRoomHandler):
         else:
             fparams=dict(self.fparams)
         if user:
-            fparams["msg"]=(u"%s has changed the subject to: %s" 
+            fparams["msg"]=(u"%s has changed the subject to: %s"
                     % (user.nick,self.room_state.subject))
         else:
-            fparams["msg"]=(u"The subject has been changed to: %s" 
+            fparams["msg"]=(u"The subject has been changed to: %s"
                     % (self.room_state.subject,))
         d=delay.get_delay(stanza)
         if d:
@@ -123,7 +123,7 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.joined",fparams)
         self.buffer.update()
         return
- 
+
     def user_left(self,user,stanza):
         fparams=self.user_format_params(user)
         d=delay.get_delay(stanza)
@@ -135,7 +135,7 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.left",fparams)
         self.buffer.update()
         return
- 
+
     def role_changed(self,user,old_role,new_role,stanza):
         fparams=self.user_format_params(user)
         d=delay.get_delay(stanza)
@@ -147,7 +147,7 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.role_changed",fparams)
         self.buffer.update()
         return
- 
+
     def affiliation_changed(self,user,old_affiliation,new_affiliation,stanza):
         fparams=self.user_format_params(user)
         d=delay.get_delay(stanza)
@@ -159,11 +159,11 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.affiliation_changed",fparams)
         self.buffer.update()
         return
- 
+
     def nick_change(self,user,new_nick,stanza):
         self.buffer.append_themed("debug","Nick change started: %r -> %r" % (user.nick,new_nick))
         return True
-        
+
     def nick_changed(self,user,old_nick,stanza):
         fparams=self.user_format_params(user)
         fparams["old_nick"]=old_nick
@@ -176,7 +176,7 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.nick_changed",fparams)
         self.buffer.update()
         return
-            
+
     def user_input(self,s):
         if not self.plugin.cjc.stream:
             self.buffer.append_themed("error","Not connected")
