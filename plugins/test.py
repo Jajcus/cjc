@@ -18,6 +18,9 @@ class Plugin(PluginBase):
 	
 	def cmd_test(self,args):
 		name=args.shift()
+		if not name:
+			self.cjc.error("Test name not given")
+			return
 		handler=getattr(self,"test_"+name,None)
 		if handler is None:
 			self.cjc.error("Uknown test: "+name)
@@ -38,12 +41,12 @@ class Plugin(PluginBase):
 
 	def test_wrap(self,args):
 		buf=ui.TextBuffer(self.cjc.theme_manager,"Scroll Test")
-		for i in range(0,200):
+		for i in range(0,20):
 			for j in range(0,15):
 				if self.cjc.exiting:
 					return
 				time.sleep(0.1)
-				buf.append("line-%i-word-%i " % (i,j))
+				buf.append("line-%i-word-%i " % (i+1,j+1))
 				buf.update()
 			buf.append_line("")
 			buf.update()
