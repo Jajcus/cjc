@@ -236,6 +236,7 @@ class EditLine(Widget):
 		else:
 			self.content=self.history[-self.history_pos]
 			self.pos=len(self.content)
+		self.pos=len(self.content)
 		self.redraw()
 
 	def update(self,now=1,refresh=0):
