@@ -171,6 +171,8 @@ class Plugin(PluginBase):
         if not self.away_saved_presence:
             self.away_saved_presence=p
 
+        insert_time=False
+
         if auto_xa and idle>=auto_xa:
             if p.get_show()=="xa":
                 return
@@ -179,7 +181,9 @@ class Plugin(PluginBase):
                     self.settings.get("away_priority",
                             self.settings.get("priority",0)))
             status=self.settings.get("auto_xa_msg","")
-            if not status and self.settings.get("keep_description"):
+            if status:
+                insert_time=True
+            elif self.settings.get("keep_description"):
                 status=p.get_status()
         elif auto_away and idle>=auto_away:
             if p.get_show()=="away":
@@ -187,13 +191,15 @@ class Plugin(PluginBase):
             show="away"
             prio=self.settings.get("away_priority",self.settings.get("priority",0))
             status=self.settings.get("auto_away_msg","")
-            if not status and self.settings.get("keep_description"):
+            if status:
+                insert_time=True
+            elif self.settings.get("keep_description"):
                 status=p.get_status()
         else:
             return
 
         self.cjc.add_event_handler("keypressed",self.ev_keypressed)
-        if status.find("%i")>=0:
+        if insert_time and status.find("%i")>=0:
             p=pyxmpp.Presence(priotity=prio, show=show, status=status % (idle,))
         else:
             p=pyxmpp.Presence(priotity=prio, show=show, status=status)
