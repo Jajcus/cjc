@@ -2,6 +2,7 @@
 import threading
 
 from cjc.commands import CommandHandler
+from cjc import common
 
 buffer_list=[]
 activity_handlers=[]
@@ -25,6 +26,26 @@ class Buffer(CommandHandler):
 		if win:
 			self.activity(0)
 
+	def close(self):
+		common.debug("Closing buffer "+self.name)
+		self.active=0
+		n=buffer_list.index(self)
+		if self.window:
+			window=self.window
+			self.window=None
+			common.debug("Buffer has window")
+			i=n
+			while i>0:
+				i-=1
+				if buffer_list[i]:
+					common.debug("Setting window's buffer to "+`buffer_list[i]`)
+					window.set_buffer(buffer_list[i])
+					break
+			window.update()
+		buffer_list[n]=None
+		for f in activity_handlers:
+			f()
+	
 	def get_number(self):
 		return buffer_list.index(self)+1
 		

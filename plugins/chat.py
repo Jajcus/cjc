@@ -42,6 +42,10 @@ class Conversation:
 		self.buffer.register_commands({"me": (self.cmd_me,
 							"/me text",
 							"Sends /me text")
+						,
+						"close": (self.cmd_close,
+							"/close",
+							"Closes current chat buffer")
 						})
 		
 	def add_msg(self,s,format,who):
@@ -78,6 +82,15 @@ class Conversation:
 			return 1
 		self.user_input(u"/me "+args.all())
 		return 1
+
+	def cmd_close(self,args):
+		args.finish()
+		key=self.peer.bare().as_unicode()
+		if self.plugin.conversations.has_key(key):
+			l=self.plugin.conversations[key]
+			if self in l:
+				l.remove(self)
+		self.buffer.close()
 
 class Plugin(PluginBase):
 	def __init__(self,app):
