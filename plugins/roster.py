@@ -8,11 +8,12 @@ from cjc.plugin import PluginBase
 from cjc.ui import ListBuffer
 
 theme_attrs=(
-	("roster.available_", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
-	("roster.available_away", curses.COLOR_BLUE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
-	("roster.available_xa", curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
-	("roster.available_chat", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
-	("roster.unavailable", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
+	("roster.available_online", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
+	("roster.available_dnd", curses.COLOR_RED,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("roster.available_away", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("roster.available_xa", curses.COLOR_BLUE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("roster.available_chat", curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
+	("roster.unavailable", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL|curses.A_DIM, curses.A_DIM),
 )
 
 theme_formats=(
@@ -20,8 +21,8 @@ theme_formats=(
 	("roster.group_none", "unfiled:"),
 	("roster.group_me", "me:"),
 	("roster.group_unknown", "not in roster:"),
-	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)s (%(J:jid)s) %(J:jid:status)s"),
-	("roster.available", "%[roster.available_%(J:jid:show)s] %(aflag)s%(sflag)s%(name)s (%(J:jid)s) %(J:jid:status)s"),
+	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)-20s [%(J:jid:show)s] %(J:jid:status)s"),
+	("roster.available", "%[roster.available_%(J:jid:show)s] %(aflag)s%(sflag)s%(name)-20s [%(J:jid:show)s] %(J:jid:status)s"),
 )
 
 # virtual groups
