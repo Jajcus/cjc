@@ -1121,6 +1121,8 @@ class Application(jabber.Client,tls.TLSHandler):
 	def stream_state_changed(self,state,arg):
 		if state=="resolving":
 			self.info("Resolving %r..." % (arg,))
+		if state=="resolving srv":
+			self.info("Resolving SRV for %r on %r..." % (arg[1],arg[0]))
 		elif state=="connecting":
 			self.info("Connecting to %s:%i..." % (arg[0],arg[1]))
 		elif state=="connected":
