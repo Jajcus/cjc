@@ -31,7 +31,12 @@ global_commands={
 	"quit": "exit",
 	"set": ("cmd_set",
 		"/set [setting] [value]",
-		"Change settings"),
+		"Changes one of the settings."
+		" Without any arguments shows all current settings."
+		" With only one argument shows description and current value of given settings."),
+	"unset": ("cmd_unset",
+		"/unset [setting]",
+		"Unsets one of settings."),
 	"connect": ("cmd_connect",
 		"/connect",
 		"Connect to a Jabber server"),
@@ -176,45 +181,15 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			pass
 
 	def session_started(self):
-		pyxmpp.Client.session_started(self)
 		for p in self.plugins.values():
 			try:
 				p.session_started(self.stream)
 			except:
 				self.print_exception()
 				self.info("Plugin call failed")
+		self.request_roster()
 		self.stream.set_message_handler("error",self.message_error)
 		self.stream.set_message_handler("normal",self.message_normal)
-
-	def presence_error(self,stanza):
-		fr=stanza.get_from()
-		if self.get_user_info(fr):
-			self.warning(u"Presence error from: "+fr.as_unicode())
-		else:
-			self.debug(u"Presence error from: "+fr.as_unicode())
-		if fr.resource:
-			self.set_user_info(fr,"presence",stanza.copy())
-		else:	
-			self.set_bare_user_info(fr,"presence",stanza.copy())
-		
-	def presence_available(self,stanza):
-		fr=stanza.get_from()
-		if self.get_user_info(fr):
-			self.info(fr.as_unicode()+u" is available")
-		else:
-			self.debug(fr.as_unicode()+u" is available")
-		self.set_user_info(fr,"presence",stanza.copy())
-		
-	def presence_unavailable(self,stanza):
-		fr=stanza.get_from()
-		if self.get_user_info(fr):
-			self.info(fr.as_unicode()+u" is unavailable")
-		else:
-			self.debug(fr.as_unicode()+u" is unavailable")
-		self.set_bare_user_info(fr,"presence",stanza.copy())
-		resources=self.get_bare_user_info(fr,"resources")
-		if resources.has_key(fr.resource):
-			del resources[fr.resource]
 
 	def message_error(self,stanza):
 		self.warning(u"Message error from: "+stanza.get_from().as_unicode())
@@ -247,14 +222,45 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 	
 	def cmd_set(self,args):
 		if not args:
+			for plugin in [None]+self.plugins.keys():
+				if plugin is None:
+					obj=self
+				else:
+					obj=self.plugins[plugin]
+				for var in obj.available_settings:
+					descr,typ,location=obj.available_settings[var]
+					if location is None:
+						val=obj.settings.get(var)
+					elif location.startswith("."):
+						val=getattr(obj,location[1:],None)
+					else:
+						continue
+					if plugin is not None:
+						var="%s.%s" % (plugin,var)
+					if val is None:
+						self.info("%s is not set" % (var,))
+						continue
+					if type(typ) is tuple:
+						typ=typ[0]
+					if typ is list:
+						self.info(u"%s = %s" % (var,string.join(val," ")))
+					elif typ is pyxmpp.JID:
+						self.info(u"%s = %s" % (var,val.as_unicode()))
+					else:
+						self.info(u"%s = %s" % (var,val))
 			return
 
-		fvar,val=args.split(None,1)
-		if fvar.find("=")>0:
-			fvar,val=args.split("=",1)
+		sp=args.split(None,1)
+		if sp[0].find("=")>0:
+			sp=args.split("=",1)
+
+		if len(sp)==1:
+			fvar,val=sp[0],None
+		else:
+			fvar,val=sp
 
 		if fvar.find(".")>0:
-			plugin,var=var.split(".",1)
+			plugin,var=fvar.split(".",1)
 			try:
 				obj=self.plugins[plugin]
 			except KeyError:
@@ -265,19 +271,53 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			var=fvar
 
 		try:
-			descr,type,location=obj.available_settings[var]
+			descr,typ,location=obj.available_settings[var]
 		except KeyError:
 			self.error("Unknown setting: "+fvar)
 			return
-		
-		try:
-			if type is unicode:
-				pass
-			if type is list:
-				val=val.split()
+
+		if val is None:
+			self.info(u"%s - %s" % (fvar,descr))
+			if location is None:
+				val=obj.settings.get(var)
+			elif location.startswith("."):
+				val=getattr(obj,location[1:],None)
 			else:
-				val=type(val)
-		except Exception,e:
+				return
+			if val is None:
+				self.info("%s is not set" % (fvar,))
+				return
+			if type(typ) is tuple:
+				typ=typ[0]
+			if typ is list:
+				self.info(u"%s = %s" % (fvar,string.join(val," ")))
+			elif typ is pyxmpp.JID:
+				self.info(u"%s = %s" % (fvar,val.as_unicode()))
+			else:
+				self.info(u"%s = %s" % (fvar,val))
+			return
+	
+		if type(typ) is not tuple:
+			typ=(typ,)
+
+		valid=0
+		for t in typ:
+			if t is None:
+				continue
+			if t is unicode:
+				valid=1
+				break
+			try:
+				if t is list:
+					val=val.split()
+				else:
+					val=t(val)
+				valid=1
+				break
+			except Exception,e:
+				continue
+
+		if not valid:
 			self.error("Bad value: "+str(e))
 			return
 		
@@ -288,6 +328,41 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			
 		self.screen.update()
 
+	def cmd_unset(self,args):
+		if not args:
+			return self.cmd_set(args)
+
+		fvar=args
+		if fvar.find(".")>0:
+			plugin,var=fvar.split(".",1)
+			try:
+				obj=self.plugins[plugin]
+			except KeyError:
+				self.error("Unknown category: "+plugin)
+				return
+		else:
+			obj=self
+			var=fvar
+
+		try:
+			descr,typ,location=obj.available_settings[var]
+		except KeyError:
+			self.error("Unknown setting: "+fvar)
+			return
+
+		if typ is None:
+			pass
+		elif type(typ) is tuple and None in typ:
+			pass
+		else:
+			self.error("%s cannot be unset %r" % (fvar,typ))
+			return
+
+		if location is None and obj.settings.has_key(var):
+			del obj.settings[var]
+		elif location.startswith("."):
+			setattr(obj,location[1:],None)
+			
 	def cmd_save(self,filename=None):
 		if filename is None:
 			filename=".cjcrc"
@@ -304,7 +379,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			else:
 				obj=self.plugins[plugin]
 			for var in obj.available_settings:
-				descr,type,location=obj.available_settings[var]
+				descr,typ,location=obj.available_settings[var]
 				if location is None:
 					val=obj.settings.get(var)
 				elif location.startswith("."):
@@ -315,10 +390,14 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 					continue
 				if plugin is not None:
 					var="%s.%s" % (plugin,var)
-				if type is list:
+				if type(typ) is tuple:
+					typ=typ[0]
+				if typ is list:
 					print >>f,var,string.join(val," ")
-				elif type is pyxmpp.JID:
+				elif typ is pyxmpp.JID:
 					print >>f,var,val.as_string()
+				elif typ is unicode:
+					print >>f,var,val.encode("utf-8")
 				else:
 					print >>f,var,val
 
@@ -408,7 +487,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		self.info("Usage:")
 		self.info(u"   "+usage)
 		self.info(u"  "+descr)
-	
+
 	def loop(self,timeout):
 		while 1:
 			fdlist=[sys.stdin.fileno()]
