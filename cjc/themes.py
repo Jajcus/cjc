@@ -12,7 +12,7 @@ import ui
 import common
 
 attr_sel_re=re.compile(r"(?<!\%)\%\[([^]]*)\]",re.UNICODE)
-preparsed_re=re.compile(r"(?<!\%)\%\{([^]]*)\}",re.UNICODE)
+formatted_re=re.compile(r"(?<!\%)\%\{([^]]*)\}",re.UNICODE)
 
 attributes_by_name={}
 colors_by_val={}
@@ -206,19 +206,34 @@ class ThemeManager:
 		else: 
 			next=None
 
-		l=preparsed_re.split(format,1)
+		l=formatted_re.split(format,1)
 		if len(l)==3:
 			before,name,after=l
-			if name=="buffers":
+			if params.has_key(name):
+				val=params[name]
+			else:
+				val=self.find_format_param(name,params)
+			if val:
 				ret=[]
 				if before:
 					ret+=self.do_format_string(before,attr,params)
-				ret+=self.format_buffers(attr,params)
+				if callable(val):
+					ret+=val(attr,params)
+				elif self.formats.has_key(val):
+					f=self.formats[val]
+					ret+=self.do_format_string(f,attr,params)
+				else:
+					format="%s%%%%{%s}%s" % (before,name,after)
+					ret+=self.do_format_string(format,attr,params)
+					before=None
+					after=None
 				if after:
 					ret+=self.do_format_string(after,attr,params)
 				if next:
 					ret+=self.do_format_string(next,next_attr,params)
 				return ret
+			else:
+				format="%s%%%%{%s}%s" % (before,name,after)
 
 		s=self.substitute(format,params)
 
@@ -263,6 +278,8 @@ class ThemeManager:
 				val=self.app.jid
 			else:
 				val=self.app.settings["jid"]
+		elif key=="buffers":
+			val=self.format_buffers
 		elif key=="program_name":
 			val="CJC"
 		elif key=="program_author":
