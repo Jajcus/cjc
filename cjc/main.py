@@ -144,6 +144,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		ui.activate_cmdtable("global",self)
 		ui.set_default_command_handler(self.unknown_command)
 		SettingCompletion(self).register("setting")
+		UserCompletion(self).register("user")
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -1159,6 +1160,44 @@ class Application(jabber.Client,tls.TLSHandler):
 		if self.settings["debug"]:
 			self.status_buf.append_themed("debug",s)
 			self.status_buf.update(1)
+
+class UserCompletion(ui.Completion):
+	def __init__(self,app):
+		self.app=app
+	def complete(self,word):
+		common.debug("UserCompletion.complete(self,%r)" % (word,))
+		matches=[]
+		if self.app.roster:
+			if word:
+				try:
+					items=self.app.roster.items_by_name(word)
+				except KeyError:
+					try:
+						items=[self.app.roster.item_by_jid(word)]
+					except KeyError:
+						items=[]
+				if len(items)==1:
+					name=items[0].name()
+					if name is None:
+						name=items[0].jid()
+					return "",[name+" "]
+				elif len(items)>1:
+					return "",[i.jid().as_unicode()+" " for i in items]
+			for ri in self.app.roster.items():
+				name=ri.name()
+				if name is None:
+					name=ri.jid().as_unicode()
+				if name.startswith(word) and name not in matches:
+					matches.append(name)
+		for jid in self.app.user_info.keys():
+			if jid.startswith(word) and jid not in matches:
+				matches.append(jid)
+		common.debug("word=%r matches=%r" % (word,matches))
+		if len(matches)==1:
+			return "",[matches[0]+" "]
+		if not matches:
+			return "",[]
+		return self.make_result("",word,matches)
 
 class SettingCompletion(ui.Completion):
 	def __init__(self,app):

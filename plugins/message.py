@@ -339,6 +339,7 @@ class Plugin(PluginBase):
 ui.CommandTable("message",50,(
 	ui.Command("message",Plugin.cmd_message,
 		"/message [-subject subject] nick|jid [text]",
-		"Compose or send message to given user"),
+		"Compose or send message to given user",
+		("-subject opaque","user","text")),
 	ui.CommandAlias("msg","message"),
 	)).install()
