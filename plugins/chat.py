@@ -59,6 +59,7 @@ class Plugin(PluginBase):
 		PluginBase.__init__(self,app)
 		self.conversations={}
 		self.last_thread=0
+		app.register_commands({"chat": self.cmd_chat})
 
 	def cmd_chat(self,args):
 		if not args:
