@@ -1,3 +1,8 @@
+2004-08-29  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- don't panic on unhandled exception in the stream loop
+
 2004-07-27  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/events.py, plugins/muc.py:
