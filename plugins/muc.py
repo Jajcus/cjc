@@ -143,9 +143,10 @@ class Room(muc.MucRoomHandler):
 
     def user_left(self,user,stanza):
         fparams=self.user_format_params(user)
-        d=delay.get_delay(stanza)
-        if d:
-            fparams["timestamp"]=d.datetime_local()
+        if stanza:
+            d=delay.get_delay(stanza)
+            if d:
+                fparams["timestamp"]=d.datetime_local()
         if user.same_as(self.room_state.me):
             self.buffer.append_themed("muc.me_left",fparams)
         else:
