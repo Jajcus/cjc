@@ -200,9 +200,9 @@ class Plugin(PluginBase):
 
         self.cjc.add_event_handler("keypressed",self.ev_keypressed)
         if insert_time and status.find("%i")>=0:
-            p=pyxmpp.Presence(priotity=prio, show=show, status=status % (idle,))
+            p=pyxmpp.Presence(priority=prio, show=show, status=status % (idle,))
         else:
-            p=pyxmpp.Presence(priotity=prio, show=show, status=status)
+            p=pyxmpp.Presence(priority=prio, show=show, status=status)
         self.set_presence(p)
 
     def ev_keypressed(self,event,arg):
