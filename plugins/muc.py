@@ -17,7 +17,7 @@ theme_attrs=(
 theme_formats=(
     ("muc.joining","[%(T:timestamp)s] %[muc.info]* Joining MUC room %(room)s...\n"),
     ("muc.me","[%(T:timestamp)s] %[muc.me]<%(role?moderator:@,visitor:-,)s%(nick)s>%[] %(msg)s\n"),
-    ("muc.other","[%(T:timestamp)s] %[muc.other]<%(role?moderator:@,visitor:+, )s%(nick)s>%[] %(msg)s\n"),
+    ("muc.other","[%(T:timestamp)s] %[muc.other]<%(role?moderator:@,visitor:-,)s%(nick)s>%[] %(msg)s\n"),
     ("muc.action","[%(T:timestamp)s] %[muc.info]* %(nick)s %(msg)s\n"),
     ("muc.info","[%(T:timestamp)s] %[muc.info]* %(msg)s\n"),
     ("muc.descr","Conference on %(J:room:bare)s"),
