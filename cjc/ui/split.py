@@ -1,3 +1,4 @@
+import curses 
 
 from widget import Widget
 
