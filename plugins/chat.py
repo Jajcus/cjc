@@ -3,6 +3,7 @@ import curses
 import os
 
 import pyxmpp
+from pyxmpp.jabber import delay
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
@@ -48,22 +49,25 @@ class Conversation:
         self.fparams["peer"]=peer
         self.buffer.update_info(self.fparams)
 
-    def add_msg(self,s,format,who):
-        self.fparams["jid"]=who
+    def add_msg(self,s,format,who,timestamp=None):
+        fparams=dict(self.fparams)
+        fparams["jid"]=who
+        if timestamp:
+            fparams["timestamp"]=timestamp
         if s.startswith(u"/me "):
-            self.fparams["msg"]=s[4:]
-            self.buffer.append_themed("chat.action",self.fparams)
+            fparams["msg"]=s[4:]
+            self.buffer.append_themed("chat.action",fparams)
             self.buffer.update()
             return
-        self.fparams["msg"]=s
-        self.buffer.append_themed(format,self.fparams)
+        fparams["msg"]=s
+        self.buffer.append_themed(format,fparams)
         self.buffer.update()
 
     def add_sent(self,s):
         self.add_msg(s,"chat.me",self.me)
 
-    def add_received(self,s):
-        self.add_msg(s,"chat.peer",self.peer)
+    def add_received(self,s,timestamp):
+        self.add_msg(s,"chat.peer",self.peer,timestamp)
 
     def user_input(self,s):
         if not self.plugin.cjc.stream:
@@ -213,8 +217,13 @@ class Plugin(PluginBase):
         if subject:
             body=u"%s: %s" % (subject,body)
 
+        d=delay.get_delay(stanza)
+        if d:
+            timestamp=d.datetime_local()
+        else:
+            timestamp=None
         if self.settings.get("log_filename"):
-            self.log_message("in",fr,self.cjc.jid,subject,body,thread)
+            self.log_message("in",fr,self.cjc.jid,subject,body,thread,timestamp)
 
         key=fr.bare().as_unicode()
         conv=None
@@ -242,10 +251,11 @@ class Plugin(PluginBase):
         else:
             if fr!=conv.peer:
                 conv.change_peer(fr)
-        conv.add_received(body)
+                
+        conv.add_received(body,timestamp)
         return 1
 
-    def log_message(self,dir,sender,recipient,subject,body,thread):
+    def log_message(self,dir,sender,recipient,subject,body,thread,timestamp=None):
         format=self.settings["log_format_"+dir]
         filename=self.settings["log_filename"]
         d={
@@ -255,6 +265,8 @@ class Plugin(PluginBase):
             "body": body,
             "thread": thread
             }
+        if timestamp:
+            d["timestamp"]=timestamp
         if dir=="in":
             d["peer"]=sender
         else:
