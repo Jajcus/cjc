@@ -113,7 +113,10 @@ class TextBuffer(Buffer):
     def clear(self):
         self.lock.acquire()
         try:
+            self.pos=None
             self.lines=[[]]
+            if self.window:
+                self.window.clear()
         finally:
             self.lock.release()
 
