@@ -402,7 +402,7 @@ class Plugin(PluginBase):
         resources=self.cjc.get_bare_user_info(jid,"resources")
         if not resources:
             p=self.cjc.get_bare_user_info(jid,"presence")
-            if p and p.get_type()!="error":
+            if p and p.get_type()!="error" and p.get_jid().resource:
                 self.cjc.set_bare_user_info(jid,"presence",None)
             return
         presence=None
