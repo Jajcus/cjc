@@ -164,12 +164,22 @@ class Screen(commands.CommandHandler):
 		if ch==27:
 			if self.escape:
 				self.escape=0
-				self.process_key(27)
+				try:
+					self.process_key(27)
+				except KeyboardInterrupt:
+					pass
+				except (StandardError,curses.error),e:
+					common.print_exception()
 				return 1
 			else:
 				self.escape=1
 				return 1
-		self.process_key(ch)
+		try:
+			self.process_key(ch)
+		except KeyboardInterrupt:
+			pass
+		except (StandardError,curses.error),e:
+			common.print_exception()
 		self.escape=0
 
 	def user_input(self,s):
@@ -177,7 +187,7 @@ class Screen(commands.CommandHandler):
 			self.do_user_input(s)
 		except KeyboardInterrupt:
 			pass
-		except StandardError:
+		except (StandardError,curses.error),e:
 			common.print_exception()
 
 	def do_user_input(self,s):
