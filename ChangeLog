@@ -1,5 +1,20 @@
 2004-09-07  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/chat.py:
+	- auto_popup=False by default
+
+	* plugins/shell.py:
+	- allow applications started with /shell, /pipe_in, /pipe_out to use terminal not breaking CJC display. Use -noterm to force no-terminal mode
+
+	* plugins/test.py:
+	- updates for some recent CJC code change
+
+	* cjc/ui/__init__.py, cjc/ui/bool_input.py, cjc/ui/choice_input.py, cjc/ui/input.py, cjc/ui/input_widget.py, cjc/ui/list_buffer.py, cjc/ui/list_input.py, cjc/ui/screen.py, cjc/ui/split.py, cjc/ui/status_bar.py, cjc/ui/text_buffer.py, cjc/ui/text_input.py, cjc/ui/window.py:
+	- Screen.shell_mode() and Screen.prog_mode() methods to prepare terminal for
+	external command execution
+	- background operation safety and better (hopefully) thread safety
+	- don't force " " as background character -- should help on slow terminals
+
 	* plugins/presence.py:
 	- fixed problem with empty auto_away_msg  and keep_description set
 
