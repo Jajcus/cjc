@@ -102,10 +102,9 @@ class KeyTable:
 		return self.keytable[(c,meta)]
 	
 	def process_key(self,c,meta):
-		common.debug("%r.process_key(%r,%r); table=%r" % (self,c,meta,self.keytable))
+		#common.debug("%r.process_key(%r,%r); table=%r" % (self,c,meta,self.keytable))
 		fun,arg=self.keytable[(c,meta)]
 		if not isinstance(fun,KeyFunction):
-			common.debug("funtable=%r" % (self.funtable,))
 			try:
 				fun=self.lookup_function(fun)
 			except KeyError:
@@ -131,13 +130,11 @@ class KeyTable:
 				# function name from original keybindings may 
 				# have not be resolved yet
 				ofun,arg=self.orig_keytable[c,meta]
-				common.debug("checking if %r is %r..." % ((fun,arg),(ofun,arg)))
 				if isinstance(ofun,KeyFunction):
 					if (ofun,arg)==(fun,arg):
 						continue
 				elif (ofun,arg)==(fun.name,arg):
 					continue
-				common.debug("it is not")
 			keyname=keycode_to_name(c,meta)
 			if fun.accepts_arg:
 				if arg:
