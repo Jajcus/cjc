@@ -143,6 +143,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		ui.activate_keytable("global",self)
 		ui.activate_cmdtable("global",self)
 		ui.set_default_command_handler(self.unknown_command)
+		SettingCompletion(self).register("setting")
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -545,6 +546,9 @@ class Application(jabber.Client,tls.TLSHandler):
 			except KeyError:
 				self.error("Unknown category: "+plugin)
 				return
+		elif fvar[0]==".":
+			obj=self
+			var=fvar[1:]
 		else:
 			obj=self
 			var=fvar
@@ -1156,6 +1160,49 @@ class Application(jabber.Client,tls.TLSHandler):
 			self.status_buf.append_themed("debug",s)
 			self.status_buf.update(1)
 
+class SettingCompletion(ui.Completion):
+	def __init__(self,app):
+		self.app=app
+	def complete(self,word):
+		common.debug("SettingCompletion.complete(self,%r)" % (word,))
+		if "." in word:
+			return self.complete_plugin(word)
+		matches=[]
+		for p in self.app.plugins.keys():
+			if p.startswith(word):
+				matches.append(p+".")
+		for s in self.app.settings.keys():
+			if s.startswith(word) and s not in matches:
+				matches.append(s+" ")
+		common.debug("word=%r matches=%r" % (word,matches))
+		if len(matches)==1:
+			return "",matches
+		if not matches:
+			return "",[]
+		return self.make_result("",word,matches)
+	def complete_plugin(self,word):
+		if word.startswith("."):
+			obj=self.app
+			head="."
+			word=word[1:]
+		else:
+			d=word.find(".")
+			plugin=word[0:d]
+			if not self.app.plugins.has_key(plugin):
+				return "",[]
+			obj=self.app.plugins[plugin]
+			head=plugin+"."
+			word=word[d+1:]
+		matches=[]
+		for s in obj.settings.keys():
+			if s.startswith(word) and s+" " not in matches:
+				matches.append(s+" ")
+		if len(matches)==1:
+			return head,matches
+		if not matches:
+			return head,[]
+		return self.make_result(head,word,matches)
+
 ui.KeyTable("default",0,(
 	ui.KeyFunction("command()",
 		Application.key_command,
@@ -1177,10 +1224,12 @@ ui.CommandTable("global",100,(
 		"/set [setting] [value]",
 		"Changes one of the settings."
 		" Without any arguments shows all current settings."
-		" With only one argument shows description and current value of given settings."),
+		" With only one argument shows description and current value of given settings.",
+		("setting","opaque")),
 	ui.Command("unset",Application.cmd_unset,
 		"/unset [setting]",
-		"Unsets one of settings."),
+		"Unsets one of settings.",
+		("setting",)),
 	ui.Command("connect",Application.cmd_connect,
 		"/connect",
 		"Connect to a Jabber server"),

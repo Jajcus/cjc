@@ -20,6 +20,8 @@ from cmdtable import activate as activate_cmdtable
 from cmdtable import deactivate as deactivate_cmdtable
 from cmdtable import set_default_handler as set_default_command_handler
 
+from complete import Completion
+
 def init():
 	screen=curses.initscr()
 	if curses.has_colors():
