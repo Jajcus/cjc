@@ -14,7 +14,13 @@ class Plugin(PluginBase):
             self.error("Python code must be given")
             return
         vars={"app":self.cjc}
-        exec code in vars
+        try:
+            r=eval(code,vars,vars)
+        except:
+            self.cjc.print_exception()
+            return
+        if r is not None:
+            self.info(repr(r))
 
 ui.CommandTable("python",50,(
     ui.Command("python",Plugin.cmd_python,
