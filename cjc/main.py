@@ -521,7 +521,7 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 			self.port=5222
 		self.server=self.settings.get("server")
 		self.tls_init()
-		self.info(u"Connecting...")
+		self.info(u"Connecting:")
 		try:
 			self.connect()
 		except pyxmpp.StreamError,e:
@@ -1171,6 +1171,21 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		else:
 			self.debug("Roster updated")
 		self.send_event("roster updated",jid)
+
+	def stream_state_changed(self,state,arg):
+		if state=="resolving":
+			self.info("Resolving %r..." % (arg,))
+		elif state=="connecting":
+			self.info("Connecting to %s:%i..." % (arg[0],arg[1]))
+		elif state=="connected":
+			self.info("Connected to %s:%i." % (arg[0],arg[1]))
+		elif state=="authenticating":
+			self.info("Authenticating as %s..." % (arg,))
+		elif state=="authenticated":
+			self.info("Authenticated as %s." % (arg,))
+		elif state=="tls connecting":
+			self.info("Doing TLS handhake with %s." % (arg,))
+			
 
 	def print_exception(self):
 		if logfile:
