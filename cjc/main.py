@@ -85,7 +85,7 @@ global_settings={
 	"password": ("Jabber ID to use.",unicode),
 	"port": ("Port number to connect to",int),
 	"server": ("Server address to connect to",str),
-	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5 digest')",list),
+	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5,digest')",list),
 	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,"set_layout"),
 	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
 	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
@@ -460,7 +460,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		if not self.port:
 			self.port=5222
 		self.server=self.settings.get("server")
-		self.auth_methodsr=self.settings.get("auth_methods")
+		self.auth_methods=self.settings.get("auth_methods")
 		self.info(u"Connecting...")
 		try:
 			self.connect()
