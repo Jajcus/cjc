@@ -1,5 +1,8 @@
 2004-07-20  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/ui/__init__.py, plugins/roster.py:
+	- /list command (filtered roster dump) added
+
 	* cjc/main.py, cjc/themes.py:
 	- /buffer_list command added
 
