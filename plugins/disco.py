@@ -47,7 +47,8 @@ class DiscoBuffer:
                 }
         self.jid = jid
         self.node = node
-        self.items=None
+        self.items = None
+        self.history = []
         self.buffer=ui.TextBuffer(plugin.cjc.theme_manager, self.fparams,
                 "disco.descr", "disco buffer", self)
         self.buffer.preference=plugin.settings["buffer_preference"]
@@ -139,11 +140,21 @@ class DiscoBuffer:
     def ask_question(self):
         if self.items: 
             max_num = len(self.items)+1
-            self.buffer.ask_question("Item to discover, [R]efresh or [C]lose",
-                    "choice", None, self.response, values=[xrange(1,max_num),"r","c"], required=1)
+            if self.history:
+                self.buffer.ask_question("Item to discover, [R]efresh, [B]ack or [C]lose",
+                        "choice", None, self.response, values=[xrange(1,max_num),"r","b","c"], 
+                        required=1)
+            else:
+                self.buffer.ask_question("Item to discover, [R]efresh or [C]lose",
+                        "choice", None, self.response, values=[xrange(1,max_num),"r","c"], 
+                        required=1)
         else:
-            self.buffer.ask_question("Item to discover, [R]efresh or [C]lose",
-                    "choice", None, self.response, values=["r","c"], required=1)
+            if self.history:
+                self.buffer.ask_question("[R]efresh, [B]ack or [C]lose",
+                        "choice", None, self.response, values=["r","b","c"], required=1)
+            else:
+                self.buffer.ask_question("[R]efresh or [C]lose",
+                        "choice", None, self.response, values=["r","c"], required=1)
 
     def response(self, arg, response):
         if response == "c":
@@ -152,11 +163,15 @@ class DiscoBuffer:
             self.buffer.clear()
             self.start_disco("new")
         else:
-            item = self.items[response-1]
-            self.jid = item.jid
-            self.node = item.node
-            self.fparams['jid'] = item.jid
-            self.fparams['node'] = item.node
+            if response == "b":
+                self.jid, self.node = self.history.pop()
+            else:
+                self.history.append((self.jid,self.node))
+                item = self.items[response-1]
+                self.jid = item.jid
+                self.node = item.node
+            self.fparams['jid'] = self.jid
+            self.fparams['node'] = self.node
             self.buffer.clear()
             self.buffer.update_info(self.fparams)
             self.start_disco()
