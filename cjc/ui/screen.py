@@ -48,7 +48,7 @@ class Screen(commands.CommandHandler):
 			h,w=self.scr.getmaxyx()
 		finally:
 			self.lock.release()
-		return w-1,h-1
+		return w,h
 
 	def set_content(self,widget):
 		self.content=widget
@@ -90,6 +90,9 @@ class Screen(commands.CommandHandler):
 
 	def set_command_handler(self,h):
 		self.command_handler=h
+
+	def set_resize_handler(self,h):
+		self.resize_handler=h
 
 	def add_window(self,win):
 		if not self.windows:
@@ -146,6 +149,9 @@ class Screen(commands.CommandHandler):
 			self.input_handler.cursync()
 
 	def process_key(self,ch):
+		if ch==curses.KEY_RESIZE and self.resize_handler:
+			self.resize_handler()
+			
 		if self.active_window:
 			if self.active_window.keypressed(ch,self.escape):
 				return
