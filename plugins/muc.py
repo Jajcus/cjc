@@ -199,11 +199,12 @@ class Room(muc.MucRoomHandler):
         self.plugin.cjc.set_user_info(fr,"presence",stanza.copy())
         if not old_presence:
             return
-        if (stanza.get_type()!=old_presence.get_type()
+        if (stanza.get_type()!="unavailable" and
+                (stanza.get_type()!=old_presence.get_type()
                 or stanza.get_show()!=old_presence.get_show()
-                or stanza.get_status()!=old_presence.get_status()):
+                or stanza.get_status()!=old_presence.get_status())):
             fparams=self.user_format_params(user)
-            self.buffer.append_themed("muc.nick_changed",fparams)
+            self.buffer.append_themed("muc.presence_changed",fparams)
             self.buffer.update()
 
     def user_input(self,s):
