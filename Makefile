@@ -17,6 +17,7 @@ pkg_datadir=$(datadir)/cjc
 pkg_docdir=$(docdir)/cjc
 
 BASE_VERSION=0.1
+RELEASE=
 
 PY_DIRS=cjc cjc/ui plugins
 DOCS=doc/manual.html COPYING ChangeLog README TODO
@@ -30,15 +31,19 @@ all: cjc.inst $(DOCS) cvs-version
 doc/manual.html: doc/manual.xml 
 	cd doc; make
 
-cvs-version:
-	SNAPSHOT=.`find . -name "*.py" '!' -name "version.py" -printf '%TY%Tm%Td_%TH%TM\n' | sort -r | head -1` ; \
-	echo "version='$(BASE_VERSION)$$SNAPSHOT'" > cjc/version.py ;
-
 version:
-	echo "version='$(BASE_VERSION)'" > cjc/version.py 
+	if test -n "$(RELEASE)" ; then \
+		SNAPSHOT="" ; \
+	else \
+		SNAPSHOT=.`find . -name "*.py" '!' -name "version.py" -printf '%TY%Tm%Td_%TH%TM\n' | sort -r | head -1` ; \
+	fi ; \
+	echo "version='$(BASE_VERSION)$$SNAPSHOT'" > cjc/version.py ;
 
 cjc.inst: cjc.in
 	sed -e 's,BASE_DIR,$(pkg_datadir),' < cjc.in > cjc.inst 
+
+clean:
+	-rm -f cjc.inst
 
 install: all
 	for d in $(PY_DIRS) ; do \
