@@ -1397,7 +1397,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         elif state=="authorized":
             self.__logger.info("Authorized as %s." % (arg,))
         elif state=="tls connecting":
-            self.__logger.info("Doing TLS handhake with %s." % (arg,))
+            self.__logger.info("Doing TLS handshake with %s." % (arg,))
 
     def show_error(self,s):
         self.status_buf.append_themed("error",s)
