@@ -57,7 +57,7 @@ class ListBuffer(Buffer):
 				self.keys.append(key)
 				self.items.append(view)
 			self.activity(1)
-			self.display(i)
+			self.display(i,1)
 		finally:
 			self.lock.release()
 
@@ -73,6 +73,21 @@ class ListBuffer(Buffer):
 			self.display(i)
 		finally:
 			self.lock.release()
+
+	def remove_item(self,key):
+		self.lock.acquire()
+		try:
+			try:
+				i=self.keys.index(key)
+			except ValueError:
+				raise ListBufferError,"Item not found"
+			del self.items[i]
+			del self.keys[i]
+			self.activity(1)
+			self.undisplay(i)
+		finally:
+			self.lock.release()
+
 
 	def clean_item(self,view):
 		ret=[]
@@ -98,6 +113,8 @@ class ListBuffer(Buffer):
 		try:
 			self.keys=[]
 			self.items=[]
+			if self.window:
+				self.window.clear()
 		finally:
 			self.lock.release()
 
@@ -114,17 +131,23 @@ class ListBuffer(Buffer):
 			ret.append(self.items[i])
 		return ret
 	
-	def display(self,i):
+	def display(self,i,insert=0):
 		if not self.window:
 			return
 		if i<self.pos:
 			return
-		if i>=self.pos+self.window.h:
+		if i>=self.pos+self.window.ih:
 			return
 		common.debug("Updating item #%i" % (i,))
+		if i>=len(self.items):
+			self.window.win.move(0,i-self.pos)
+			self.window.clrtoeol()
+			return
 		view=self.items[i]
 		attr,s=view[0]
 		common.debug("Item: %r" % (view,))
+		if insert:
+			self.window.insert_line(i-self.pos)
 		self.window.write_at(0,i-self.pos,s,attr)
 		for attr,s in view[1:]:
 			self.window.write(s,attr)
@@ -132,12 +155,24 @@ class ListBuffer(Buffer):
 		if x<self.window.iw-1:
 			self.window.clrtoeol()
 
+	def undisplay(self,i):
+		if not self.window:
+			return
+		if i<self.pos:
+			return
+		if i>=self.pos+self.window.ih:
+			return
+		common.debug("Erasing item #%i" % (i,))
+		self.window.delete_line(i-self.pos)
+		if len(self.items)>=self.pos+self.window.ih:
+			self.display(self,self.pos+self.window.ih-1)
+
 	def page_up(self):
 		self.lock.acquire()
 		try:
 			if self.pos<=0:
 				return
-			self.pos-=self.window.h
+			self.pos-=self.window.ih
 			if self.pos<0:
 				self.pos=0
 		finally:
@@ -148,9 +183,9 @@ class ListBuffer(Buffer):
 	def page_down(self):
 		self.lock.acquire()
 		try:
-			if self.pos>=len(self.keys)-self.window.h+1:
+			if self.pos>=len(self.keys)-self.window.ih+1:
 				return
-			self.pos+=self.window.h
+			self.pos+=self.window.ih
 		finally:		
 			self.lock.release()
 		self.window.draw_buffer()

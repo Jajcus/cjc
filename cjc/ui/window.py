@@ -172,6 +172,30 @@ class Window(Widget):
 			self.win.addstr("\n")
 		finally:
 			self.screen.lock.release()
+
+	def delete_line(self,y):
+		self.screen.lock.acquire()
+		try:
+			self.win.move(y,0)
+			self.win.deleteln()
+		finally:
+			self.screen.lock.release()
+			
+	def insert_line(self,y):
+		self.screen.lock.acquire()
+		try:
+			self.win.move(y,0)
+			self.win.insertln()
+		finally:
+			self.screen.lock.release()
+
+	def clear(self):
+		self.screen.lock.acquire()
+		try:
+			self.win.erase()
+		finally:
+			self.screen.lock.release()
+
 	def clrtoeol(self):
 		self.screen.lock.acquire()
 		try:
