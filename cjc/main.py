@@ -242,6 +242,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             r=plugin.unload()
         except:
             self.__logger.exception("Exception:")
+            r=None
         if not r:
             self.__logger.error("Plugin %s cannot be reloaded" % (name,))
             return False
@@ -249,7 +250,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         sys.path=plugin.sys_path
         try:
             mod=reload(plugin.module)
-            plugin=mod.Plugin(self)
+            plugin=mod.Plugin(self,name)
             plugin.module=mod
             self.plugins[name]=plugin
         except:
