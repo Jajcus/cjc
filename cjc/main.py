@@ -665,12 +665,18 @@ class Application(jabber.Client,tls.TLSHandler):
 			self.settings["layout"]=oldval
 			return
 		self.screen.lock.acquire()
+		if self.main_window:
+			main_buf=self.main_window.buffer
+		else:
+			main_buf=None
 		getattr(self,"layout_"+newval)()
 		self.screen.lock.release()
 		if self.status_window:
 			self.status_window.set_buffer(self.status_buf)
-		elif self.main_window:
-			self.main_window.set_buffer(self.status_buf)
+		elif main_buf==None:
+			main_buf=self.status_buf
+		if self.main_window and main_buf:
+			self.main_window.set_buffer(main_buf)
 		self.send_event("layout changed",newval)
 		self.screen.redraw()
 			
