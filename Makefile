@@ -79,5 +79,6 @@ dist: all
 		$(INSTALL_DIR) $$distname/$$d || exit 1; \
 		cp -a $$f $$distname/$$d || exit 1; \
 	done ; \
-	tar czf $${distname}.tar.gz $$distname && \
+	mkdir -p dist ; \
+	tar czf dist/$${distname}.tar.gz $$distname && \
 	rm -r $$distname
