@@ -6,7 +6,7 @@ import traceback
 import sys,os
 import select
 import string
-from types import StringType,UnicodeType,IntType,ListType,TupleType
+from types import StringType,UnicodeType,IntType,ListType,TupleType,TypeType
 import locale
 import curses
 import threading
@@ -297,7 +297,6 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		screen.set_default_command_handler(self)
 		
 		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
-		self.message_buf=ui.TextBuffer(self.theme_manager,"Messages")
 
 		self.set_layout(self.settings["layout"],"plain")
 		
@@ -347,7 +346,6 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				self.print_exception()
 				self.info("Plugin call failed")
 		self.stream.set_message_handler("error",self.message_error)
-		self.stream.set_message_handler("normal",self.message_normal)
 
 	def disconnected(self):
 		self.warning("Disconnected")
@@ -356,18 +354,6 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.warning(u"Message error from: "+stanza.get_from().as_unicode())
 		return 1
 		
-	def message_normal(self,stanza):
-		self.info(u"Message from: "+stanza.get_from().as_unicode())
-		self.message_buf.append_line(u"Message from: "+stanza.get_from().as_unicode())
-		subject=stanza.get_subject()
-		if subject:
-			self.message_buf.append_line("Subject: "+subject)
-		body=stanza.get_body()
-		if body:
-			self.message_buf.append_line(body)
-		self.message_buf.update(1)
-		return 1
-	
 	def cmd_quit(self,args):
 		reason=args.all()
 		args.finish()
@@ -481,8 +467,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			if val is None:
 				self.info("%s is not set" % (fvar,))
 				return
-			if type(typ) is tuple:
-				typ=typ[0]
+			if type(typ) in (TupleType,ListType):
+				if type(typ)[0] is TypeType:
+					typ=typ[0]
 			if typ is list:
 				self.info(u"%s = %s" % (fvar,string.join(val,",")))
 			elif typ is pyxmpp.JID:
@@ -496,13 +483,16 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 		valid=0
 		for t in typ:
+			if val==t:
+				valid=1
+				break
 			if t is None:
 				continue
-			if t is unicode:
+			if t is UnicodeType:
 				valid=1
 				break
 			try:
-				if t is list:
+				if t is ListType:
 					val=val.split(",")
 				else:
 					val=t(val)
@@ -771,6 +761,20 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				continue
 			try:
 				self.stream.loop_iter(1)
+			except pyxmpp.FatalStreamError,e:
+				self.state_changed.acquire()
+				try:
+					self.error(str(e))
+					try:
+						self.stream.close()
+					except:
+						pass
+					self.stream=None
+					self.state_changed.notify()
+				finally:
+					self.state_changed.release()
+			except pyxmpp.StreamError,e:
+				self.error(str(e))
 			except (KeyboardInterrupt,SystemExit),e:
 				self.exit_request(unicode(str(e)))
 				self.print_exception()
