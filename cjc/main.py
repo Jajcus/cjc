@@ -652,9 +652,9 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.disconnected()
 
     def cmd_set(self,args):
-        self.__logger.debug("args: "+`args.args`)
+        #self.__logger.debug("args: "+`args.args`)
         fvar=args.shift()
-        self.__logger.debug("fvar: "+`fvar`+" args:"+`args.args`)
+        #self.__logger.debug("fvar: "+`fvar`+" args:"+`args.args`)
         if not fvar:
             for plugin in [None]+self.plugins.keys():
                 if plugin is None:
@@ -687,7 +687,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             return
 
         val=args.shift()
-        self.__logger.debug("val: "+`val`)
+        #self.__logger.debug("val: "+`val`)
         args.finish()
 
         if fvar.find(".")>0:
@@ -721,7 +721,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             if val is None:
                 self.__logger.info("%s is not set" % (fvar,))
                 return
-            self.__logger.debug("Type: "+`typ`)
+            #self.__logger.debug("Type: "+`typ`)
             if type(typ) in (TupleType,ListType):
                 if type(typ[0]) is TypeType:
                     typ=typ[0]
