@@ -127,15 +127,17 @@ class ThemeManager:
 		for name,format in formats:
 			if not self.formats.has_key(name):
 				self.formats[name]=format
-	def format_string(self,fname,attr,params):
+	def format_string(self,fname,params):
 		format=self.formats[fname]
-		return self.do_format_string(format,attr,params)
+		return self.do_format_string(format,"default",params)
 		
 	def do_format_string(self,format,attr,params):
 		m=attr_sel_re.match(format)
 		if m:
 			format=m.group("before")
 			next_attr=m.group("attr")
+			if next_attr.find("%")>=0:
+				next_attr=self.substitute(next_attr,params)
 			next=m.group("after")
 		else: 
 			next=None
@@ -143,6 +145,21 @@ class ThemeManager:
 		if type(params) in (UnicodeType,StringType):
 			params={"msg":params}
 		
+		s=self.substitute(format,params)
+
+		if self.attrs.has_key(attr):
+			attr=self.attrs[attr]
+		else:
+			attr=self.attrs["default"]
+			
+		ret=[]
+		if s:
+			ret.append((attr,s))
+		if next:
+			ret+=self.do_format_string(next,next_attr,params)
+		return ret
+
+	def substitute(self,format,params):
 		while 1:
 			try:
 				s=format % params
@@ -158,17 +175,7 @@ class ThemeManager:
 					val=self.find_format_param(key,params)
 					if not val:
 						format=self.quote_format_param(format,key)
-		if self.attrs.has_key(attr):
-			attr=self.attrs[attr]
-		else:
-			attr=self.attrs["default"]
-			
-		ret=[]
-		if s:
-			ret.append((attr,s))
-		if next:
-			ret+=self.do_format_string(next,next_attr,params)
-		return ret
+		return s
 					
 	def quote_format_param(self,format,key):
 		return format.replace("%%(%s)" % key,"%%%%(%s)" % key)
@@ -193,7 +200,7 @@ class ThemeManager:
 		else:
 			val=self.find_format_param(param,params)
 			if val is None:
-				return quote_format_param(format,key)
+				return self.quote_format_param(format,key)
 
 		if typ=="T":
 			if form:

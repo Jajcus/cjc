@@ -159,8 +159,8 @@ class TextBuffer(Buffer):
 		if self.window and self.pos is None:
 			self.window.write(u"\n",attr)
 
-	def append_themed(self,format,attr,params):
-		for attr,s in self.theme_manager.format_string(format,attr,params):
+	def append_themed(self,format,params):
+		for attr,s in self.theme_manager.format_string(format,params):
 			self.append(s,attr)
 
 	def write(self,s):
@@ -501,7 +501,7 @@ class StatusBar(Widget):
 		self.win.clear()
 		self.win.move(0,0)
 		x=0
-		for attr,s in self.theme_manager.format_string(self.format,"bar",self.dict):
+		for attr,s in self.theme_manager.format_string(self.format,self.dict):
 			x+=len(s)
 			if x>=self.w:
 				s=s[:x-self.w]

@@ -81,21 +81,16 @@ global_theme_attrs=(
 	("info", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
 	("debug", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_DIM),
 	("bar", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_STANDOUT, curses.A_STANDOUT),
-	("online", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
-	("away", curses.COLOR_BLUE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
-	("xa", curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
-	("chat", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
-	("unavailable", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
 )
 
 global_theme_formats=(
-	("window_status",u" %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s)"),
-	("title_bar",u"%(name)s ver. %(version)s by %(author)s"),
-	("status_bar",u"%(name)s"),
-	("error",u"[%(T:now)s] %(msg)s\n"),
-	("warning",u"[%(T:now)s] %(msg)s\n"),
-	("info",u"[%(T:now)s] %(msg)s\n"),
-	("debug",u"[%(T:now)s] %(msg)s\n"),
+	("window_status",u"%[bar] %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s)"),
+	("title_bar",u"%[bar]%(name)s ver. %(version)s by %(author)s"),
+	("status_bar",u"%[bar]%(name)s"),
+	("error",u"%[error][%(T:now)s] %(msg)s\n"),
+	("warning",u"%[warning][%(T:now)s] %(msg)s\n"),
+	("info",u"%[info][%(T:now)s] %(msg)s\n"),
+	("debug",u"%[debug][%(T:now)s] %(msg)s\n"),
 )
 
 class Application(pyxmpp.Client,ui.CommandHandler):
@@ -646,25 +641,25 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 	def error(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"ERROR",s.encode("utf-8","replace")
-		self.status_buf.append_themed("error","error",s)
+		self.status_buf.append_themed("error",s)
 		self.status_buf.update(1)
 		
 	def warning(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"WARNING",s.encode("utf-8","replace")
-		self.status_buf.append_themed("warning","warning",s)
+		self.status_buf.append_themed("warning",s)
 		self.status_buf.update(1)
 		
 	def info(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"INFO",s.encode("utf-8","replace")
-		self.status_buf.append_themed("info","info",s)
+		self.status_buf.append_themed("info",s)
 		self.status_buf.update(1)
 
 	def debug(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"DEBUG",s.encode("utf-8","replace")
-		#self.status_buf.append_themed("debug","debug",s)
+		#self.status_buf.append_themed("debug",s)
 		#self.status_buf.update(1)
 
 

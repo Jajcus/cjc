@@ -37,7 +37,7 @@ class Conversation:
 			"peer":self.peer,
 			"jid":self.me,
 		}
-		self.buffer.append_themed("chat.started","default",self.fparams)
+		self.buffer.append_themed("chat.started",self.fparams)
 		self.buffer.update()
 		self.buffer.register_commands({"me": (self.cmd_me,
 							"/me text",
@@ -48,11 +48,11 @@ class Conversation:
 		self.fparams["jid"]=who
 		if s.startswith(u"/me "):
 			self.fparams["msg"]=s[4:]
-			self.buffer.append_themed("chat.action","default",self.fparams)
+			self.buffer.append_themed("chat.action",self.fparams)
 			self.buffer.update()
 			return
 		self.fparams["msg"]=s
-		self.buffer.append_themed(format,"default",self.fparams)
+		self.buffer.append_themed(format,self.fparams)
 		self.buffer.update()
 
 	def add_sent(self,s):
