@@ -8,9 +8,10 @@ from cjc import common
 
 
 class ListInput:
-	def __init__(self,parent,abortable,default,values,multi=0):
+	def __init__(self,parent,abortable,required,default,values,multi=0):
 		self.parent=parent
 		self.abortable=abortable
+		self.required=required
 		self.win=None
 		self.capture_rest=0
 		self.multi=multi
@@ -25,12 +26,13 @@ class ListInput:
 		else:
 			self.choice=0
 			self.selected=[0]*len(self.keys)
-			for k in default:
-				try:
-					i=self.keys.index(k)
-				except ValueError:
-					continue
-				self.selected[i]=1
+			if default:
+				for k in default:
+					try:
+						i=self.keys.index(k)
+					except ValueError:
+						continue
+					self.selected[i]=1
 		self.theme_manager=parent.theme_manager
 		
 	def set_window(self,win):
@@ -82,15 +84,22 @@ class ListInput:
 			for i in range(0,len(self.selected)):
 				if self.selected[i]:
 					ans.append(self.keys[i])
+			if not ans and self.required:
+				return curses.beep()
 		else:
 			if self.choice<0:
-				ans=None
+				if self.required:
+					return curses.beep()
+				else:
+					ans=None
 			else:
 				ans=self.keys[self.choice]
 		self.parent.input_handler(ans)
 
 	def key_up(self):
-		if self.choice<=0:
+		if self.choice==0 and (self.required or self.multi):
+			self.choice=len(self.keys)-1
+		elif self.choice<0:
 			self.choice=len(self.keys)-1
 		else:
 			self.choice-=1
@@ -99,8 +108,10 @@ class ListInput:
 	def key_down(self):
 		if self.choice<len(self.keys)-1:
 			self.choice+=1
-		else:
+		elif self.required or self.multi:
 			self.choice=0
+		else:
+			self.choice=-1
 		self.redraw()
 
 	def key_space(self):

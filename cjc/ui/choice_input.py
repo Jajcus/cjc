@@ -9,7 +9,7 @@ from cjc import common
 
 
 class ChoiceInput:
-	def __init__(self,parent,abortable,default,choice):
+	def __init__(self,parent,abortable,required,default,choice):
 		from input import InputError
 		self.single_choice=[]
 		self.string_choice=[]
@@ -39,6 +39,7 @@ class ChoiceInput:
 		self.prompt=u"[%s]: " % (string.join(prompt,"/"))
 		self.parent=parent
 		self.abortable=abortable
+		self.required=required
 		self.win=None
 		self.content=u""
 		self.default=default
@@ -101,6 +102,10 @@ class ChoiceInput:
 			return self.answer(ans)
 		if ans in self.string_choice:
 			return self.answer(ans)
+		if not ans:
+			if not self.required:
+				return self.answer(None)
+			return curses.beep()
 		try:
 			ival=int(ans)
 		except ValueError:

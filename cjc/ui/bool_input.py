@@ -8,9 +8,10 @@ from cjc import common
 
 
 class BooleanInput:
-	def __init__(self,parent,abortable,default=None):
+	def __init__(self,parent,abortable,required,default=None):
 		self.parent=parent
 		self.abortable=abortable
+		self.required=required
 		self.win=None
 		self.content=u""
 		if default==1:
@@ -64,7 +65,7 @@ class BooleanInput:
 			curses.beep()
 
 	def key_enter(self):
-		if self.default is None:
+		if self.default is None and self.required:
 			curses.beep()
 			return
 		self.answer(self.default)

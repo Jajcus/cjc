@@ -79,19 +79,23 @@ class Input(Widget):
 		finally:
 			self.screen.lock.release()
 
-	def ask_question(self,question,type,default,handler,abort_handler,arg,values=None):
+	def ask_question(self,question,type,default,handler,abort_handler,arg,values=None,required=1):
+		if abort_handler:
+			abortable=1
+		else:
+			abortable=0
 		if type=="text-single":
-			self.input_widget=text_input.TextInput(self,1,default,0)
+			self.input_widget=text_input.TextInput(self,abortable,required,default,0)
 		elif type=="boolean":
-			self.input_widget=bool_input.BooleanInput(self,1,default)
+			self.input_widget=bool_input.BooleanInput(self,abortable,required,default)
 		elif type=="choice":
 			if not values:
 				raise InputError,"Values required for 'choice' input."
-			self.input_widget=choice_input.ChoiceInput(self,1,default,values)
+			self.input_widget=choice_input.ChoiceInput(self,abortable,required,default,values)
 		elif type=="list-single":
-			self.input_widget=list_input.ListInput(self,1,default,values)
+			self.input_widget=list_input.ListInput(self,abortable,required,default,values)
 		elif type=="list-multi":
-			self.input_widget=list_input.ListInput(self,1,default,values,1)
+			self.input_widget=list_input.ListInput(self,abortable,required,default,values,1)
 		else:
 			raise InputError,"Unknown input type: "+type
 		self.question_handler=handler

@@ -62,16 +62,16 @@ class InputTest(Test):
 	def __init__(self,plugin):
 		Test.__init__(self,plugin,"Input")
 		self.questions=[
-			("What is your name?","text-single",u"",None,0)
-			("Do you like me?","boolean",1,None,0)
-			("How old are you?","choice",1,[xrange(1,100)],0)
-			("Male or Female?","choice",1,["m","f"],0)
+			("What is your name?","text-single",u"",None,0),
+			("Do you like me?","boolean",None,None,0),
+			("How old are you?","choice",None,[xrange(1,100)],0),
+			("Male or Female?","choice",None,["m","f"],0),
 			("Your favorite animal?","list-single",None,
-				{1:"dog",2:"cat",3:"turtle",100:"Tux, the penguin with atitude, logo of the Linux operating system. What can I write more, to make this entry big enough?"},0)
-			("Your favorite animals?","list-multi",[100],
-				{1:"dog",2:"cat",3:"turtle",100:"Tux, the penguin with atitude, logo of the Linux operating system. What can I write more, to make this entry big enough?"},0)
+				{1:"dog",2:"cat",3:"turtle",100:"Tux, the penguin with atitude, logo of the Linux operating system. What can I write more, to make this entry big enough?"},0),
+			("Your favorite animals?","list-multi",None,
+				{1:"dog",2:"cat",3:"turtle",100:"Tux, the penguin with atitude, logo of the Linux operating system. What can I write more, to make this entry big enough?"},0),
 			("Do you like very, very long questions which make no sense beside being very long?",
-				"boolean",1,None,0)
+				"boolean",None,None,0),
 			]
 		
 	def run(self):
@@ -85,12 +85,25 @@ class InputTest(Test):
 								self.abort_handler,(t,v),v,r)
 	
 	def input_handler(self,arg,answer):
-		self.buffer.append_line(arg[0] % answer)
+		if answer in (None,[],u""):
+			self.buffer.append_line("You didn't answer")
+		else:
+			type,values=arg
+			if type is "boolean":
+				if answer:
+					answer="yes"
+				else:
+					answer="no"
+			elif type is "list-single":
+				answer=values[answer]
+			elif type is "list-multi":
+				answer=[values[a] for a in answer]
+			self.buffer.append_line("Your answer is %r" % (answer,))
 		self.buffer.update()
 		self.ask_next_question()
 
 	def abort_handler(self,arg):
-		self.buffer.append_line(arg[1])
+		self.buffer.append_line("You have aborted the question")
 		self.buffer.update()
 		self.ask_next_question()
 		

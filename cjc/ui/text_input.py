@@ -8,9 +8,10 @@ from cjc import common
 
 
 class TextInput:
-	def __init__(self,parent,abortable,default=u"",history_len=0):
+	def __init__(self,parent,abortable,required,default=u"",history_len=0):
 		self.parent=parent
 		self.abortable=abortable
+		self.required=required
 		self.win=None
 		self.capture_rest=0
 		self.content=u""
@@ -116,6 +117,8 @@ class TextInput:
 		self.win.move(0,self.pos-self.offset)
 
 	def key_enter(self):
+		if self.required and not self.content:
+			return curses.beep()
 		if self.history_len:
 			if self.history_pos:
 				if self.content==self.history[-self.history_pos]:
