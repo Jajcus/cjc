@@ -63,14 +63,15 @@ class DiscoBuffer:
             self.plugin.cjc.cache.request_object(disco.DiscoItems, (self.jid, self.node), state,
                     self.got_disco_items, self.disco_items_error)
         except TypeError:
-            self.buffer.append_themed("error",
-                    "No disco available for '%s','%s'. Maybe you should connect first?"
-                    % (self.jid, self.node))
-            self.ask_question()
-            self.buffer.update()
+            if self.buffer:
+                self.buffer.append_themed("error",
+                        "No disco available for '%s','%s'. Maybe you should connect first?"
+                        % (self.jid, self.node))
+                self.ask_question()
+                self.buffer.update()
 
     def got_disco_items(self,address,items,state):
-        if address != (self.jid, self.node):
+        if address != (self.jid, self.node) or not self.buffer:
             pass
         self.buffer.unask_question()
         format_string=self.plugin.cjc.theme_manager.format_string
@@ -98,6 +99,8 @@ class DiscoBuffer:
         self.buffer.update()
 
     def disco_items_error(self,address,data):
+        if address != (self.jid, self.node) or not self.buffer:
+            pass
         if not data:
             message="Timeout"
         elif isinstance(data,ErrorNode):
@@ -119,7 +122,7 @@ class DiscoBuffer:
         self.buffer.update()
 
     def got_disco_info(self,address,info,state):
-        if address != (self.jid, self.node):
+        if address != (self.jid, self.node) or not self.buffer:
             pass
         self.buffer.unask_question()
         format_string=self.plugin.cjc.theme_manager.format_string
@@ -152,6 +155,8 @@ class DiscoBuffer:
         self.buffer.update()
 
     def disco_info_error(self,address,data):
+        if address != (self.jid, self.node) or not self.buffer:
+            pass
         if not data:
             message=u"Timeout"
         elif isinstance(data,ErrorNode):
@@ -216,8 +221,6 @@ class DiscoBuffer:
             self.buffer.update_info(self.fparams)
             self.start_disco()
             self.buffer.update()
-
-
 
 class Plugin(PluginBase):
     def __init__(self,app,name):
