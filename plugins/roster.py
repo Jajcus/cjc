@@ -117,6 +117,8 @@ class Plugin(PluginBase):
 			for g,j in self.buffer.get_keys():
 				if j==jid and g not in groups:
 					self.buffer.remove_item((g,j))
+				elif g==VG_UNKNOWN and (j==jid or j.bare()==jid):
+					self.buffer.remove_item((g,j))
 			if groups:
 				for group in groups:
 					self.write_item(group,item)
