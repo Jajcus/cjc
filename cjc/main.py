@@ -11,6 +11,7 @@ import locale
 import curses
 import threading
 import socket
+import signal
 
 import pyxmpp
 
@@ -143,6 +144,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.main_window=None
 		self.top_bar=None
 		self.bottom_bar=None
+		self.resize_request=0
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -315,6 +317,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.bottom_bar.update()
 
 	def run(self,screen):
+		signal.signal(signal.SIGINT,signal.SIG_IGN)
 		self.screen=screen
 		self.theme_manager=themes.ThemeManager(self)
 		try:
@@ -324,6 +327,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.theme_manager.set_default_attrs(global_theme_attrs)
 		self.theme_manager.set_default_formats(global_theme_formats)
 		screen.set_command_handler(self)
+		screen.set_resize_handler(self.resize_handler)
 		
 		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
 
@@ -369,6 +373,13 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			if th is threading.currentThread():
 				continue
 			th.join(0)
+
+	def resize_handler(self):
+		self.screen.lock.acquire()
+		layout=self.settings["layout"]
+		self.screen.set_input_handler(None)
+		self.set_layout(layout,layout)
+		self.screen.lock.release()
 
 	def session_started(self):
 		for p in self.plugins.values():
@@ -590,7 +601,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		if newval not in ("plain","icr","irc","vertical","horizontal"):
 			self.settings["layout"]=oldval
 			return
+		self.screen.lock.acquire()
 		getattr(self,"layout_"+newval)()
+		self.screen.lock.release()
 		if self.status_window:
 			self.status_window.set_buffer(self.status_buf)
 		elif self.main_window:
