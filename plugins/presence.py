@@ -7,7 +7,7 @@ from cjc.plugin import PluginBase
 from cjc import ui
 
 theme_formats=(
-	("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is available\n"),
+	("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is %(J:user:show)s: %(J:user:status)s\n"),
 	("presence.unavailable","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is unavailable\n"),
 	("presence.subscribe","%[info][%(T:timestamp)s] %(J:user)s sent you a presence subscription request\n"),
 	("presence.subscribe_buffer","Subscription request from %(J:user)s"),
@@ -303,14 +303,14 @@ class Plugin(PluginBase):
 	def presence_available(self,stanza):
 		fr=stanza.get_from()
 		p=self.cjc.get_user_info(fr,"presence")
+		self.cjc.set_user_info(fr,"presence",stanza.copy())
+		self.compute_current_resource(fr.bare())
+		self.cjc.send_event("presence changed",fr)
 		if (not p or p!=stanza) and self.settings.get("show_changes"):
 			self.cjc.status_buf.append_themed("presence.available",{"user":fr})
 			self.cjc.status_buf.update()
 		else:
 			self.debug(fr.as_unicode()+u" is unavailable")
-		self.cjc.set_user_info(fr,"presence",stanza.copy())
-		self.compute_current_resource(fr.bare())
-		self.cjc.send_event("presence changed",fr)
 		return 1
 		
 	def presence_unavailable(self,stanza):
