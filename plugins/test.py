@@ -70,6 +70,12 @@ class InputTest(Test):
 				u"Your answer is %s.",u"Are you afraid to answer?"),
 			("Male or Female?","choice",1,["m","f"],
 				u"Your answer is %s.",u"Are you afraid to answer?"),
+			("Your favorite animal?","list-single",None,
+				{1:"dog",2:"cat",3:"turtle",100:"Tux, the penguin with atitude, logo of the Linux operating system. What can I write more, to make this entry big enough?"},
+				u"Your answer is %s.",u"Are you afraid to answer?"),
+			("Do you like very, very long questions which make no sense beside being very long?",
+				"boolean",1,None,
+				u"Your answer is %s.",u"Are you afraid to answer?"),
 			]
 		
 	def run(self):
