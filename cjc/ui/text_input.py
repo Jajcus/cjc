@@ -319,7 +319,7 @@ class TextInput(InputWidget):
                 self.screen.lock.acquire()
                 try:
                     if self.screen.active:
-                        self.win.addstr(c.encode(self.screen.encoding))
+                        self.win.addstr(c.encode(self.screen.encoding,"replace"))
                 finally:
                     self.screen.lock.release()
         else:
@@ -331,7 +331,7 @@ class TextInput(InputWidget):
                 self.screen.lock.acquire()
                 try:
                     if self.screen.active:
-                        self.win.insstr(c.encode(self.screen.encoding))
+                        self.win.insstr(c.encode(self.screen.encoding,"replace"))
                         self.right_scroll_mark()
                         self.win.move(0,self.pos-self.offset)
                 finally:

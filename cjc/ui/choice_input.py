@@ -162,7 +162,7 @@ class ChoiceInput(InputWidget):
         self.screen.lock.acquire()
         try:
             if self.screen.active:
-                self.win.addstr(c.encode(self.screen.encoding))
+                self.win.addstr(c.encode(self.screen.encoding,"replace"))
                 self.win.refresh()
         finally:
             self.screen.lock.release()
