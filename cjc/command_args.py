@@ -1,20 +1,21 @@
 
 import re
 
-quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)"(?P<rest>.*)$')
-need_quote_re=re.compile(r'[ \"\\\n\t]')
+quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)"(?P<rest>.*)$',re.UNICODE)
+need_quote_re=re.compile(r'[ \"\\\n\t]',re.UNICODE)
+quote_re=re.compile(r'\\(.)',re.UNICODE)
 
 def quote(s):
-	s=s.replace('\\','\\\\')
-	s=s.replace('"','\\"')
-	s=s.replace('\t','\\t')
-	s=s.replace('\n','\\n')
+	s=s.replace(u'\\',u'\\\\')
+	s=s.replace(u'"',u'\\"')
+	s=s.replace(u'\t',u'\\t')
+	s=s.replace(u'\n',u'\\n')
 	return s
 
 def unquote(s):
-	s=s.replace('\\t','\t')
-	s=s.replace('\\n','\n')
-	s=s.replace('\\','') #FIXME
+	s=s.replace(u'\\t',u'\t')
+	s=s.replace(u'\\n',u'\n')
+	s=quote_re.sub(ur"\1",s)
 	return s
 
 class CommandError(ValueError):
