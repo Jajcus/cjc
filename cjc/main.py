@@ -755,7 +755,7 @@ class Application(jabber.Client,tls.TLSHandler):
                 else:
                     try:
                         val=int(val)
-                    except ValueError:
+                    except ValueError,e:
                         continue
                     val=bool(val)
                     valid=1
@@ -774,7 +774,7 @@ class Application(jabber.Client,tls.TLSHandler):
                 continue
 
         if not valid:
-            self.__logger.error("Bad value: "+str(e))
+            self.__logger.error(u"Bad value: "+unicode(e))
             return
 
         if handler:
