@@ -468,6 +468,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		if not self.port:
 			self.port=5222
 		self.server=self.settings.get("server")
+		self.keepalive=self.settings.get("keepalive",0)
 		self.auth_methods=auth_methods
 		self.tls_init()
 		self.info(u"Connecting:")
