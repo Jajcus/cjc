@@ -16,6 +16,9 @@ class EditLine(Widget):
 		self.pos=0
 		self.offset=0
 		self.theme_manager=theme_manager
+		self.history=[]
+		self.history_pos=0
+		self.saved_content=None
 		
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
@@ -51,6 +54,10 @@ class EditLine(Widget):
 			return self.key_left()
 		elif c==curses.KEY_RIGHT:
 			return self.key_right()
+		elif c==curses.KEY_UP:
+			return self.key_up()
+		elif c==curses.KEY_DOWN:
+			return self.key_down()
 		elif c==curses.KEY_BACKSPACE:
 			return self.key_bs()
 		elif c==curses.KEY_DC:
@@ -104,8 +111,14 @@ class EditLine(Widget):
 		self.win.move(0,self.pos-self.offset)
 
 	def key_enter(self):
+		if self.history_pos:
+			if self.content==self.history[-self.history_pos]:
+				del self.history[-self.history_pos]
+			self.history_pos=0
+		self.history.append(self.content)
 		self.screen.user_input(self.content)
 		self.content=u""
+		self.saved_content=None
 		self.pos=0
 		self.offset=0
 		self.win.move(0,0)
@@ -198,6 +211,32 @@ class EditLine(Widget):
 				self.right_scroll_mark()
 				self.win.move(0,self.pos-self.offset)
 		self.win.refresh()
+
+	def key_up(self):
+		if self.history_pos>=len(self.history):
+			curses.beep()
+			return
+		if self.history_pos==0:
+			self.saved_content=self.content
+		self.history_pos+=1
+		self.content=self.history[-self.history_pos]
+		self.pos=len(self.content)
+		self.redraw()
+
+	def key_down(self):
+		if self.history_pos<=0:
+			curses.beep()
+			return
+		self.history_pos-=1
+		if self.history_pos==0:
+			if self.saved_content:
+				self.content=self.saved_content
+			else:
+				self.content=u""
+		else:
+			self.content=self.history[-self.history_pos]
+			self.pos=len(self.content)
+		self.redraw()
 
 	def update(self,now=1,refresh=0):
 		self.screen.lock.acquire()
