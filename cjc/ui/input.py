@@ -34,18 +34,37 @@ class Input(Widget):
 		self.make_windows()
 		self.screen.set_input_handler(self)
 
-	def complete(self,s,pos):
+	def complete(self,s,pos,again):
 		if self.input_widget!=self.command_line:
 			self.screen.beep()
-			return
+			return 0
 		head,tails=complete.complete(s[:pos])
 		common.debug("complete() returned: "+`(head,tails)`)
+		if len(tails)>1 and self.current_buffer:
+			if again:
+				self.current_buffer.ask_question(head,"list-single",tails[0],
+					self.complete_answer,self.complete_abort,
+					(s,pos,head,tails),tails,1);
+				return 0
+			else:
+				self.screen.beep()
+				return 1
 		if len(tails)!=1:
 			self.screen.beep()
-			return
+			return 0
 		self.input_widget.set_content(head+tails[0]+s[pos:])
 		self.input_widget.set_pos(len(head)+len(tails[0]))
 		self.input_widget.redraw()
+		return 0
+
+	def complete_answer(self,arg,answer):
+		s,pos,head,tails=arg
+		self.input_widget.set_content(head+answer+s[pos:])
+		self.input_widget.set_pos(len(head)+len(answer))
+		self.input_widget.redraw()
+
+	def complete_abort(self,arg):
+		return
 
 	def input_handler(self,answer):
 		if self.input_widget==self.command_line:
@@ -84,7 +103,7 @@ class Input(Widget):
 				self.prompt_win=curses.newwin(self.h,l+1,self.y,self.x)
 				self.prompt_win.addstr(prompt)
 				self.prompt_win.leaveok(1)
-				self.input_win=curses.newwin(self.h,self.w-l-1,self.y,self.x+l+1)
+				self.input_win=curses.newwin(self.h,self.w-l,self.y,self.x+l)
 			else:
 				self.prompt_win=None
 				self.input_win=curses.newwin(self.h,self.w,self.y,self.x)

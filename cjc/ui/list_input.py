@@ -2,6 +2,7 @@
 import curses
 import curses.textpad
 import string
+from types import ListType,TupleType
 
 import keytable
 from cjc import common
@@ -12,6 +13,8 @@ class ListInput(InputWidget):
 		InputWidget.__init__(self,abortable,required)
 		self.capture_rest=0
 		self.multi=multi
+		if type(values) in (TupleType,ListType):
+			values=dict([(a,a) for a in values])
 		self.keys=values.keys()
 		self.keys.sort()
 		self.values=values

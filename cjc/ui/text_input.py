@@ -18,6 +18,7 @@ class TextInput(InputWidget):
 		self.history=[]
 		self.history_pos=0
 		self.saved_content=None
+		self.completing=0
 
 	def set_parent(self,parent):
 		InputWidget.set_parent(self,parent)
@@ -91,6 +92,7 @@ class TextInput(InputWidget):
 		self.win.move(0,self.pos-self.offset)
 
 	def key_enter(self):
+		self.completing=0
 		if self.required and not self.content:
 			self.screen.beep()
 			return
@@ -112,6 +114,7 @@ class TextInput(InputWidget):
 		self.parent.input_handler(ans)
 
 	def key_kill(self):
+		self.completing=0
 		if not self.content:
 			self.screen.beep()
 			return
@@ -124,6 +127,7 @@ class TextInput(InputWidget):
 		self.win.refresh()
 
 	def key_home(self):
+		self.completing=0
 		if self.pos<=0:
 			self.screen.beep()
 			return
@@ -135,6 +139,7 @@ class TextInput(InputWidget):
 			self.win.refresh()
 
 	def key_end(self):
+		self.completing=0
 		if self.pos>=len(self.content):
 			self.screen.beep()
 			return
@@ -146,6 +151,7 @@ class TextInput(InputWidget):
 			self.win.refresh()
 
 	def key_left(self):
+		self.completing=0
 		if self.pos<=0:
 			self.screen.beep()
 			return
@@ -157,6 +163,7 @@ class TextInput(InputWidget):
 			self.win.refresh()
 
 	def key_right(self):
+		self.completing=0
 		if self.pos>=len(self.content):
 			self.screen.beep()
 			return
@@ -168,6 +175,7 @@ class TextInput(InputWidget):
 			self.win.refresh()
 
 	def key_bs(self):
+		self.completing=0
 		if self.pos<=0:
 			self.screen.beep()
 			return
@@ -182,6 +190,7 @@ class TextInput(InputWidget):
 			self.win.refresh()
 
 	def key_del(self):
+		self.completing=0
 		if self.pos>=len(self.content):
 			self.screen.beep()
 			return
@@ -191,6 +200,7 @@ class TextInput(InputWidget):
 		self.win.refresh()
 
  	def key_uclean(self):
+		self.completing=0
  		if self.pos==0:
 			self.screen.beep()
 			return
@@ -199,6 +209,7 @@ class TextInput(InputWidget):
 		self.redraw()
 
 	def key_wrubout(self):
+		self.completing=0
 		if self.pos==0:
 			self.screen.beep()
 			return
@@ -216,9 +227,10 @@ class TextInput(InputWidget):
 		self.redraw()
 	
 	def key_complete(self):
-		self.parent.complete(self.content,self.pos)
+		self.completing=self.parent.complete(self.content,self.pos,self.completing)
 
 	def key_char(self,c):
+		self.completing=0
 		c=unicode(c,self.screen.encoding,"replace")
 		if self.pos==len(self.content):
 			self.content+=c
@@ -239,6 +251,7 @@ class TextInput(InputWidget):
 		self.win.refresh()
 
 	def history_prev(self):
+		self.completing=0
 		if not self.history_len or self.history_pos>=len(self.history):
 			self.screen.beep()
 			return
@@ -254,6 +267,7 @@ class TextInput(InputWidget):
 			self.redraw()
 
 	def history_next(self):
+		self.completing=0
 		if not self.history_len or self.history_pos<=0:
 			self.screen.beep()
 			return

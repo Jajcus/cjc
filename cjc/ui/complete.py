@@ -15,14 +15,14 @@ class Completion:
 		longest=min([len(m) for m in matches])
 		l=len(word)
 		if longest==l:
-			return [m[l:] for m in matches]
+			return matches
 		longest_match=matches[0][:longest]
 		for m in matches[1:]:
 			while longest>l and m[:longest]!=longest_match:
 				longest_match=longest_match[:-1]
 				longest-=1
 		if longest==l:
-			return [m[l:] for m in matches]
+			return matches
 		return [longest_match]
 
 class CommandCompletion(Completion):
@@ -36,7 +36,7 @@ class CommandCompletion(Completion):
 			return [matches[0].name+" "]
 		if not matches:
 			return []
-		return self.make_result(word,[cmd.name for cmd in matches])
+		return self.make_result(word,[cmd.name+" " for cmd in matches])
 
 CommandCompletion().register("command")
 
