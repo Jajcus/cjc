@@ -150,9 +150,14 @@ class Screen(commands.CommandHandler):
 			if self.active_window.keypressed(ch,self.escape):
 				return
 				
-		if self.escape and ch==ord("\t"):
-			self.focus_next()
-			return
+		if self.escape:
+			if ch==ord("\t"):
+				self.focus_next()
+				return
+		else:
+			if ch==0x0c:
+				self.redraw()
+				return
 		
 		if self.input_handler:
 			if self.input_handler.keypressed(ch,self.escape):
