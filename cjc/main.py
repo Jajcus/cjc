@@ -49,6 +49,7 @@ global_settings={
 	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
 	"autoconnect": ("Automatically connect on startup.",int),
 	"keepalive": ("Keep-alive interval in seconds (0 to disable).",int),
+	"case_sensitive": ("Should roster name matches be case sensitive?",int),
 	"backup_config": ("Save backup of previous config file when saving.",int),
 	"debug": ("Display some debuging information in status window.",int),
 }
@@ -115,6 +116,7 @@ class Application(jabber.Client,tls.TLSHandler):
 			"tls_require":0,
 			"keepalive":15*60,
 			"backup_config":0,
+			"case_sensitive":1,
 			"debug":0}
 		self.aliases={}
 		self.available_settings=global_settings
@@ -1059,7 +1061,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		if name.find("@")>=0:
 			if self.roster:
 				try:
-					ritems=self.roster.items_by_name(name)
+					ritems=self.roster.items_by_name(name,self.settings["case_sensitive"])
 				except KeyError:
 					ritems=None
 				if ritems:
@@ -1076,7 +1078,7 @@ class Application(jabber.Client,tls.TLSHandler):
 			return None
 
 		try:
-			ritems=self.roster.items_by_name(name)
+			ritems=self.roster.items_by_name(name,self.settings["case_sensitive"])
 		except KeyError:
 			try:
 				jid=pyxmpp.JID(name)

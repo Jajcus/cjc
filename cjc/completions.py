@@ -8,18 +8,25 @@ class UserCompletion(ui.Completion):
 	def complete(self,word):
 		common.debug("UserCompletion.complete(self,%r)" % (word,))
 		matches=[]
+		case_sensitive=self.app.settings["case_sensitive"]
+		if case_sensitive:
+			mword=word
+		else:
+			mword=word.lower()
 		if self.app.roster:
 			for ri in self.app.roster.items():
 				name=ri.name()
-				if word==name:
-					items=self.app.roster.items_by_name(name)
+				if not case_sensitive and name:
+					name=name.lower()
+				if mword==name:
+					items=self.app.roster.items_by_name(name,case_sensitive)
 					if len(items)>1:
 						for i in items:
 							matches.append(i.jid().as_unicode())
 						continue
 				if name is None:
 					name=ri.jid().as_unicode()
-				if (name.startswith(word) 
+				if (name.startswith(mword) 
 						and name not in matches 
 						and ri.jid().as_unicode() not in matches): 
 					matches.append(name)
