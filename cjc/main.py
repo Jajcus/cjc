@@ -508,7 +508,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 					if val is None:
 						self.info("%s is not set" % (var,))
 						continue
-					if type(typ) is tuple:
+					if type(typ) is TupleType:
 						typ=typ[0]
 					if typ is list:
 						self.info(u"%s = %s" % (var,string.join(val,",")))
@@ -550,8 +550,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			if val is None:
 				self.info("%s is not set" % (fvar,))
 				return
+			common.debug("Type: "+`typ`)
 			if type(typ) in (TupleType,ListType):
-				if type(typ)[0] is TypeType:
+				if type(typ[0]) is TypeType:
 					typ=typ[0]
 			if typ is list:
 				self.info(u"%s = %s" % (fvar,string.join(val,",")))
@@ -806,7 +807,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				return
 			commands=win.commands()
 			if commands:
-				self.info(u"  commands for window '%s':" % (win.description(),))
+				self.info(u"  commands for current window")
 				for cmd in commands:
 					self.info(u"    /"+cmd)
 			return
