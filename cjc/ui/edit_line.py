@@ -108,7 +108,8 @@ class EditLine(Widget):
 		self.content=u""
 		self.pos=0
 		self.offset=0
-		self.win.clear()
+		self.win.move(0,0)
+		self.win.clrtoeol()
 		self.win.refresh()
 
 	def key_home(self):
@@ -201,7 +202,6 @@ class EditLine(Widget):
 	def update(self,now=1):
 		self.screen.lock.acquire()
 		try:
-			self.win.cursyncup()
 			if now:
 				self.win.refresh()
 			else:

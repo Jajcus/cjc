@@ -2,6 +2,7 @@
 import curses
 
 from widget import Widget
+from cjc import common
 
 class StatusBar(Widget):
 	def __init__(self,theme_manager,format,dict):
@@ -9,6 +10,7 @@ class StatusBar(Widget):
 		self.theme_manager=theme_manager
 		self.format=format
 		self.dict=dict
+		self.current_content=None
 
 	def get_height(self):
 		return 1
@@ -29,21 +31,25 @@ class StatusBar(Widget):
 	def update(self,now=1):
 		self.screen.lock.acquire()
 		try:
-			self.win.clear()
+			content=self.theme_manager.format_string(self.format,self.dict)
+			if content==self.current_content:
+				return
+			self.current_content=content
 			self.win.move(0,0)
 			x=0
-			for attr,s in self.theme_manager.format_string(self.format,self.dict):
+			for attr,s in content:
 				x+=len(s)
 				if x>=self.w:
 					s=s[:x-self.w]
 					self.win.addstr(s,attr)
 					break
 				self.win.addstr(s,attr)
+			self.win.clrtoeol()
 			if now:
 				self.win.refresh()
+				self.screen.cursync()
 			else:
 				self.win.noutrefresh()
-			self.screen.cursync()
 		finally:
 			self.screen.lock.release()
 

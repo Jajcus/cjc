@@ -141,7 +141,7 @@ class Window(Widget):
 	def draw_buffer(self):
 		self.screen.lock.acquire()
 		try:
-			self.win.clear()
+			self.win.erase()
 			self.win.move(0,0)
 			if not self.buffer:
 				return
@@ -241,7 +241,7 @@ class Window(Widget):
 		self.screen.lock.acquire()
 		try:
 			self.status_bar.redraw(now)
-			self.win.clear()
+			self.win.erase()
 			if self.buffer:
 				self.draw_buffer()
 			if now:

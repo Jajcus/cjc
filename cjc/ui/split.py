@@ -48,7 +48,7 @@ class VerticalSplit(Split):
 				div=curses.newwin(self.h,1,self.y,l-1)
 				div.leaveok(1)
 				div.bkgdset(ord("|"),curses.A_STANDOUT)
-				div.clear()
+				div.erase()
 				self.divs.append(div)
 			self.children_pos.append(l)
 			l=r+1
