@@ -280,7 +280,7 @@ class Plugin(PluginBase):
             self.error("Bad JID!")
             return
 
-        if user.bare()==self.cjc.stream.jid.bare():
+        if user.bare()==self.cjc.stream.me.bare():
             self.error("Self presence subscription is automatic."
                     " Cannot add own JID to the roster.")
             return
@@ -308,7 +308,7 @@ class Plugin(PluginBase):
         user=self.cjc.get_user(user)
         if user is None:
             return
-        if user.bare()==self.cjc.stream.jid.bare():
+        if user.bare()==self.cjc.stream.me.bare():
             self.error("Self presence subscription is automatic."
                     " Cannot remove own JID from the roster.")
             return
@@ -325,7 +325,7 @@ class Plugin(PluginBase):
         user=self.cjc.get_user(user)
         if user is None:
             return
-        if user.bare()==self.cjc.stream.jid.bare():
+        if user.bare()==self.cjc.stream.me.bare():
             self.error("Self presence subscription is automatic."
                     " Cannot rename own JID in the roster.")
             return
@@ -347,7 +347,7 @@ class Plugin(PluginBase):
         user=self.cjc.get_user(user)
         if user is None:
             return
-        if user.bare()==self.cjc.stream.jid.bare():
+        if user.bare()==self.cjc.stream.me.bare():
             self.error("Self presence subscription is automatic."
                     " Cannot group own JID in the roster.")
             return

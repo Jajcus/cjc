@@ -290,7 +290,7 @@ class Plugin(PluginBase):
         user=self.cjc.get_user(user)
         if user is None:
             return
-        if user.bare()==self.cjc.stream.jid.bare():
+        if user.bare()==self.cjc.stream.me.bare():
             self.error("Self presence subscription is automatic."
                     " Cannot subscribe own presence.")
             return
@@ -307,7 +307,7 @@ class Plugin(PluginBase):
         user=self.cjc.get_user(user)
         if user is None:
             return
-        if user.bare()==self.cjc.stream.jid.bare():
+        if user.bare()==self.cjc.stream.me.bare():
             self.error("Self presence subscription is automatic."
                     " Cannot unsubscribe own presence.")
             return
@@ -326,7 +326,7 @@ class Plugin(PluginBase):
         user=self.cjc.get_user(user)
         if user is None:
             return
-        if user.bare()==self.cjc.stream.jid.bare():
+        if user.bare()==self.cjc.stream.me.bare():
             self.error("Self presence subscription is automatic."
                     " Cannot cancel own presence subscription.")
             return
@@ -418,7 +418,7 @@ class Plugin(PluginBase):
 
     def presence_subscribe(self,stanza):
         fr=stanza.get_from()
-        if fr.bare()==self.cjc.stream.jid.bare():
+        if fr.bare()==self.cjc.stream.me.bare():
             self.debug("Ignoring own presence subscription request")
             return
         reason=stanza.get_status()
@@ -465,7 +465,7 @@ class Plugin(PluginBase):
 
     def presence_subscription_change(self,stanza):
         fr=stanza.get_from()
-        if fr.bare()==self.cjc.stream.jid.bare():
+        if fr.bare()==self.cjc.stream.me.bare():
             self.debug("Ignoring own presence subscription change request")
             return
         typ=stanza.get_type()

@@ -363,7 +363,7 @@ class Plugin(PluginBase):
         else:
             nick=self.settings.get("default_nick")
             if not nick:
-                nick=self.cjc.stream.jid.node
+                nick=self.cjc.stream.me.node
             room_jid=arg1
         if not room_jid:
             self.error("Room name not given")
@@ -379,7 +379,7 @@ class Plugin(PluginBase):
         if rs and rs.joined:
             room_handler=rs.handler
         else:
-            room_handler=Room(self,room_jid,self.cjc.stream.jid)
+            room_handler=Room(self,room_jid,self.cjc.me.jid)
             self.room_manager.join(room_jid,nick,room_handler)
         self.cjc.screen.display_buffer(room_handler.buffer)
 
