@@ -165,35 +165,61 @@ class TextBuffer(Buffer):
 
 	def offset_back(self,width,back,l=None,c=0):
 		if l is None:
-			debug("offset_back: Moving %i lines back from the end" % (back,))
 			if self.lines[-1]==[]:
-				l=len(self.lines)-2
-			else:
 				l=len(self.lines)-1
+			else:
+				l=len(self.lines)
 			if l<=0:
 				return 0,0
-		else:
-			debug("offset_back: Moving %i lines back from %i,%i" % (l,c))
-		debug("offset_back: lines=%r" % (self.lines,))
-		while back>0 and l>0:
-			line=self.lines[l]
-			debug("offset_back: lines[%i]: %r" % (l,line))
-			ln=self.line_length(line)
-			debug("offset_back: length: %r" % (ln,))
-			h=ln/width+1
-			debug("offset_back: h: %r" % (h,))
-			back-=h
-			debug("offset_back: back: %r" % (back,))
+		while back>0 and l>1:
 			l-=1
-		debug("offset_back: back=%r" % (back,))
+			line=self.lines[l]
+			ln=self.line_length(line)
+			h=ln/width+1
+			back-=h
+
 		if back>0:
-			debug("offset_back: result: %i,%i" % (0,0))
 			return 0,0
 		if back==0:
-			debug("offset_back: result: %i,%i" % (l,0))
 			return l,0
-		debug("offset_back: result: %i,%i" % (l,(-back)*width))
 		return l,(-back)*width
+
+	def offset_forward(self,width,forward,l=0,c=0):
+
+		if l>=len(self.lines):
+			l=len(self.lines)-1
+			if self.lines[-1]==[]:
+				l-=1
+			if l>0:
+				return l
+			else:
+				return 0
+
+		if c>0:
+			left,right=self.split_line(self.lines[l],c)
+			l+=1
+			ln=self.line_length(right)
+			forward-=ln/width+1
+		
+		end=len(self.lines)
+		if self.lines[-1]==[]:
+			end-=1
+
+		l-=1
+		while forward>0 and l<end-1:
+			l+=1
+			line=self.lines[l]
+			ln=self.line_length(line)
+			h=ln/width+1
+			forward-=h
+
+		if forward>=0:
+			return l,0
+
+		if l>0:
+			return l-1,0
+		else:
+			return 0,0
 
 	def cut_line(self,line,cut):
 		i=0
@@ -213,10 +239,10 @@ class TextBuffer(Buffer):
 		return left,right
 			
 	def format(self,width,height):
-		debug("format: width: %i height: %i pos: %r" % (width,height,self.pos))
-		debug("format: lines=%r" % (self.lines,))
 		if self.pos is None:
-			l,c=self.offset_back(width,height-1)
+			l,c=self.offset_back(width,height)
+		else:
+			l,c=self.pos
 
 		if c:
 			x,line=self.cut_line(self.lines[l],c)
@@ -238,16 +264,61 @@ class TextBuffer(Buffer):
 			height-=h
 			l+=1
 
-		debug("format: got %r, height left: %r" % (ret,height))
 		if height>=0:
+			if self.lines[-1]==[]:
+				ret.append([])
 			return ret
 
-		debug("format: splitting last line")
 		cut=(-height)*width
 		ret[-1],x=self.cut_line(ret[-1],cut)
-		debug("format: result: %r" % (ret,))
+		ret.append([])
 		return ret
 
+	def page_up(self):
+		if self.pos is None:
+			l,c=self.offset_back(self.window.w,self.window.h-2)
+		else:
+			l,c=self.pos
+
+		if (l,c)==(0,0):
+			self.pos=l,c
+			formatted=self.format(self.window.w,self.window.h-1)
+			if len(formatted)<=self.window.h-1:
+				self.pos=None
+			return
+			
+		l1,c1=self.offset_back(self.window.w,self.window.h-2,l,c)
+		self.pos=l1,c1
+		self.window.draw_buffer()
+		self.window.update()
+
+	def page_down(self):
+		if self.pos is None:
+			return
+
+		l,c=self.pos
+			
+		l1,c1=self.offset_forward(self.window.w,self.window.h-2,l,c)
+		self.pos=l1,c1
+
+		formatted=self.format(self.window.w,self.window.h-1)
+		if len(formatted)<=self.window.h-1:
+			self.pos=None
+		
+		self.window.draw_buffer()
+		self.window.update()
+
+	def keypressed(self,ch,escape):
+		if escape:
+			return 0
+		if ch==curses.KEY_PPAGE:
+			self.page_up()
+			return 1
+		if ch==curses.KEY_NPAGE:
+			self.page_down()
+			return 1
+		return 0
+			
 class Split(Widget):
 	def __init__(self,*children):
 		if len(children)<1:
@@ -499,9 +570,9 @@ class Window(Widget):
 				buf.window.set_buffer(self.buffer)
 			buf.window=self
 		self.buffer=buf
+		self.newline=0
 		if self.win:
 			self.draw_buffer()
-		self.newline=0
 		d=self.status_bar.get_dict()
 		if buf:
 			d["bufname"]=buf.name
@@ -523,6 +594,11 @@ class Window(Widget):
 		lines=self.buffer.format(self.w,self.h-1)
 		if not lines:
 			return
+		if lines[-1]==[]:
+			lines=lines[:-1]
+			has_eol=1
+		else:
+			has_eol=0
 		self.newline=0
 		for line in lines:
 			if self.newline:
@@ -532,6 +608,8 @@ class Window(Widget):
 				attr=self.screen.attrs[attr]
 				self.win.addstr(s,attr)
 			self.newline=1
+		if not has_eol:
+			self.newline=0
 
 	def write(self,s,attr):
 		if not s:
@@ -852,6 +930,7 @@ def init():
 	screen=curses.initscr()
 	curses.start_color()
 	curses.cbreak()
+	curses.meta(1)
 	curses.noecho()
 	curses.nonl()
 	return Screen(screen)

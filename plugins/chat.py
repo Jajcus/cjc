@@ -71,11 +71,26 @@ class Plugin(PluginBase):
 			return
 			
 		args=args.split(None,1)
-		try:
-			peer=pyxmpp.JID(args[0])
-		except pyxmpp.JIDError:
-			self.error("Bad JID")
-			return
+		if args[0].find("*")>=0:
+			try:
+				peer=pyxmpp.JID(args[0])
+			except pyxmpp.JIDError:
+				peer=None
+		else:
+			peer=None
+
+		if peer is None and self.cjc.roster:
+			try:
+				ritems=self.cjc.roster.items_by_name(args[0])
+			except KeyError:
+				self.error("%s not found in roster" % (args[0],))
+				return
+			if ritems:
+				if len(ritems)>1:
+					self.error("ambiguous user name")
+					return
+				else:
+					peer=ritems[0].jid()
 
 		conversation=Conversation(self,self.cjc.jid.node,peer)
 		key=peer.bare().as_unicode()

@@ -94,7 +94,6 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		self.status_buf=ui.TextBuffer("Status")
 		self.message_buf=ui.TextBuffer("Messages")
 		self.roster_buf=ui.TextBuffer("Roster")
-		self.test_buf=ui.TextBuffer("Test")
 
 		self.top_bar=ui.StatusBar("CJC",{})
 		self.status_window=ui.Window("Status",1)
@@ -333,6 +332,8 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		ubare=bare.as_unicode()
 		if self.user_info.has_key(ubare):
 			uinf=self.user_info[ubare]
+			if not uinf.has_key("resources"):
+				uinf["resources"]={}
 		else:
 			uinf={"resources":{},"jid":bare}
 			self.user_info[ubare]=uinf
@@ -357,9 +358,13 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 	def roster_updated(self):
 		self.info("Got roster")
 		self.roster_buf.clear()
-		for group in self.roster.groups():
+		groups=self.roster.groups()
+		groups.sort()
+		for group in groups:
 			if group:
 				self.roster_buf.append(group+u":\n","default")
+			else:
+				self.roster_buf.append(u"unfiled:\n","default")
 			for item in self.roster.items_by_group(group):
 				jid=item.jid()
 				name=item.name()
