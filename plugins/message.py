@@ -435,7 +435,7 @@ class Plugin(PluginBase):
         if thread==0:
             self.last_thread+=1
             thread="message-thread-%i" % (self.last_thread,)
-        m=pyxmpp.Message(to=recipient,type="normal",subject=subject,body=body,thread=thread)
+        m=pyxmpp.Message(to=recipient,typ="normal",subject=subject,body=body,thread=thread)
         self.cjc.stream.send(m)
         if buff is None:
             buff=self.find_or_make(recipient,thread)

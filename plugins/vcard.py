@@ -49,7 +49,7 @@ class Plugin(PluginBase):
         else:
             jid=self.cjc.jid.bare()
 
-        iq=pyxmpp.Iq(to=jid,type="get")
+        iq=pyxmpp.Iq(to=jid,typ="get")
         q=iq.new_query(VCARD_NS)
         self.cjc.stream.set_response_handlers(iq,self.vcard_response,self.vcard_error)
         self.cjc.stream.send(iq)

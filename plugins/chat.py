@@ -94,7 +94,7 @@ class Conversation:
             return 0
         if self.plugin.settings.get("log_filename"):
             self.plugin.log_message("out",self.me,self.peer,None,s,self.thread)
-        m=pyxmpp.Message(to=self.peer,type="chat",body=s,thread=self.thread)
+        m=pyxmpp.Message(to=self.peer,typ="chat",body=s,thread=self.thread)
         self.plugin.cjc.stream.send(m)
         self.add_sent(s)
         return 1

@@ -143,7 +143,7 @@ class Plugin(PluginBase):
         self.set_presence(pyxmpp.Presence(priority=self.settings["priority"]))
 
     def ev_disconnect_request(self,event,arg):
-        p=pyxmpp.Presence(type="unavailable",status=arg)
+        p=pyxmpp.Presence(typ="unavailable",status=arg)
         self.set_presence(p)
 
     def ev_idle(self,event,arg):
@@ -294,7 +294,7 @@ class Plugin(PluginBase):
             self.error("Self presence subscription is automatic."
                     " Cannot subscribe own presence.")
             return
-        p=pyxmpp.Presence(type="subscribe",to=user)
+        p=pyxmpp.Presence(typ="subscribe",to=user)
         self.cjc.stream.send(p)
 
     def cmd_unsubscribe(self,args):
@@ -312,7 +312,7 @@ class Plugin(PluginBase):
                     " Cannot unsubscribe own presence.")
             return
 
-        p=pyxmpp.Presence(type="unsubscribe",to=user)
+        p=pyxmpp.Presence(typ="unsubscribe",to=user)
         self.cjc.stream.send(p)
 
     def cmd_cancel(self,args):
@@ -330,7 +330,7 @@ class Plugin(PluginBase):
             self.error("Self presence subscription is automatic."
                     " Cannot cancel own presence subscription.")
             return
-        p=pyxmpp.Presence(type="unsubscribed",to=user)
+        p=pyxmpp.Presence(typ="unsubscribed",to=user)
         self.cjc.stream.send(p)
 
     def set_presence(self,p):
@@ -458,7 +458,7 @@ class Plugin(PluginBase):
     def subscribe_back_decision(self,arg,accept):
         stanza,buf=arg
         if accept:
-            p=pyxmpp.Presence(type="subscribe",to=stanza.get_from())
+            p=pyxmpp.Presence(typ="subscribe",to=stanza.get_from())
             self.cjc.stream.send(p)
         buf.close()
         stanza.free()

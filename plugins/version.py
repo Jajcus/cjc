@@ -86,7 +86,7 @@ class Plugin(PluginBase):
             jids=[jid]
 
         for jid in jids:
-            iq=pyxmpp.Iq(to=jid,type="get")
+            iq=pyxmpp.Iq(to=jid,typ="get")
             q=iq.new_query("jabber:iq:version")
             self.cjc.stream.set_response_handlers(iq,self.version_response,self.version_error)
             self.cjc.stream.send(iq)
