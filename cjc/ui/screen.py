@@ -218,7 +218,7 @@ class Screen(commands.CommandHandler):
 			cmd,args=s[0],None
 		args=commands.CommandArgs(args)
 		cmd=cmd.lower()
-		if self.command_handler and self.command_handler.command(cmd,args):
+		if self.command_handler and self.command_handler(cmd,args):
 			return
 			
 	def display_buffer(self,buffer):

@@ -207,7 +207,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	def add_info_handler(self,var,handler):
 		self.info_handlers[var]=handler
 
-	def command(self,cmd,args):
+	def do_command(self,cmd,args):
 		if self.aliases.has_key(cmd):
 			newcommand=self.aliases[cmd]
 			if args.args:
@@ -226,7 +226,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			return
 		if self.screen.command(cmd,args):
 			return
-		if not commands.CommandHandler.command(self,cmd,args):
+		if not self.command(cmd,args):
 			self.error(u"Unknown command: %s" % (cmd,))
 
 	def layout_plain(self):
@@ -326,7 +326,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			pass
 		self.theme_manager.set_default_attrs(global_theme_attrs)
 		self.theme_manager.set_default_formats(global_theme_formats)
-		screen.set_command_handler(self)
+		screen.set_command_handler(self.do_command)
 		screen.set_resize_handler(self.resize_handler)
 		
 		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
