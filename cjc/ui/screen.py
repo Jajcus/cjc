@@ -249,7 +249,11 @@ class Screen(commands.CommandHandler):
 			common.print_exception()
 
 	def do_user_input(self,s):
+		if not s:
+			return
 		if not s.startswith(u"/"):
+			if s.startswith(u"\\") and s[1:2] in ("\\","/",""):
+				s=s[1:]
 			if self.active_window and self.active_window.user_input(s):
 				return
 			return
