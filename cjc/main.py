@@ -458,12 +458,17 @@ class Application(jabber.Client,tls.TLSHandler):
 		if not password:
 			self.error(u"Can't connect - password not given")
 			return
+		auth_methods=self.settings.get("auth_methods")
+		if not auth_methods:
+			self.error(u"Can't connect - auth_methods not given")
+			return
 		self.jid=jid
 		self.password=password
 		self.port=self.settings.get("port")
 		if not self.port:
 			self.port=5222
 		self.server=self.settings.get("server")
+		self.auth_methods=auth_methods
 		self.tls_init()
 		self.info(u"Connecting:")
 		try:
@@ -1131,8 +1136,10 @@ class Application(jabber.Client,tls.TLSHandler):
 			self.info("Connected to %s:%i." % (arg[0],arg[1]))
 		elif state=="authenticating":
 			self.info("Authenticating as %s..." % (arg,))
-		elif state=="authenticated":
-			self.info("Authenticated as %s." % (arg,))
+		elif state=="binding":
+			self.info("Binding to resource %s..." % (arg,))
+		elif state=="authorized":
+			self.info("Authorized as %s." % (arg,))
 		elif state=="tls connecting":
 			self.info("Doing TLS handhake with %s." % (arg,))
 			
