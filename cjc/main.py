@@ -33,65 +33,6 @@ logfile=None
 class Exit(Exception):
 	pass
 
-global_commands={
-	# command: alias
-	#    or
-	# command: (handler, usage, description)
-	#
-	# handler may be method name or any callable
-	"exit": ("cmd_quit",
-		"/exit [reason]",
-		"Exit from CJC"),
-	"quit": "exit",
-	"set": ("cmd_set",
-		"/set [setting] [value]",
-		"Changes one of the settings."
-		" Without any arguments shows all current settings."
-		" With only one argument shows description and current value of given settings."),
-	"unset": ("cmd_unset",
-		"/unset [setting]",
-		"Unsets one of settings."),
-	"connect": ("cmd_connect",
-		"/connect",
-		"Connect to a Jabber server"),
-	"disconnect": ("cmd_disconnect",
-		"/disconnect [reason]",
-		"Disconnect from a Jabber server"),
-	"save": ("cmd_save",
-		"/save [filename]",
-		"Save current settings to a file (default: ~/.cjc/config)"),
-	"load": ("cmd_load",
-		"/load [filename]",
-		"Load settings from a file (default: ~/.cjc/config)"),
-	"redraw": ("cmd_redraw",
-		"/redraw",
-		"Redraw screen"),
-	"info": ("cmd_info",
-		"/info jid",
-		"Show information known about given jid"),
-	"help": ("cmd_help",
-		"/help [command]",
-		"Show simple help"),
-	"theme": ("cmd_theme",
-		("/theme load [filename]","/theme save [filename]"),
-		"Theme management. Default theme filename is \"~/.cjc/theme\""),
-	"alias": ("cmd_alias",
-		"/alias name command [arg...]",
-		"Defines an alias for command. When the alias is used $1, $2, etc."
-		" are replaced with alias arguments."),
-	"unalias": ("cmd_unalias",
-		"/unalias name",
-		"Undefines an alias for command."),
-	"bind": ("cmd_bind",
-		"/bind [function [[table] keyname]]",
-		"Without arguments - shows current keybindings otherwise binds"
-		" given function to a key. If keyname is not given user will be"
-		" asked to press one. If a table is given only the function is bound"
-		" in that table, otherwise in all tables that define it."),
-	"unbind": ("cmd_unbind",
-		"/unbind [table] keyname",
-		"Unbinds given key."),
-}
 
 global_settings={
 	"jid": ("Jabber ID to use.",pyxmpp.JID),
@@ -161,10 +102,9 @@ global_theme_formats=(
 )
 
 
-class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
+class Application(jabber.Client,tls.TLSHandler):
 	def __init__(self,base_dir,config_file="config",theme_file="theme"):
 		jabber.Client.__init__(self)
-		commands.CommandHandler.__init__(self,global_commands)
 		self.settings={
 			"jid":self.jid,
 			"password":self.password,
@@ -202,6 +142,8 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		self.resize_request=0
 		ui.keytable.activate("default",self)
 		ui.keytable.activate("global",self)
+		commands.activate_table("global",self)
+		commands.set_default_handler(self.unknown_command)
 
 	def load_plugin(self,name):
 		self.info("  %s" % (name,))
@@ -268,9 +210,9 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 	def key_command(self,arg):
 		args=commands.CommandArgs(arg)
 		cmd=args.shift()
-		self.do_command(cmd,args)
+		commands.run_command(cmd,args)
 
-	def do_command(self,cmd,args):
+	def unknown_command(self,cmd,args):
 		if self.aliases.has_key(cmd):
 			newcommand=self.aliases[cmd]
 			if args.args:
@@ -285,12 +227,9 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 					i+=1
 			args=commands.CommandArgs(newcommand)
 			cmd=args.shift()
-		if self.screen.active_window and self.screen.active_window.command(cmd,args):
-			return
-		if self.screen.command(cmd,args):
-			return
-		if not self.command(cmd,args):
-			self.error(u"Unknown command: %s" % (cmd,))
+		commands.set_default_handler(None)
+		commands.run_command(cmd,args)
+		commands.set_default_handler(self.unknown_command)
 
 	def layout_plain(self):
 		ui.buffer.activity_handlers=[]
@@ -389,7 +328,6 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 			pass
 		self.theme_manager.set_default_attrs(global_theme_attrs)
 		self.theme_manager.set_default_formats(global_theme_formats)
-		screen.set_command_handler(self.do_command)
 		
 		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
 
@@ -880,52 +818,36 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		cmd=args.shift()
 		if not cmd:
 			self.info("Available commands:")
-			commands=self.commands()
-			if commands:
-				self.info("  Global commands:")
-				for cmd in commands:
-					self.info(u"    /"+cmd)
-			commands=self.screen.commands()
-			if commands:
-				self.info("  Screen commands:")
-				for cmd in commands:
-					self.info(u"    /"+cmd)
-			win=self.screen.active_window
-			if not win:
-				return
-			commands=win.commands()
-			if commands:
-				self.info(u"  commands for current window")
-				for cmd in commands:
-					self.info(u"    /"+cmd)
+			for tb in commands.command_tables:
+				tname=tb.name[0].upper()+tb.name[1:]
+				if tb.active:
+					active="active"
+				else:
+					active="inactive"
+				self.info("  %s commands (%s):" % (tname,active))
+				for cmd in tb.get_commands():
+					self.info(u"    /"+cmd.name)
 			return
 
 		if cmd[0]=="/":
 			cmd=cmd[1:]
+
 		try:
-			handler,usage,descr=self.get_command_info(cmd)
+			cmd=commands.lookup_command(cmd,1)
 		except KeyError:
 			try:
-				handler,usage,descr=self.screen.get_command_info(cmd)
+				cmd=commands.lookup_command(cmd,0)
 			except KeyError:
-				if self.screen.active_window:
-					win=self.screen.active_window
-					try:
-						handler,usage,descr=win.get_command_info(cmd)
-					except KeyError:
-						self.error(u"Unknown command: "+`cmd`)
-						return
-				else:
-					self.error(u"Unknown command: "+`cmd`)
-					return
-		
-		self.info("Usage:")
-		if type(usage) in (ListType,TupleType):
+				self.error(u"Unknown command: "+`cmd`)
+				return
+	
+		self.info(u"Command /%s:" % (cmd.name,))
+		if type(cmd.usage) in (ListType,TupleType):
 			for u in usage:
-				self.info(u"   "+u)
+				self.info(u"  "+u)
 		else:
-			self.info(u"   "+usage)
-		self.info(u"  "+descr)
+			self.info(u"  "+cmd.usage)
+		self.info(u"  "+cmd.descr)
 
 	def cmd_theme(self,args):
 		self.theme_manager.command(args)
@@ -991,7 +913,6 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 				p["function"]=f.name+"(<arg>)"
 			r+=self.theme_manager.format_string("keyfunction",p)
 		return r
-		
 
 	def exit_request(self,reason):
 		if self.stream:
@@ -1232,7 +1153,65 @@ global_ktb=ui.keytable.KeyTable("global",100,(
 
 ui.keytable.install(default_ktb)
 ui.keytable.install(global_ktb)
-		
+	
+from commands import Command,CommandAlias
+
+global_ctb=commands.CommandTable("global",100,(
+	Command("quit",Application.cmd_quit,
+		"/quit [reason]",
+		"Exit CJC"),
+	CommandAlias("exit","quit"),
+	Command("set",Application.cmd_set,
+		"/set [setting] [value]",
+		"Changes one of the settings."
+		" Without any arguments shows all current settings."
+		" With only one argument shows description and current value of given settings."),
+	Command("unset",Application.cmd_unset,
+		"/unset [setting]",
+		"Unsets one of settings."),
+	Command("connect",Application.cmd_connect,
+		"/connect",
+		"Connect to a Jabber server"),
+	Command("disconnect",Application.cmd_disconnect,
+		"/disconnect [reason]",
+		"Disconnect from a Jabber server"),
+	Command("save",Application.cmd_save,
+		"/save [filename]",
+		"Save current settings to a file (default: ~/.cjc/config)"),
+	Command("load",Application.cmd_load,
+		"/load [filename]",
+		"Load settings from a file (default: ~/.cjc/config)"),
+	Command("redraw",Application.cmd_redraw,
+		"/redraw",
+		"Redraw screen"),
+	Command("info",Application.cmd_info,
+		"/info jid",
+		"Show information known about given jid"),
+	Command("help",Application.cmd_help,
+		"/help [command]",
+		"Show simple help"),
+	Command("theme",Application.cmd_theme,
+		("/theme load [filename]","/theme save [filename]"),
+		"Theme management. Default theme filename is \"~/.cjc/theme\""),
+	Command("alias",Application.cmd_alias,
+		"/alias name command [arg...]",
+		"Defines an alias for command. When the alias is used $1, $2, etc."
+		" are replaced with alias arguments."),
+	Command("unalias",Application.cmd_unalias,
+		"/unalias name",
+		"Undefines an alias for command."),
+	Command("bind",Application.cmd_bind,
+		"/bind [function [[table] keyname]]",
+		"Without arguments - shows current keybindings otherwise binds"
+		" given function to a key. If keyname is not given user will be"
+		" asked to press one. If a table is given only the function is bound"
+		" in that table, otherwise in all tables that define it."),
+	Command("unbind",Application.cmd_unbind,
+		"/unbind [table] keyname",
+		"Unbinds given key."),
+	))
+commands.install_table(global_ctb)
+	
 def usage():
 	print
 	print "Console Jabber Client (c) 2003 Jacek Konieczny <jajcus@bnet.pl>"

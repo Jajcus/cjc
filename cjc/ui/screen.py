@@ -9,29 +9,8 @@ import buffer
 
 import keytable
 
-screen_commands={
-	"next": ("cmd_next",
-		"/next",
-		"Change active window to the next one"),
-	"prev": ("cmd_prev",
-		"/previous",
-		"Change active window to the previous one"),
-	"nextbuf": ("cmd_nextbuf",
-		"/nextbuf",
-		"Change buffer in active window to next available"),
-	"nb": "nextbuf",
-	"prevbuf": ("cmd_prevbuf",
-		"/nextbuf",
-		"Change buffer in active window to next available"),
-	"pb": "prevbuf",
-	"move": ("cmd_move",
-		"/move [oldnumber] number",
-		"Change buffer order"), 
-}
-
-class Screen(commands.CommandHandler):
+class Screen:
 	def __init__(self,screen):
-		commands.CommandHandler.__init__(self,screen_commands)
 		self.scr=screen
 		self.screen=self
 		self.attrs={}
@@ -41,13 +20,13 @@ class Screen(commands.CommandHandler):
 		self.active_window=None
 		self.windows=[]
 		self.input_handler=None
-		self.command_handler=None
 		self.escape=0
 		self.lock=threading.RLock()
 		lc,self.encoding=locale.getlocale()
 		if self.encoding is None:
 			self.encoding="us-ascii"
 		keytable.activate("screen",self,input_window=self.scr)
+		commands.activate_table("screen",self)
 
 	def set_background(self,char,attr):
 		self.lock.acquire()
@@ -101,9 +80,6 @@ class Screen(commands.CommandHandler):
 
 	def set_input_handler(self,h):
 		self.input_handler=h
-
-	def set_command_handler(self,h):
-		self.command_handler=h
 
 	def set_resize_handler(self,h):
 		self.resize_handler=h
@@ -266,9 +242,7 @@ class Screen(commands.CommandHandler):
 		else:
 			cmd,args=s[0],None
 		args=commands.CommandArgs(args)
-		cmd=cmd.lower()
-		if self.command_handler and self.command_handler(cmd,args):
-			return
+		commands.run_command(cmd,args)
 			
 	def display_buffer(self,buffer):
 		if buffer.window:
@@ -290,3 +264,23 @@ ktb=keytable.KeyTable("screen",20,(
 			KeyFunction("redraw-screen",Screen.redraw,"Redraw the screen","^L"),
 		))
 keytable.install(ktb)
+
+from cjc.commands import Command
+ctb=commands.CommandTable("screen",90,(
+	Command("next",Screen.cmd_next,
+		"/next",
+		"Change active window to the next one"),
+	Command("prev",Screen.cmd_prev,
+		"/previous",
+		"Change active window to the previous one"),
+	Command("nextbuf",Screen.cmd_nextbuf,
+		"/nextbuf",
+		"Change buffer in active window to next available"),
+	Command("prevbuf",Screen.cmd_prevbuf,
+		"/nextbuf",
+		"Change buffer in active window to next available"),
+	Command("move",Screen.cmd_move,
+		"/move [oldnumber] number",
+		"Change buffer order"), 
+))
+commands.install_table(ctb)

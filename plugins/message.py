@@ -6,6 +6,7 @@ import pyxmpp
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
+from cjc import commands
 
 theme_attrs=(
 	("message.subject", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -49,17 +50,11 @@ class MessageBuffer:
 		self.thread=thread
 		if peer:
 			self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{"peer":self.peer},
-									"message.descr-per-user")
+					"message.descr-per-user","message buffer",self)
 		else:
-			self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},"message.descr")
+			self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},"message.descr"
+					"messaage buffer",self)
 		self.buffer.update()
-		self.buffer.register_commands({"close": (self.cmd_close,
-							"/close",
-							"Closes current chat buffer"),
-						"reply": (self.cmd_reply,
-							"/reply [-subject subject] [text]",
-							"Reply to the last message in window"),
-						})
 		self.last_sender=None
 		self.last_subject=None
 		self.last_body=None
@@ -144,6 +139,16 @@ class MessageBuffer:
 
 		self.plugin.send_message(self.last_sender,subject,body,self.last_thread)
 
+ctb=commands.CommandTable("message buffer",50,(
+	commands.Command("close", MessageBuffer.cmd_close,
+		"/close",
+		"Closes current chat buffer"),
+	commands.Command("reply", MessageBuffer.cmd_reply,
+		"/reply [-subject subject] [text]",
+		"Reply to the last message in window"),
+	))
+commands.install_table(ctb)
+
 class Plugin(PluginBase):
 	def __init__(self,app):
 		PluginBase.__init__(self,app)
@@ -169,10 +174,6 @@ class Plugin(PluginBase):
 						"To: %(recipient)s\n"
 						"Subject: %(subject)s\n%(body)s\n",
 				}
-		app.register_commands({"message": (self.cmd_message,
-					"/message [-subject subject] nick|jid [text]",
-					"Compose or send message to given user"),
-					"msg": "message",})
 		app.add_event_handler("presence changed",self.ev_presence_changed)
 
 	def cmd_message(self,args):
@@ -335,3 +336,11 @@ class Plugin(PluginBase):
 				f.close()
 		except (IOError,OSError),e:
 			self.cjc.error("Couldn't write message log: "+str(e))
+
+ctb=commands.CommandTable("message",50,(
+	commands.Command("message",Plugin.cmd_message,
+		"/message [-subject subject] nick|jid [text]",
+		"Compose or send message to given user"),
+	commands.CommandAlias("msg","message"),
+	))
+commands.install_table(ctb)

@@ -5,6 +5,7 @@ import os
 
 import cjc.version
 from cjc.plugin import PluginBase
+from cjc import commands
 import pyxmpp
 
 class Plugin(PluginBase):
@@ -15,17 +16,13 @@ class Plugin(PluginBase):
 			"version": ("Client version to return in reply to jabber:iq:version query",str),
 			"os": ("OS name to return in reply to jabber:iq:version query",str),
 			}
-		app.register_commands({"version": (self.cmd_version,
-							"/version [jid]",
-							"Queries software version of given entity"
-							" or displays version of the client")
-						})
 		sysname,nodename,release,version,machine=os.uname()
 		self.defaults={
 				"version": cjc.version.version,
 				"name": "Console Jabber Client",
 				"os": "%s %s %s"  % (sysname,release,machine),
 			}
+		commands.activate_table("version",self)
 	
 	def session_started(self,stream):
 		self.cjc.stream.set_iq_get_handler("query","jabber:iq:version",self.version_get)
@@ -93,3 +90,12 @@ class Plugin(PluginBase):
 	def version_error(self,stanza):
 		self.error(u"Version query error from %s: %s" % (stanza.get_from(),
 						stanza.get_error().serialize()))
+
+ctb=commands.CommandTable("version",50,(
+	commands.Command("version",Plugin.cmd_version,
+		"/version [jid]",
+		"Queries software version of given entity"
+		" or displays version of the client"),
+	))
+commands.install_table(ctb)
+

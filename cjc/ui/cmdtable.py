@@ -1,6 +1,7 @@
 
 from types import StringType,IntType,UnicodeType
 import re
+import curses
 
 import common
 
@@ -21,56 +22,124 @@ def unquote(s):
 	s=quote_re.sub(ur"\1",s)
 	return s
 
-class CommandHandler:
-	def __init__(self,d=None,object=None):
-		self.command_info={}
-		self.command_aliases={}
-		if d:
-			self.register_commands(d,object)
-
-	def register_commands(self,d,object=None):
-		if object is None:
-			object=self
-		for name,info in d.items():
-			if type(info) is StringType: # alias
-				self.command_aliases[name]=info
-				continue
-			handler,usage,descr=info
-			if type(handler) is StringType:
-				handler=getattr(object,handler)
-			if not callable(handler):
-				raise TypeError,"Bad command handler"
-			self.command_info[name]=(handler,usage,descr)
-
-	def commands(self):
-		return self.command_info.keys()+self.command_aliases.keys()
-
-	def get_command_info(self,cmd):
-		if self.command_aliases.has_key(cmd):
-			cmd=self.command_aliases[cmd]
-		return self.command_info[cmd]
-
-	def command(self,cmd,args):
-		if self.command_aliases.has_key(cmd):
-			cmd=self.command_aliases[cmd]
-
-		if self.command_info.has_key(cmd):
-			try:
-				self.command_info[cmd][0](args)
-			except common.non_errors:
-				raise
-			except CommandError,e:
-				common.error(u"Command '%s' failed: %s" % (cmd,e))
-			except Exception,e:
-				common.error("Comand execution failed: "+str(e))
-				common.print_exception()
-			return 1
-		else:
-			return 0
-
-
 class CommandError(ValueError):
 	pass
+
+class Command:
+	def __init__(self,name,handler,usage,descr,hints=None):
+		self.name=name
+		self.handler=handler
+		self.usage=usage
+		self.descr=descr
+		self.hints=hints
+	def run(self,object,args):
+		try:
+			return self.handler(object,args)
+		except common.non_errors:
+			raise
+		except:
+			common.print_exception()
+
+class CommandAlias:
+	def __init__(self,name,cmd):
+		self.name=name
+		self.cmd=cmd
+
+class CommandTable:
+	def __init__(self,name,priority,commands):
+		self.name=name
+		self.priority=priority
+		self.commands={}
+		for c in commands:
+			if isinstance(c,CommandAlias):
+				self.commands[c.name]=self.commands[c.cmd]	
+			else:
+				self.commands[c.name]=c	
+		self.object=None
+		self.active=0
+		
+	def __repr__(self):
+		if self.active:
+			act="active "
+		else:
+			act=""
+		return "<CommandTable %r %sprio=%r>" % (self.name,act,self.priority)
+
+	def has_command(self,cmd):
+		return self.commands.has_key(cmd)
+
+	def lookup_command(self,cmd):
+		return self.commands[cmd]
+	
+	def run_command(self,cmd,args):
+		return self.commands[cmd].run(self.object,args)
+
+	def get_commands(self):
+		l=self.commands.items()
+		l.sort()
+		return [i[1] for i in l if i[0]==i[1].name]
+
+command_tables=[]
+def install_table(command_table):
+	pos=len(command_tables)
+	for i in range(0,len(command_tables)):
+		if command_table.priority>command_tables[i].priority:
+			pos=i
+			break
+	command_tables.insert(pos,command_table)
+
+def lookup_table(name):
+	for t in command_tables:
+		if t.name==name:
+			return t
+	raise KeyError,name
+
+def activate_table(name,object):
+	table=lookup_table(name)
+	table.active=1
+	table.object=object
+
+def deactivate_table(name,object=None):
+	table=lookup_table(name)
+	if object and table.object!=object:
+		return
+	table.active=0
+	table.object=None
+
+def lookup_command(name,active_only=0):
+	for ctb in command_tables:
+		if active_only and not ctb.active:
+			continue
+		try:
+			return ctb.lookup_command(name)
+		except KeyError:
+			pass
+	raise KeyError,name
+
+def run_command(cmd,args=None):
+	if args is None:
+		args=CommandArgs(cmd)
+		cmd=args.shift()
+	cmd=cmd.lower()
+	for t in command_tables:
+		if not t.active:
+			continue
+		try:
+			return t.run_command(cmd,args)
+		except KeyError:
+			continue
+	if default_handler:
+		return default_handler(cmd,args)
+	common.error("Unknown command: "+cmd)
+	try:
+		curses.beep()
+	except curses.error:
+		pass
+
+default_handler=None
+def set_default_handler(handler):
+	global default_handler
+	default_handler=handler
 
 class CommandArgs:
 	def __init__(self,args=None):

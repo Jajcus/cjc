@@ -7,8 +7,9 @@ from cjc import common
 import keytable
 
 class TextBuffer(Buffer):
-	def __init__(self,theme_manager,info,descr_format="default_buffer_descr",length=200):
-		Buffer.__init__(self,info,descr_format)
+	def __init__(self,theme_manager,info,descr_format="default_buffer_descr",
+				command_table=None,command_table_object=None,length=200):
+		Buffer.__init__(self,info,descr_format,command_table,command_table_object)
 		self.theme_manager=theme_manager
 		self.length=length
 		self.lines=[]

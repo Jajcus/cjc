@@ -5,6 +5,7 @@ import pyxmpp
 
 from cjc.plugin import PluginBase
 from cjc import ui
+from cjc import commands
 
 theme_formats=(
 	("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is available\n"),
@@ -17,35 +18,6 @@ theme_formats=(
 	("presence.subscribed","%[info][%(T:timestamp)s] %(J:user)s accepted your presence subscription request\n"),
 	("presence.unsubscribed","%[info][%(T:timestamp)s] %(J:user)s denied your presence subscription\n"),
 )
-
-commands={
-	"online": ("cmd_online",
-		"/online [reason]",
-		"Set availability to 'online' with optional reason"),
-	"back": "online",
-	"away": ("cmd_away",
-		"/away [reason]",
-		"Set availability to 'away' with optional reason"),
-	"xa": ("cmd_xa",
-		"/xa [reason]",
-		"Set availability to 'extended away' with optional reason"),
-	"dnd": ("cmd_dnd",
-		"/dnd [reason]",
-		"Set availability to 'do not disturb' with optional reason"),
-	"busy": "dnd",
-	"chatready": ("cmd_chatready",
-		"/chatready [reason]",
-		"Set availability to 'ready for a chat' with optional reason"),
-	"subscribe": ("cmd_subscribe",
-		"/subscribe user",
-		"Subscribe to user's presence"),
-	"unsubscribe": ("cmd_unsubscribe",
-		"/unsubscribe user",
-		"Unsubscribe from user's presence (this doesn't remove user from roster)"),
-	"cancel": ("cmd_cancel",
-		"/cancel user",
-		"Cancel user's subscription to your presence"),
-	}
 
 class Plugin(PluginBase):
 	def __init__(self,app):
@@ -74,7 +46,7 @@ class Plugin(PluginBase):
 		app.add_info_handler("presence",self.info_presence)
 		app.add_event_handler("disconnect request",self.ev_disconnect_request)
 		app.add_event_handler("idle",self.ev_idle)
-		app.register_commands(commands,self)
+		commands.activate_table("presence",self)
 		self.away_saved_presence=None
 
 	def info_resources(self,k,v):
@@ -418,3 +390,35 @@ class Plugin(PluginBase):
 		self.cjc.status_buf.append_themed("presence.%s" % (typ,),{"user":fr})
 		p=stanza.make_accept_response()
 		self.cjc.stream.send(p)
+
+ctb=commands.CommandTable("presence",50,(
+	commands.Command("online",Plugin.cmd_online,
+		"/online [reason]",
+		"Set availability to 'online' with optional reason"),
+	commands.CommandAlias("back","online"),
+	commands.Command("away",Plugin.cmd_away,
+		"/away [reason]",
+		"Set availability to 'away' with optional reason"),
+	commands.Command("xa",Plugin.cmd_xa,
+		"/xa [reason]",
+		"Set availability to 'extended away' with optional reason"),
+	commands.Command("dnd",Plugin.cmd_dnd,
+		"/dnd [reason]",
+		"Set availability to 'do not disturb' with optional reason"),
+	commands.CommandAlias("busy","dnd"),
+	commands.Command("chatready",Plugin.cmd_chatready,
+		"/chatready [reason]",
+		"Set availability to 'ready for a chat' with optional reason"),
+	commands.Command("subscribe",Plugin.cmd_subscribe,
+		"/subscribe user",
+		"Subscribe to user's presence"),
+	commands.Command("unsubscribe",Plugin.cmd_unsubscribe,
+		"/unsubscribe user",
+		"Unsubscribe from user's presence (this doesn't remove user from roster)"),
+	commands.Command("cancel",Plugin.cmd_cancel,
+		"/cancel user",
+		"Cancel user's subscription to your presence"),
+	))
+commands.install_table(ctb)
+
+

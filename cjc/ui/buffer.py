@@ -2,16 +2,18 @@
 import threading
 from types import StringType,UnicodeType
 
-from cjc.commands import CommandHandler
+from cjc import commands
 from cjc import common
 from input import InputError
 
 buffer_list=[]
 activity_handlers=[]
 
-class Buffer(CommandHandler):
-	def __init__(self,info,descr_format="default_buffer_descr"):
-		CommandHandler.__init__(self)
+class Buffer:
+	def __init__(self,info,descr_format="default_buffer_descr",
+			command_table=None,command_table_object=None):
+		self.command_table=command_table
+		self.command_table_object=command_table_object
 		try:
 			buffer_list[buffer_list.index(None)]=self
 		except ValueError:
@@ -39,6 +41,13 @@ class Buffer(CommandHandler):
 			self.window=win
 			if win:
 				self.activity(0)
+			if self.command_table:
+				if win:
+					commands.activate_table(self.command_table,
+							self.command_table_object)
+				else:
+					commands.deactivate_table(self.command_table,
+							self.command_table_object)
 		finally:
 			self.lock.release()
 

@@ -10,8 +10,9 @@ class ListBufferError(StandardError):
 	pass
 
 class ListBuffer(Buffer):
-	def __init__(self,theme_manager,name):
-		Buffer.__init__(self,name)
+	def __init__(self,theme_manager,name,command_table=None,command_table_object=None):
+		Buffer.__init__(self,name,command_table=command_table,
+				command_table_object=command_table_object)
 		self.theme_manager=theme_manager
 		self.keys=[]
 		self.items=[]

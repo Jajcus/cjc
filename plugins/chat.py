@@ -6,6 +6,7 @@ import pyxmpp
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
+from cjc import commands
 
 theme_attrs=(
 	("chat.me", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -37,18 +38,11 @@ class Conversation:
 			"peer":self.peer,
 			"jid":self.me,
 		}
-		self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,self.fparams,"chat.descr")
+		self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,self.fparams,"chat.descr",
+				"chat buffer",self)
 		self.buffer.user_input=self.user_input
 		self.buffer.append_themed("chat.started",self.fparams)
 		self.buffer.update()
-		self.buffer.register_commands({"me": (self.cmd_me,
-							"/me text",
-							"Sends /me text")
-						,
-						"close": (self.cmd_close,
-							"/close",
-							"Closes current chat buffer")
-						})
 		
 	def add_msg(self,s,format,who):
 		self.fparams["jid"]=who
@@ -107,6 +101,16 @@ class Conversation:
 		self.buffer.close()
 		return 1
 
+conv_ctb=commands.CommandTable("chat buffer",50,(
+	commands.Command("me",Conversation.cmd_me,
+		"/me text",
+		"Sends /me text"),
+	commands.Command("close",Conversation.cmd_close,
+		"/close",
+		"Closes current chat buffer"),
+	))
+commands.install_table(conv_ctb)
+
 class Plugin(PluginBase):
 	def __init__(self,app):
 		PluginBase.__init__(self,app)
@@ -124,11 +128,8 @@ class Plugin(PluginBase):
 				"log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
 				"log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
 				}
-		app.register_commands({"chat": (self.cmd_chat,
-					"/chat nick|jid [text]",
-					"Start chat with given user")
-					})
 		app.add_event_handler("presence changed",self.ev_presence_changed)
+		commands.activate_table("chat",self)
 
 	def cmd_chat(self,args):
 		peer=args.shift()
@@ -261,3 +262,10 @@ class Plugin(PluginBase):
 				f.close()
 		except (IOError,OSError),e:
 			self.cjc.error("Couldn't write chat log: "+str(e))
+
+ctb=commands.CommandTable("chat",51,(
+	commands.Command("chat",Plugin.cmd_chat,
+		"/chat nick|jid [text]",
+		"Start chat with given user"),
+	))
+commands.install_table(ctb)

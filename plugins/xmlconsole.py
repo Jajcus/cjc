@@ -7,6 +7,7 @@ import pyxmpp
 from pyxmpp.utils import from_utf8,to_utf8
 
 from cjc.plugin import PluginBase
+from cjc import commands
 from cjc import ui
 
 theme_attrs=(
@@ -19,15 +20,6 @@ theme_formats=(
 	("xmlconsole.in","%[xmlconsole.in][%(T:now)s] IN: %(msg)s\n"),
 	("xmlconsole.descr","Raw XML console"),
 )
-
-commands={
-	"xmlconsole": ("cmd_xmlconsole",
-		"/xmlconsole",
-		"Open raw XML console"),
-	"rawxml": ("cmd_rawxml",
-		"/rawxml xmlstring",
-		"Send raw xml element"),
-	}
 
 class Plugin(PluginBase):
 	def __init__(self,app):
@@ -44,7 +36,7 @@ class Plugin(PluginBase):
 			}
 		app.add_event_handler("stream created",self.ev_stream_created)
 		app.add_event_handler("stream closed",self.ev_stream_closed)
-		app.register_commands(commands,self)
+		commands.activate_table("xmlconsole",self)
 		self.away_saved_presence=None
 		self.buffer=None
 		self.saved_data_in_cb=None
@@ -99,13 +91,10 @@ class Plugin(PluginBase):
 		if self.buffer:
 			self.cjc.screen.display_buffer(self.buffer)
 			return
-		self.buffer=ui.TextBuffer(self.cjc.theme_manager,{},"xmlconsole.descr")
+		self.buffer=ui.TextBuffer(self.cjc.theme_manager,{},"xmlconsole.descr",
+				"xmlconsole buffer",self)
 		self.buffer.user_input=self.user_input
 		self.buffer.update()
-		self.buffer.register_commands({"close": (self.cmd_close,
-							"/close",
-							"Closes current chat buffer")
-						})
 		if self.cjc.stream:
 			self.setup_stream_callbacks(self.cjc.stream)
 		self.cjc.screen.display_buffer(self.buffer)
@@ -142,3 +131,21 @@ class Plugin(PluginBase):
 		if self.saved_data_in_cb:
 			self.saved_data_out_cb(data)
 		self.show_data(data,"out")
+
+ctb=commands.CommandTable("xmlconsole buffer",51,(
+	commands.Command("close",Plugin.cmd_close,
+		"/close",
+		"Closes current chat buffer"),
+	))
+commands.install_table(ctb)
+
+ctb=commands.CommandTable("xmlconsole",51,(
+	commands.Command("xmlconsole",Plugin.cmd_xmlconsole,
+		"/xmlconsole",
+		"Open raw XML console"),
+	commands.Command("rawxml",Plugin.cmd_rawxml,
+		"/rawxml xmlstring",
+		"Send raw xml element"),
+	))
+commands.install_table(ctb)
+

@@ -6,13 +6,12 @@ import keytable
 from widget import Widget
 from status_bar import StatusBar
 from cjc import common
-from cjc.commands import CommandHandler
+from cjc import commands
 
 control_re=re.compile("[\x00-\x1f\x7f]",re.UNICODE)
 
-class Window(Widget,CommandHandler):
+class Window(Widget):
 	def __init__(self,theme_manager,title,lock=0):
-		CommandHandler.__init__(self)
 		Widget.__init__(self)
 		self.buffer=None
 		self.title=title
@@ -21,7 +20,6 @@ class Window(Widget,CommandHandler):
 		self.active=0
 		d=self.get_status_dict()
 		self.status_bar=StatusBar(theme_manager,"window_status",d)
-		self.register_commands({"clear":("cmd_clear","/clear","Clears current window")})
 
 	def get_status_dict(self):
 		if self.locked:
@@ -131,10 +129,12 @@ class Window(Widget,CommandHandler):
 			self.active=1
 			a="*"
 			keytable.activate("window",self)
+			commands.activate_table("window",self)
 		else:
 			self.active=0
 			a=""
 			keytable.deactivate("window")
+			commands.deactivate_table("window",self)
 		d=self.status_bar.get_dict()
 		d["active"]=a
 		if self.screen:
@@ -297,3 +297,9 @@ ktb=keytable.KeyTable("window",60,(
 		KeyBinding("switch-to-buffer(0)","M-0"),
 	))
 keytable.install(ktb)
+
+from cjc.commands import Command
+ctb=commands.CommandTable("window",80,(
+	Command("clear",Window.cmd_clear,"/clear","Clears current window"),
+))
+commands.install_table(ctb)
