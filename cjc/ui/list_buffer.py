@@ -242,6 +242,15 @@ class ListBuffer(Buffer):
             self.lock.release()
         return ret
 
+    def dump_content(self):
+        self.lock.acquire()
+        try:
+            dump="List buffer dump of %r:\n" % (self.info["buffer_name"],)
+            for i in range(0,len(self.items)):
+                dump+="%5i. %r: %r\n" % (i,self.keys[i],self.items[i])
+        finally:
+            self.lock.release()
+        self.__logger.debug("%s",dump)
 
 from keytable import KeyFunction
 ktb=keytable.KeyTable("list-buffer",30,(
@@ -253,6 +262,10 @@ ktb=keytable.KeyTable("list-buffer",30,(
                 ListBuffer.page_down,
                 "Scroll buffer one page down",
                 "NPAGE"),
+        KeyFunction("dump-content",
+                ListBuffer.dump_content,
+                "Dump buffer content to the debug output",
+                "M-d"),
         ))
 
 keytable.install(ktb)
