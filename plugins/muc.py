@@ -379,7 +379,7 @@ class Plugin(PluginBase):
         if rs and rs.joined:
             room_handler=rs.handler
         else:
-            room_handler=Room(self,room_jid,self.cjc.me.jid)
+            room_handler=Room(self,room_jid,self.cjc.stream.me)
             self.room_manager.join(room_jid,nick,room_handler)
         self.cjc.screen.display_buffer(room_handler.buffer)
 
