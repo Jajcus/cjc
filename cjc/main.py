@@ -110,6 +110,7 @@ global_settings={
 	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
 	"autoconnect": ("Automatically connect on startup.",int),
 	"keepalive": ("Keep-alive interval in seconds (0 to disable).",int),
+	"backup_config": ("Save backup of previous config file when saving.",int),
 	"debug": ("Display some debuging information in status window.",int),
 }
 
@@ -175,6 +176,7 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 			"tls_enable":1,
 			"tls_require":0,
 			"keepalive":15*60,
+			"backup_config":0,
 			"debug":0}
 		self.aliases={}
 		self.available_settings=global_settings
@@ -746,8 +748,9 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		if not os.path.split(filename)[0]:
 			filename=os.path.join(self.home_dir,filename)
 		self.info(u"Saving settings to "+filename)
+		tmpfilename=filename+".tmp"
 		try:
-			f=file(filename,"w")
+			f=file(tmpfilename,"w")
 		except IOError,e:
 			self.error(u"Couldn't open config file: "+str(e))
 			return 0
@@ -785,6 +788,14 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 				else:
 					print >>f,"unbind",table.name,keyname
 
+		if os.path.exists(filename):
+			bakfilename=filename+".bak"
+			if os.path.exists(bakfilename):
+				os.unlink(bakfilename)
+			os.rename(filename,bakfilename)
+		os.rename(tmpfilename,filename)
+		if not self.settings["backup_config"]:
+			os.unlink(bakfilename)
 		return 1
 
 	def cmd_load(self,args):
