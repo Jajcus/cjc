@@ -135,7 +135,7 @@ class TextBuffer(Buffer):
 				return 0,0
 
 		if c>0:
-			left,right=self.split_line(self.lines[l],c)
+			left,right=self.split_text(self.lines[l],c)
 			l+=1
 			ln=self.line_length(right)
 			forward-=ln/width+1
