@@ -444,9 +444,9 @@ class Plugin(PluginBase):
 
 ui.CommandTable("muc",50,(
     ui.Command("join",Plugin.cmd_join,
-        "/join room_jid",
+        "/join [-nick nick] room_jid",
         "Join given Multi User Conference room",
-        ("jid")),
+        ("-nick opaque","jid")),
     ui.Command("leave",Plugin.cmd_leave,
         "/leave room_jid",
         "Leave given Multi User Conference room",
