@@ -4,7 +4,6 @@ import libxml2
 import time
 import traceback
 import sys,os
-import select
 import string
 from types import StringType,UnicodeType,IntType,ListType,TupleType,TypeType
 import locale
