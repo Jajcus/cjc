@@ -1,5 +1,12 @@
 2004-09-09  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/python.py:
+	- updated for the recent logging/output changes
+	- debug(), info(), warning() and error() functions installed in the
+	 script's namespace
+	- Application object available as "cjc" in the script's namespace
+	- help message improved
+
 	* cjc/ui/screen.py:
 	- don't panic on bad arguments to /move
 
