@@ -15,10 +15,17 @@ theme_attrs=(
 )
 
 theme_formats=(
+    ("muc.nick","%(role?moderator:@,visitor:-,)s%(nick)s"),
+    ("muc.userinfo","%(affiliation?none:, (%(affiliation)s))s%(role?participant:, (%(role)s))s%(real_jid? (JID: %(real_jid)s))s"),
+    ("muc.nickinfo","%(nick)s%{@muc.userinfo}"),
     ("muc.joining","[%(T:timestamp)s] %[muc.info]* Joining MUC room %(room)s...\n"),
-    ("muc.me","[%(T:timestamp)s] %[muc.me]<%(role?moderator:@,visitor:-,)s%(nick)s>%[] %(msg)s\n"),
-    ("muc.other","[%(T:timestamp)s] %[muc.other]<%(role?moderator:@,visitor:-,)s%(nick)s>%[] %(msg)s\n"),
-    ("muc.action","[%(T:timestamp)s] %[muc.info]* %(nick)s %(msg)s\n"),
+    ("muc.me","[%(T:timestamp)s] %[muc.me]<%{@muc.nick}>%[] %(msg)s\n"),
+    ("muc.other","[%(T:timestamp)s] %[muc.other]<%{@muc.nick}>%[] %(msg)s\n"),
+    ("muc.action","[%(T:timestamp)s] %[muc.info]* %{@muc.nick} %(msg)s\n"),
+    ("muc.joined","[%(T:timestamp)s] %[muc.info]* %{@muc.nickinfo} has entered the room\n"),
+    ("muc.me_joined","[%(T:timestamp)s] %[muc.info]* You%{@muc.userinfo} have entered the room\n"),
+    ("muc.left","[%(T:timestamp)s] %[muc.info]* %{@muc.nickinfo} has left the room\n"),
+    ("muc.me_left","[%(T:timestamp)s] %[muc.info]* You%{@muc.userinfo} have left the room\n"),
     ("muc.info","[%(T:timestamp)s] %[muc.info]* %(msg)s\n"),
     ("muc.descr","Conference on %(J:room:bare)s"),
 )
@@ -77,7 +84,10 @@ class Room(muc.MucRoomHandler):
         self.buffer.update()
 
     def subject_changed(self,user,stanza):
-        fparams=dict(self.fparams)
+        if user:
+            fparams=self.user_format_params(user)
+        else:
+            fparams=dict(self.fparams)
         if user:
             fparams["msg"]=(u"%s has changed the subject to: %s" 
                     % (user.nick,self.room_state.subject))
@@ -92,28 +102,26 @@ class Room(muc.MucRoomHandler):
         return
 
     def user_joined(self,user,stanza):
-        fparams=dict(self.fparams)
-        if user.same_as(self.room_state.me):
-            fparams["msg"]=u"You have entered the room."
-        else:
-            fparams["msg"]=(u"%s has entered the room." % (user.nick,))
+        fparams=self.user_format_params(user)
         d=delay.get_delay(stanza)
         if d:
             fparams["timestamp"]=d.datetime_local()
-        self.buffer.append_themed("muc.info",fparams)
+        if user.same_as(self.room_state.me):
+            self.buffer.append_themed("muc.me_joined",fparams)
+        else:
+            self.buffer.append_themed("muc.joined",fparams)
         self.buffer.update()
         return
  
     def user_left(self,user,stanza):
-        fparams=dict(self.fparams)
-        if user.same_as(self.room_state.me):
-            fparams["msg"]=u"You have left the room."
-        else:
-            fparams["msg"]=(u"%s has left the room." % (user.nick,))
+        fparams=self.user_format_params(user)
         d=delay.get_delay(stanza)
         if d:
             fparams["timestamp"]=d.datetime_local()
-        self.buffer.append_themed("muc.info",fparams)
+        if user.same_as(self.room_state.me):
+            self.buffer.append_themed("muc.me_left",fparams)
+        else:
+            self.buffer.append_themed("muc.left",fparams)
         self.buffer.update()
         return
             
