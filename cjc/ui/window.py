@@ -5,11 +5,13 @@ import buffer
 from widget import Widget
 from status_bar import StatusBar
 from cjc import common
+from cjc.commands import CommandHandler
 
 control_re=re.compile("[\x00-\x1f\x7f]",re.UNICODE)
 
-class Window(Widget):
+class Window(Widget,CommandHandler):
 	def __init__(self,theme_manager,title,lock=0):
+		CommandHandler.__init__(self)
 		Widget.__init__(self)
 		self.buffer=None
 		self.title=title
@@ -18,6 +20,7 @@ class Window(Widget):
 		self.active=0
 		d=self.get_status_dict()
 		self.status_bar=StatusBar(theme_manager,"window_status",d)
+		self.register_commands({"clear":("cmd_clear","/clear","Clears current window")})
 
 	def get_status_dict(self):
 		if self.locked:
@@ -60,25 +63,26 @@ class Window(Widget):
 
 	def commands(self):
 		if self.buffer:
-			return self.buffer.commands()
+			return self.buffer.commands()+CommandHandler.commands(self)
 		else:
-			return []
+			return CommandHandler.commands(self)
 		
 	def get_command_info(self,cmd):
-		if cmd=="clear":
-			return ("cmd_clear","/clear","Clears current window")
-		elif self.buffer:
-			return self.buffer.get_command_info(cmd)
-		raise KeyError,cmd
+		if self.buffer:
+			try:
+				return self.buffer.get_command_info(cmd)
+			except KeyError:
+				pass
+		return CommandHandler.get_command_info(self,cmd)
 
 	def command(self,cmd,args):
-		if cmd=="clear":
-			self.cmd_clear(args)
-			return 1
-		elif self.buffer:
-			return self.buffer.command(cmd,args)
-		else:
-			return 0
+		if self.buffer:
+			try:
+				if self.buffer.command(cmd,args):
+					return
+			except KeyError:
+				pass
+		return CommandHandler.command(self,cmd,args)
 
 	def cmd_clear(self,args):
 		args.finish()
