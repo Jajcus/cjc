@@ -46,11 +46,10 @@ if os.path.exists(os.path.join(base_dir,"CVS/Entries")):
 
 from cjc import main
 
-if sys.argv[1]=="--profile":
+if len(sys.argv)>1 and sys.argv[1]=="--profile":
     sys.argv[1:]=sys.argv[2:]
     import profile
-    #profile.run("main.main(base_dir,profile=True)","cjc.prof")
-    main.main(base_dir,profile=True)
+    profile.run("main.main(base_dir,profile=True)","cjc.prof")
 else:
     main.main(base_dir)
 
