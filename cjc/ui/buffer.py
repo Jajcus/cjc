@@ -37,11 +37,16 @@ class Buffer(CommandHandler):
 			i=n
 			while i>0:
 				i-=1
-				if buffer_list[i]:
+				if buffer_list[i] and not buffer_list[i].window:
 					common.debug("Setting window's buffer to "+`buffer_list[i]`)
 					window.set_buffer(buffer_list[i])
+					window.update()
+					window=None
 					break
-			window.update()
+			if window:
+				window.set_buffer(None)
+				window.update()
+				window=None
 		buffer_list[n]=None
 		for f in activity_handlers:
 			f()
