@@ -1,6 +1,23 @@
 import string
-from cjc.plugin import PluginBase
+import curses
+
 import pyxmpp
+
+from cjc.plugin import PluginBase
+
+theme_attrs=(
+	("roster.available_", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
+	("roster.available_away", curses.COLOR_BLUE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("roster.available_xa", curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("roster.available_chat", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("roster.unavailable", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
+)
+
+theme_formats=(
+	("roster.group", "%(group)s:\n"),
+	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)\n"),
+	("roster.available", "%[roster.available_%(show)s] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)\n"),
+)
 
 class Plugin(PluginBase):
 	def __init__(self,app):
@@ -14,6 +31,8 @@ class Plugin(PluginBase):
 		app.add_info_handler("rostergroups",self.info_rostergroups)
 		app.add_event_handler("roster updated",self.ev_roster_updated)
 		app.add_event_handler("presence changed",self.ev_presence_changed)
+		app.theme_manager.set_default_attrs(theme_attrs)
+		app.theme_manager.set_default_formats(theme_formats)
 
 	def info_rostername(self,k,v):
 		if not v:
@@ -42,33 +61,39 @@ class Plugin(PluginBase):
 			self.cjc.set_user_info(jid,"rostername",name)
 		else:
 			self.cjc.set_bare_user_info(jid,"rostername",name)
-		p=self.cjc.get_user_info(jid,"presence")
-		if not p or p.get_type() and p.get_type()!="available":
-			attr="unavailable"
+		p={"name":name,"jid":jid}
+		pr=self.cjc.get_user_info(jid,"presence")
+		if not pr or pr.get_type() and pr.get_type()!="available":
+			available=0
 		else:
-			show=p.get_show()
-			if show in ("chat","away","xa"):
-				attr=show
-			else:
-				attr="online"
+			available=1
+			show=pr.get_show()
+			if not show:
+				show=""
+			p["show"]=show
 		ask=item.ask()
+		p["ask"]=ask
 		if not ask:
-			aflag=" "
+			p["aflag"]=" "
 		elif ask=="unsubscribe":
-			aflag="-"
+			p["aflag"]="-"
 		else:
-			aflag="?"
+			p["aflag"]="?"
 		subs=item.subscription()
+		p["subscription"]=subs
 		if subs=="both":
-			sflag=" "
+			p["sflag"]=" "
 		elif subs=="from":
-			sflag="<"
+			p["sflag"]="<"
 		elif subs=="to":
-			sflag=">"
+			p["sflag"]=">"
 		else:
-			sflag="-"
-		self.cjc.roster_buf.append_line(u"%c%c%s (%s)" % (
-					aflag,sflag,name,jid.as_unicode()),attr)
+			p["sflag"]="-"
+			
+		if available:
+			self.cjc.roster_buf.append_themed("roster.available",p)
+		else:
+			self.cjc.roster_buf.append_themed("roster.unavailable",p)
 
 	def update(self):
 		self.cjc.roster_buf.clear()
@@ -76,9 +101,10 @@ class Plugin(PluginBase):
 		groups.sort()
 		for group in groups:
 			if group:
-				self.cjc.roster_buf.append(group+u":\n","default")
+				p={"group":group}
 			else:
-				self.cjc.roster_buf.append(u"unfiled:\n","default")
+				p={"group":"unfiled"}
+			self.cjc.roster_buf.append_themed("roster.group",p)
 			for item in self.cjc.roster.items_by_group(group):
 				self.write_item(item)
 		self.cjc.roster_buf.redraw()
