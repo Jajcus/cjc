@@ -69,7 +69,8 @@ class Plugin(PluginBase):
 					})
 
 	def cmd_chat(self,args):
-		if not args:
+		peer=args.shift()
+		if not peer:
 			self.error("/chat without arguments")
 			return
 			
@@ -77,8 +78,7 @@ class Plugin(PluginBase):
 			self.error("Connect first!")
 			return
 			
-		args=args.split(None,1)
-		peer=self.cjc.get_user(args[0])
+		peer=self.cjc.get_user(peer)
 		if peer is None:
 			return
 
@@ -89,8 +89,8 @@ class Plugin(PluginBase):
 		else:
 			self.conversations[key]=[conversation]
 
-		if len(args)==2:
-			conversation.user_input(args[1])
+		if args.all():
+			conversation.user_input(args.all())
 			
 		self.cjc.screen.display_buffer(conversation.buffer)
 

@@ -36,7 +36,8 @@ class Plugin(PluginBase):
 		return "%(name)s/%(version)s (%(os)s)" % d
 
 	def cmd_version(self,args):
-		if not args:
+		target=args.shift()
+		if not target:
 			self.info(self.version_string())
 			return
 		
@@ -44,7 +45,7 @@ class Plugin(PluginBase):
 			self.error("Connect first!")
 			return
 			
-		jid=self.cjc.get_user(args)
+		jid=self.cjc.get_user(target)
 		if jid is None:
 			return
 

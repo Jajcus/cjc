@@ -6,6 +6,8 @@ import curses
 import curses.textpad
 import traceback
 
+import command_args
+
 def debug(s):
 	print >>sys.stderr,"DEBUG:",s
 		
@@ -53,6 +55,8 @@ class CommandHandler:
 				self.command_info[cmd][0](args)
 			except KeyboardInterrupt:
 				raise
+			except command_args.CommandError,e:
+				error(u"Command '%s' failed: %s" % (cmd,e))
 			except StandardError,e:
 				error("Comand execution failed: "+str(e))
 				print_exception()
@@ -776,11 +780,20 @@ class Screen(CommandHandler):
 		self.make_attr("bar",
 				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_STANDOUT,
 				curses.A_STANDOUT)
-		self.make_attr("available",
+		self.make_attr("online",
+				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_BOLD,
+				curses.A_BOLD)
+		self.make_attr("away",
+				curses.COLOR_BLUE,curses.COLOR_BLACK,curses.A_NORMAL,
+				curses.A_BOLD)
+		self.make_attr("xa",
+				curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL,
+				curses.A_BOLD)
+		self.make_attr("chat",
 				curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL,
-				curses.A_NORMAL)
+				curses.A_BOLD)
 		self.make_attr("unavailable",
-				curses.COLOR_RED,curses.COLOR_BLACK,curses.A_NORMAL,
+				curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL,
 				curses.A_NORMAL)
 		self.scr.bkgdset(ord(" "),self.attrs["default"])
 		
@@ -925,6 +938,7 @@ class Screen(CommandHandler):
 			cmd,args=s
 		else:
 			cmd,args=s[0],None
+		args=command_args.CommandArgs(args)
 		cmd=cmd.lower()
 		if self.active_window and self.active_window.command(cmd,args):
 			return
