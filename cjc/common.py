@@ -1,8 +1,9 @@
 import sys
 import traceback
 import curses,socket
+import libxml2
 
-standard_errors=StandardError,curses.error,socket.error
+standard_errors=StandardError,curses.error,socket.error,libxml2.treeError
 
 def debug(s):
 	print >>sys.stderr,"DEBUG:",s
