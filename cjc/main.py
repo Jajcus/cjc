@@ -32,7 +32,8 @@ import datetime
 import logging
 import logging.config
 
-import pyxmpp
+import pyxmpp.all
+import pyxmpp.jabber.all
 from pyxmpp import jabber
 
 from cjc import cjclogging
