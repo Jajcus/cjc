@@ -102,7 +102,8 @@ global_theme_formats=(
 
 
 class Application(jabber.Client,tls.TLSHandler):
-    def __init__(self,base_dir,config_file="default",theme_file="theme"):
+    def __init__(self,base_dir,config_file="default",theme_file="theme",profile=False):
+        self.profile=profile
         jabber.Client.__init__(self)
         self.settings={
             "jid":self.jid,
@@ -366,9 +367,17 @@ class Application(jabber.Client,tls.TLSHandler):
             self.info("PgUp/PgDown to scroll window content")
 
         self.update_status_bars()
-        self.ui_thread=threading.Thread(None,self.ui_loop,"UI")
+        if self.profile:
+            self.info("Running UI thread under profiler")
+            self.ui_thread=threading.Thread(None,self.ui_loop_prof,"UI")
+        else:
+            self.ui_thread=threading.Thread(None,self.ui_loop,"UI")
         self.ui_thread.setDaemon(1)
-        self.stream_thread=threading.Thread(None,self.stream_loop,"Stream")
+        if self.profile:
+            self.info("Running Stream thread under profiler")
+            self.stream_thread=threading.Thread(None,self.stream_loop_prof,"Stream")
+        else:
+            self.stream_thread=threading.Thread(None,self.stream_loop,"Stream")
         self.stream_thread.setDaemon(1)
 
         self.ui_thread.start()
@@ -991,6 +1000,13 @@ class Application(jabber.Client,tls.TLSHandler):
             return 1
         return 0
 
+    def ui_loop_prof(self):
+        import profile
+        p=profile.Profile()
+        p.runcall(self.ui_loop)
+        p.create_stats()
+        p.dump_stats("cjc-ui.prof")
+        
     def ui_loop(self):
         last_active=time.time()
         idle=0
@@ -1012,6 +1028,13 @@ class Application(jabber.Client,tls.TLSHandler):
                     self.send_event("idle",idle)
         if logfile:
             print >>logfile,"UI loop exiting"
+
+    def stream_loop_prof(self):
+        import profile
+        p=profile.Profile()
+        p.runcall(self.stream_loop)
+        p.create_stats()
+        p.dump_stats("cjc-stream.prof")
 
     def stream_loop(self):
         while not self.exit_time():
@@ -1302,8 +1325,10 @@ def usage():
     print "  --log-file=filename      File where debug log should be written"
     print "  -L filename"
     print "  --append-log-file=filename  File where debug log should be appended"
+    print "  -P"
+    print "  --profile                Write profiling statistics"
 
-def main(base_dir):
+def main(base_dir,profile=False):
     global logfile
     libxml2.debugMemory(1)
     locale.setlocale(locale.LC_ALL,"")
@@ -1339,7 +1364,7 @@ def main(base_dir):
             usage()
             sys.exit(0)
 
-    app=Application(base_dir,config_file,theme_file)
+    app=Application(base_dir,config_file,theme_file,profile=profile)
     try:
         screen=ui.init()
         app.run(screen)
@@ -1349,6 +1374,5 @@ def main(base_dir):
         ui.deinit()
         if logfile:
             print >>logfile,"Cleaned up"
-
 
 # vi: sts=4 et sw=4
