@@ -94,6 +94,7 @@ global_settings={
 	"tls_ca_cert_file": ("Path to CA certificates file",(str,None)),
 	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5,digest')",list),
 	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,"set_layout"),
+	"ignore_activity": ("List of buffer numbers which activity should be ignored (not displayed in the status bar)",list),
 	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
 	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
 	"autoconnect": ("Automatically connect on startup.",int),

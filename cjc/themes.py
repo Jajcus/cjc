@@ -172,6 +172,8 @@ class ThemeManager:
 			if not self.formats.has_key(name):
 				self.formats[name]=format
 	def format_buffers(self,attr,params):
+		ignore=self.app.settings.get("ignore_activity",[])
+		self.app.debug("Buffers to ignore: "+`ignore`)
 		ret=[]
 		for num in range(0,len(ui.buffer.buffer_list)):
 			buf=ui.buffer.buffer_list[num]
@@ -181,6 +183,8 @@ class ThemeManager:
 			p.update(buf.info)
 			if buf.window:
 				format="buffer_visible"
+			elif unicode(num+1) in ignore:
+				format="buffer_inactive"
 			elif buf.active==1:
 				format="buffer_active1"
 			elif buf.active==2:
