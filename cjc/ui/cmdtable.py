@@ -2,7 +2,7 @@
 from types import StringType,IntType,UnicodeType
 import re
 
-from common import debug,error,print_exception
+import common
 
 quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)"(?P<rest>.*)$',re.UNICODE)
 need_quote_re=re.compile(r'[ \"\\\n\t]',re.UNICODE)
@@ -60,10 +60,10 @@ class CommandHandler:
 			except KeyboardInterrupt:
 				raise
 			except CommandError,e:
-				error(u"Command '%s' failed: %s" % (cmd,e))
+				common.error(u"Command '%s' failed: %s" % (cmd,e))
 			except StandardError,e:
-				error("Comand execution failed: "+str(e))
-				print_exception()
+				common.error("Comand execution failed: "+str(e))
+				common.print_exception()
 			return 1
 		else:
 			return 0
@@ -115,7 +115,7 @@ class CommandArgs:
 			self.args=""
 		else:
 			self.args+=" "
-		if need_quote_re.search(s):
+		if need_quote_re.search(s) or not s:
 			self.args+='"%s"' % (quote(s),)
 		else:
 			self.args+=s
