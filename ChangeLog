@@ -1,5 +1,14 @@
 2004-07-27  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/events.py, plugins/muc.py:
+	- groupchat event notifications fixed and defaults changed to more sane and more annoying ;-)
+
+	* Makefile:
+	- permission-safer 'version' target (no error when version.py is not writtable)
+
+	* plugins/chat.py, plugins/events.py, plugins/message.py, plugins/muc.py, cjc/main.py:
+	- basic, but extensible event notifications ('beeps')
+
 	* plugins/muc.py:
 	- don't panic if user_left() is called with stanza=None
 
