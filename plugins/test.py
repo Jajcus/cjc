@@ -1,6 +1,4 @@
 
-# Normative reference: JEP-0092
-
 import os
 import threading
 import time
