@@ -33,7 +33,7 @@ global_commands={
 	#
 	# handler may be method name or any callable
 	"exit": ("cmd_quit",
-		"/exit",
+		"/exit [reason]",
 		"Exit from CJC"),
 	"quit": "exit",
 	"set": ("cmd_set",
@@ -48,7 +48,7 @@ global_commands={
 		"/connect",
 		"Connect to a Jabber server"),
 	"disconnect": ("cmd_disconnect",
-		"/disconnect",
+		"/disconnect [reason]",
 		"Disconnect from a Jabber server"),
 	"save": ("cmd_save",
 		"/save [filename]",
@@ -77,6 +77,7 @@ global_settings={
 	"server": ("Server address to connect to",str,".server"),
 	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5 digest')",list,".auth_methods"),
 	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,None,"set_layout"),
+	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",int,None),
 }
 
 global_theme_attrs=(
@@ -108,7 +109,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	def __init__(self):
 		pyxmpp.Client.__init__(self)
 		commands.CommandHandler.__init__(self,global_commands)
-		self.settings={"layout":"plain"}
+		self.settings={"layout":"plain","disconnect_timeout":10}
 		self.available_settings=global_settings
 		self.plugin_dirs=["cjc/plugins"]
 		self.plugins={}
@@ -314,6 +315,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.ui_thread.start()
 		self.stream_thread.start()
 		self.main_loop()
+		self.ui_thread.join(1)
+		self.stream_thread.join(1)
 
 	def session_started(self):
 		for p in self.plugins.values():
@@ -324,6 +327,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 				self.info("Plugin call failed")
 		self.stream.set_message_handler("error",self.message_error)
 		self.stream.set_message_handler("normal",self.message_normal)
+
+	def disconnected(self):
+		self.warning("Disconnected")
 
 	def message_error(self,stanza):
 		self.warning(u"Message error from: "+stanza.get_from().as_unicode())
@@ -336,7 +342,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		self.message_buf.update(1)
 	
 	def cmd_quit(self,args):
-		raise Exit
+		reason=args.all()
+		args.finish()
+		self.exit_request(reason)
 
 	def cmd_connect(self,args):
 		if not self.jid:
@@ -357,6 +365,13 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.error("Connection failed: "+e.args[1])
 	
 	def cmd_disconnect(self,args):
+		reason=args.all()
+		args.finish()
+		if reason:
+			self.info(u"Disconnecting (%s)..." % (reason,))
+		else:
+			self.info(u"Disconnecting...")
+		self.send_event("disconnect request",reason)
 		self.disconnect()
 	
 	def cmd_set(self,args):
@@ -673,54 +688,65 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	def cmd_theme(self,args):
 		self.theme_manager.command(args)
 
+	def exit_request(self,reason):
+		if self.stream:
+			if reason:
+				self.info(u"Disconnecting (%s)..." % (reason,))
+			else:
+				self.info(u"Disconnecting...")
+			self.send_event("disconnect request",reason)
+			self.disconnect()
+		self.state_changed.acquire()
+		self.exiting=time.time()
+		self.state_changed.notify()
+		self.state_changed.release()
+
+	def exit_time(self):
+		if not self.exiting:
+			return 0
+		if not self.stream:
+			return 1
+		if self.exiting>time.time()+self.settings["disconnect_timeout"]:
+			return 1
+		return 0
+
 	def ui_loop(self):
-		while not self.exiting:
+		while not self.exit_time():
 			try:
 				self.screen.keypressed()
-			except Exit:
-				self.exiting=1
-			except KeyboardInterrupt,SystemExit:
-				self.exiting=1
-				raise
+			except (KeyboardInterrupt,SystemExit),e:
+				self.exit_request(str(e))
+				self.print_exception()
+		print >>logfile,"UI loop exiting"
 
 	def stream_loop(self):
-		while not self.exiting:
-			self.stream_cond.acquire()
+		while not self.exit_time():
+			self.state_changed.acquire()
 			stream=self.stream
 			if not stream:
-				self.stream_cond.wait(1)
+				self.state_changed.wait(1)
 				stream=self.stream
-			self.stream_cond.release()
+			self.state_changed.release()
 			if not stream:
 				continue
 			try:
 				self.stream.loop_iter(1)
-			except KeyboardInterrupt,SystemExit:
-				self.exiting=1
-				raise
+			except (KeyboardInterrupt,SystemExit),e:
+				self.exit_request(unicode(str(e)))
+				self.print_exception()
+		print >>logfile,"Stream loop exiting"
 
 	def main_loop(self):
-		while not self.exiting:
+		while not self.exit_time():
 			try:
-				time.sleep(1)
-			except KeyboardInterrupt,SystemExit:
-				self.exiting=1
-				raise
+				self.state_changed.acquire()
+				self.state_changed.wait(1)
+				self.state_changed.release()
+			except (KeyboardInterrupt,SystemExit),e:
+				self.exit_request(unicode(str(e)))
+				self.print_exception()
+		print >>logfile,"Main loop exiting"
 		
-	def loop(self,timeout):
-		while 1:
-			fdlist=[sys.stdin.fileno()]
-			if self.stream and self.stream.socket:
-				fdlist.append(self.stream.socket)
-			id,od,ed=select.select(fdlist,[],fdlist,timeout)
-			if sys.stdin.fileno() in id:
-				while self.screen.keypressed():
-					pass
-			if self.stream and self.stream.socket in id:
-				self.stream.process()
-			if len(id)==0:
-				self.idle()
-
 	def get_user(self,name):
 		if name.find("@")>=0:
 			if self.roster:
@@ -851,4 +877,6 @@ def main():
 		screen=ui.init()
 		app.run(screen)
 	finally:
+		print >>logfile,"Cleaning up"
 		ui.deinit()
+		print >>logfile,"Cleaned up"
