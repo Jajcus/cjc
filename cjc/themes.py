@@ -29,7 +29,7 @@ def name2attr(name):
 	attr=0
 	name.replace("|","+")
 	for a in name.split("+"):
-		attr|=attributes_by_name(a.lower())
+		attr|=attributes_by_name[a.lower()]
 	return attr
 
 def attr2name(attr):
@@ -62,11 +62,19 @@ class ThemeManager:
 		f=open(filename,"r")
 		for l in f.xreadlines():
 			command=CommandArgs(l.strip())
-			self.command(command)
+			self.command(command,1)
 		f.close()
+		if self.app and self.app.screen:
+			self.app.screen.redraw()
 	def save(self,filename):
 		f=open(filename,"w")
-		for name,(fg,bg,attr,fallback) in self.attr_defs.items():
+		attr_names=self.attr_defs.keys()
+		attr_names1=[n for n in attr_names if n.find(".")<0]
+		attr_names2=[n for n in attr_names if n.find(".")>=0]
+		attr_names1.sort()
+		attr_names2.sort()
+		for name in attr_names1+attr_names2:
+			(fg,bg,attr,fallback)=self.attr_defs[name]
 			cmd=CommandArgs("attr")
 			cmd.add_quoted(name)
 			cmd.add_quoted(color2name(fg))
@@ -74,28 +82,48 @@ class ThemeManager:
 			cmd.add_quoted(attr2name(attr))
 			cmd.add_quoted(attr2name(fallback))
 			print >>f,cmd.all()
-		for name,format in self.formats.items():
+		format_names=self.formats.keys()
+		format_names1=[n for n in format_names if n.find(".")<0]
+		format_names2=[n for n in format_names if n.find(".")>=0]
+		format_names1.sort()
+		format_names2.sort()
+		for name in format_names1+format_names2:
+			format=self.formats[name]
 			cmd=CommandArgs("format")
 			cmd.add_quoted(name)
 			cmd.add_quoted(format)
 			print >>f,cmd.all()
 		f.close()
-	def command(self,args):
+	def command(self,args,safe=0):
 		cmd=args.shift()
-		if cmd=="save":
+		if cmd=="save" and not safe:
 			filename=args.shift()
 			if not filename:
 				filename=".cjc-theme"
 			args.finish()
 			self.save(filename)
 			return
-		if cmd=="load":
+		if cmd=="load" and not safe:
 			filename=args.shift()
 			if not filename:
 				filename=".cjc-theme"
 			args.finish()
 			self.load(filename)
 			return
+		if cmd=="attr":
+			name=args.shift()
+			fg=name2color(args.shift())
+			bg=name2color(args.shift())
+			attr=name2attr(args.shift())
+			fallback=name2attr(args.shift())
+			args.finish()
+			self.set_attr(name,fg,bg,attr,fallback)
+		if cmd=="format":
+			name=args.shift()
+			format=args.shift()
+			args.finish()
+			self.set_format(name,format)
+	
 	def set_attr(self,name,fg,bg,attr,fallback):
 		if not curses.has_colors():
 			self.attrs[name]=fallback
