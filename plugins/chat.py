@@ -69,10 +69,10 @@ class Conversation:
 		self.add_sent(s)
 		return 1
 
-	def cmd_me(self,arg):
-		if not arg:
+	def cmd_me(self,args):
+		if not args:
 			return 1
-		self.user_input(u"/me "+arg)
+		self.user_input(u"/me "+args.all())
 		return 1
 
 class Plugin(PluginBase):
