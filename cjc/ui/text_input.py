@@ -57,8 +57,24 @@ class TextInput(InputWidget):
 		c=chr(c)
 		if c in ("\n\r"):
 			self.key_enter()
-		elif c=="\b":
+		elif c=="\x01": # ^A
+			self.key_home()
+		elif c=="\x02": # ^B
+			self.key_left()
+		elif c=="\x04": # ^D
+			self.key_del()
+		elif c=="\x05": # ^E
+			self.key_end()
+		elif c=="\x06": # ^F
+			self.key_right()
+		elif c=="\b":   # ^H
 			self.key_bs()
+		elif c=="\x0b": # ^K
+			self.key_kill()
+		elif c=="\x0e": # ^N
+			self.key_down()
+		elif c=="\x10": # ^P
+			self.key_up()
 		elif c=="\x7f":
 			self.key_del()
 		elif c in self.printable:
@@ -119,6 +135,17 @@ class TextInput(InputWidget):
 		self.win.clrtoeol()
 		self.win.refresh()
 		self.parent.input_handler(ans)
+
+	def key_kill(self):
+		if not self.content:
+			return curses.beep()
+		self.content=u""
+		self.saved_content=None
+		self.pos=0
+		self.offset=0
+		self.win.move(0,0)
+		self.win.clrtoeol()
+		self.win.refresh()
 
 	def key_home(self):
 		if self.pos<=0:
