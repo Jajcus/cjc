@@ -632,7 +632,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			return
 		args.finish()
 		try:
-			jid=pyxmpp.JID(args.all())
+			jid=pyxmpp.JID(jid)
 		except pyxmpp.JIDError:
 			self.error("Invalid jabber id")
 		uinf=self.get_user_info(jid)
