@@ -1,3 +1,8 @@
+2004-06-02  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/completions.py:
+	- updated for the new roster API in PyXMPP
+
 2004-05-31  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py:
