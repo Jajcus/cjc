@@ -333,17 +333,13 @@ class ThemeManager:
 			elif form=="bare":
 				params[key]=val.bare().as_unicode()
 			elif form in ("show","status"):
-				common.debug("Getting presence for user "+str(val))
 				pr=self.app.get_user_info(val,"presence")
-				common.debug("Got: "+`pr`)
-				if pr:
-					common.debug("type: "+`pr.get_type()`)
-					common.debug("show: "+`pr.get_show()`)
-					common.debug("status: "+`pr.get_status()`)
 				if form=="show":
 					common.debug("Getting show")
 					if pr is None or pr.get_type()=="unavailable":
 						val="offline"
+					elif pr.get_type()=="error":
+						val="error"
 					else:
 						val=pr.get_show()
 						if not val or val=="":
@@ -352,6 +348,9 @@ class ThemeManager:
 					common.debug("Getting status")
 					if pr is None:
 						val=""
+					elif pr.get_type()=="error":
+						err=pr.get_error()
+						val=err.get_message()
 					else:
 						val=pr.get_status()
 						if val is None:
