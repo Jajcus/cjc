@@ -1245,6 +1245,7 @@ class Application(jabber.Client,tls.TLSHandler):
                 return None
             else:
                 return ritems[0].jid
+        self.error(u"%s not found in roster" % (name,))
         return None
 
     def get_bare_user_info(self,jid,var=None):
