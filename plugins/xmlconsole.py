@@ -129,7 +129,8 @@ class Plugin(PluginBase):
     def cmd_close(self,args):
         self.data_in_handler.setLevel(logging.CRITICAL)
         self.data_out_handler.setLevel(logging.CRITICAL)
-        self.buffer.close()
+        if self.buffer:
+            self.buffer.close()
         self.buffer=None
 
     def show_data(self,data,dir):
