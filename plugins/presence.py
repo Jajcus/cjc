@@ -136,7 +136,8 @@ class Plugin(PluginBase):
                 return
             show="xa"
             prio=self.settings.get("xa_priority",
-                self.settings.get("away_priority",self.settings.get("priority",0)))
+                    self.settings.get("away_priority",
+                            self.settings.get("priority",0)))
             status=self.settings.get("auto_xa_msg","")
         elif auto_away and idle>=auto_away:
             if p.get_show()=="away":
