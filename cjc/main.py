@@ -22,6 +22,7 @@ import version
 import commands
 import themes
 import common
+import tls
 
 logfile=None
 
@@ -123,9 +124,27 @@ global_theme_formats=(
 	("buffer_active1","%[default]%(buffer_num)i"),
 	("buffer_active2","%[warning]%(buffer_num)i"),
 	("buffer_active3","%[error]%(buffer_num)i"),
+	("certificate","  Subject: %(subject)s\n"
+			"  Issuer: %(issuer)s\n"
+			"  Serial number: %(serial_number)s\n"
+			"  Valid not before: %(not_before)s\n"
+			"  Valid not after: %(not_after)s\n"),
+	("certificate_error","%[warning]Server certificate failed verifiaction.\n\n"
+		"%[info]Server has presented following certificate chain:\n"
+		"%{chain}\n"
+		"The rejected certificate is:\n"
+		"%{certificate}\n"
+		"%[error]Verification failed with error #%(errnum)i: %(errdesc)s\n"),
+	("certificate_remember","%[info]Server '%(who)s' has presented following certificate:\n\n"
+		"%{certificate}\n"
+		"Verification of that certificat failed.\n"
+		"Should it be accepted in future sessions anyway?\n"),
+	("tls_error_ignored","%[info]Certificate verification error #%(errnum)i:"
+			" '%(errdesc)s' ignored - peer certificate is known as trustworthy.\n"),
 )
 
-class Application(pyxmpp.Client,commands.CommandHandler):
+
+class Application(pyxmpp.Client,commands.CommandHandler,tls.TLSHandler):
 	def __init__(self,base_dir,config_file="config",theme_file="theme"):
 		pyxmpp.Client.__init__(self)
 		commands.CommandHandler.__init__(self,global_commands)
@@ -336,7 +355,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.bottom_bar.update()
 
 	def run(self,screen):
-		signal.signal(signal.SIGINT,signal.SIG_IGN)
+		#signal.signal(signal.SIGINT,signal.SIG_IGN)
 		self.screen=screen
 		self.theme_manager=themes.ThemeManager(self)
 		try:
@@ -430,6 +449,14 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		if etxt:
 			msg+=" ('%s')" % etxt
 		self.error(msg)
+
+	def connected(self):
+		tls=self.stream.get_tls_connection()
+		if tls:
+			self.tls_connected(tls)
+		else:
+			self.info("Unencrypted connection to %s established." 
+				% (self.stream.peer,))
 		
 	def disconnected(self):
 		for user,info in self.user_info.items():
@@ -469,15 +496,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		if not self.port:
 			self.port=5222
 		self.server=self.settings.get("server")
-		if self.settings.get("tls_enable"):
-			self.tls_settings=pyxmpp.TLSSettings(
-					require=self.settings.get("tls_require"),
-					cert_file=self.settings.get("tls_cert_file"),
-					key_file=self.settings.get("tls_key_file"),
-					cacert_file=self.settings.get("tls_ca_cert_file")
-					)
-		else:
-			self.tls_settings=None
+		self.tls_init()
 		self.info(u"Connecting...")
 		try:
 			self.connect()
@@ -1044,8 +1063,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 	def print_exception(self):
 		if logfile:
-			traceback.print_exc(file=logfile)
-		traceback.print_exc(file=self.status_buf)
+			traceback.print_exc(file=logfile,limit=1000)
+		traceback.print_exc(file=self.status_buf,limit=1000)
 			
 	def error(self,s):
 		if logfile:
@@ -1072,6 +1091,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.status_buf.append_themed("debug",s)
 			self.status_buf.update(1)
 
+		
 def usage():
 	print
 	print "Console Jabber Client (c) 2003 Jacek Konieczny <jajcus@bnet.pl>"
@@ -1090,8 +1110,11 @@ def usage():
 	print "                           default: 'default'"
 	print "  -l filename"
 	print "  --log-file=filename      File where debug log should be written"
+	print "  -L filename"
+	print "  --append-log-file=filename  File where debug log should be appended"
 
 def main(base_dir):
+	libxml2.debugMemory(1)
 	locale.setlocale(locale.LC_ALL,"")
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], "hc:t:l:", 
@@ -1116,6 +1139,12 @@ def main(base_dir):
 			if a=="-":
 				logfile=sys.stderr
 			else:
+				logfile=open(a,"w",1)
+		elif o in ("-L","--append-log-file"):
+			global logfile
+			if a=="-":
+				logfile=sys.stderr
+			else:
 				logfile=open(a,"a",1)
 		else:
 			usage()
@@ -1131,3 +1160,5 @@ def main(base_dir):
 		ui.deinit()
 		if logfile:
 			print >>logfile,"Cleaned up"
+
+
