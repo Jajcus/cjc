@@ -332,7 +332,7 @@ class Plugin(PluginBase):
             if not self.cjc.roster:
                 self.error("Roster is not available yet")
                 return
-            for item in self.cjc.roster.items():
+            for item in self.cjc.roster.get_items():
                 if item.jid.domain=="jogger.pl":
                     recipient=item.jid
                     break

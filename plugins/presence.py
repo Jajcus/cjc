@@ -445,7 +445,7 @@ class Plugin(PluginBase):
             self.cjc.stream.send(p)
             self.cjc.status_buf.append_themed("presence.subscribe_accepted",{"user":fr})
             try:
-                item=self.cjc.roster.item_by_jid(fr)
+                item=self.cjc.roster.get_item_by_jid(fr)
             except KeyError:
                 item=None
             if item and item.subscription in ("both","to"):

@@ -35,12 +35,12 @@ class UserCompletion(ui.Completion):
         else:
             mword=word.lower()
         if self.app.roster:
-            for ri in self.app.roster.items():
+            for ri in self.app.roster.get_items():
                 name=ri.name
                 if not case_sensitive and name:
                     name=name.lower()
                 if mword==name:
-                    items=self.app.roster.items_by_name(name,case_sensitive)
+                    items=self.app.roster.get_items_by_name(name,case_sensitive)
                     if len(items)>1:
                         for i in items:
                             matches.append(i.jid.as_unicode())
@@ -54,7 +54,7 @@ class UserCompletion(ui.Completion):
         for jid in self.app.user_info.keys():
             if self.app.roster:
                 try:
-                    name=self.app.roster.item_by_jid(jid).name
+                    name=self.app.roster.get_item_by_jid(jid).name
                     if name in matches:
                         continue
                 except KeyError:

@@ -105,7 +105,7 @@ class Room(muc.MucRoomHandler):
             fparams=dict(self.fparams)
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.datetime_local()
+            fparams["timestamp"]=d.get_datetime_local()
         if body.startswith(u"/me "):
             fparams["msg"]=body[4:]
             self.buffer.append_themed("muc.action",fparams)
@@ -143,7 +143,7 @@ class Room(muc.MucRoomHandler):
                     % (self.room_state.subject,))
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.datetime_local()
+            fparams["timestamp"]=d.get_datetime_local()
         self.plugin.cjc.send_event("groupchat subject changed",self.room_state.subject)
         self.buffer.append_themed("muc.info",fparams)
         self.buffer.update()
@@ -153,7 +153,7 @@ class Room(muc.MucRoomHandler):
         fparams=self.user_format_params(user)
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.datetime_local()
+            fparams["timestamp"]=d.get_datetime_local()
         self.plugin.cjc.send_event("groupchat user joined",user.nick)
         if user.same_as(self.room_state.me):
             self.buffer.append_themed("muc.me_joined",fparams)
@@ -167,7 +167,7 @@ class Room(muc.MucRoomHandler):
         if stanza:
             d=delay.get_delay(stanza)
             if d:
-                fparams["timestamp"]=d.datetime_local()
+                fparams["timestamp"]=d.get_datetime_local()
         self.plugin.cjc.send_event("groupchat user left",user.nick)
         if user.same_as(self.room_state.me):
             self.buffer.append_themed("muc.me_left",fparams)
@@ -180,7 +180,7 @@ class Room(muc.MucRoomHandler):
         fparams=self.user_format_params(user)
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.datetime_local()
+            fparams["timestamp"]=d.get_datetime_local()
         if user.same_as(self.room_state.me):
             self.buffer.append_themed("muc.my_role_changed",fparams)
         else:
@@ -192,7 +192,7 @@ class Room(muc.MucRoomHandler):
         fparams=self.user_format_params(user)
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.datetime_local()
+            fparams["timestamp"]=d.get_datetime_local()
         if user.same_as(self.room_state.me):
             self.buffer.append_themed("muc.my_affiliation_changed",fparams)
         else:
@@ -209,7 +209,7 @@ class Room(muc.MucRoomHandler):
         fparams["old_nick"]=old_nick
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.datetime_local()
+            fparams["timestamp"]=d.get_datetime_local()
         if user.same_as(self.room_state.me):
             self.buffer.append_themed("muc.my_nick_changed",fparams)
         else:

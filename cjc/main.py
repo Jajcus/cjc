@@ -1298,7 +1298,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         if name.find("@")>=0:
             if self.roster:
                 try:
-                    ritems=self.roster.items_by_name(name,self.settings["case_sensitive"])
+                    ritems=self.roster.get_items_by_name(name,self.settings["case_sensitive"])
                 except KeyError:
                     ritems=None
                 if ritems:
@@ -1315,11 +1315,11 @@ class Application(tls.TLSMixIn,jabber.Client):
             return None
 
         try:
-            ritems=self.roster.items_by_name(name,self.settings["case_sensitive"])
+            ritems=self.roster.get_items_by_name(name,self.settings["case_sensitive"])
         except KeyError:
             try:
                 jid=pyxmpp.JID(name)
-                return [self.roster.item_by_jid(jid).jid()]
+                return [self.get_roster.get_item_by_jid(jid).jid()]
             except (ValueError,pyxmpp.JIDError,KeyError):
                 pass
             self.__logger.error(u"%s not found in roster" % (name,))

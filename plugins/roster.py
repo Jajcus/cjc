@@ -88,7 +88,7 @@ class Plugin(PluginBase):
 
     def ev_roster_updated(self,event,arg):
         if not arg:
-            for item in self.cjc.roster.items():
+            for item in self.cjc.roster.get_items():
                 for group,it in self.extra_items:
                     if not isinstance(it,pyxmpp.JID) or group!=VG_UNKNOWN:
                         continue
@@ -114,10 +114,10 @@ class Plugin(PluginBase):
         if isinstance(item,pyxmpp.JID):
             if self.cjc.roster:
                 try:
-                    item=self.cjc.roster.item_by_jid(item)
+                    item=self.cjc.roster.get_item_by_jid(item)
                 except KeyError:
                     try:
-                        item=self.cjc.roster.item_by_jid(item.bare())
+                        item=self.cjc.roster.get_item_by_jid(item.bare())
                     except KeyError:
                         pass
         if isinstance(item,pyxmpp.roster.RosterItem):
@@ -255,10 +255,10 @@ class Plugin(PluginBase):
         if not self.cjc.roster:
             self.buffer.update()
             return
-        groups=self.cjc.roster.groups()
+        groups=self.cjc.roster.get_groups()
         groups.sort()
         for group in groups:
-            for item in self.cjc.roster.items_by_group(group):
+            for item in self.cjc.roster.get_items_by_group(group):
                 self.write_item(group,item)
         self.buffer.update()
 
@@ -286,7 +286,7 @@ class Plugin(PluginBase):
             return
 
         try:
-            item=self.cjc.roster.item_by_jid(user)
+            item=self.cjc.roster.get_item_by_jid(user)
             if item:
                 self.error("User '%s' already in roster." % (user,))
                 return
@@ -297,7 +297,7 @@ class Plugin(PluginBase):
         if not name:
             name=None
 
-        item=self.cjc.roster.add_item(user,name=name)
+        item=self.cjc.roster.get_add_item(user,name=name)
         item.groups=groups
         iq=item.make_roster_push()
         self.cjc.stream.send(iq)
@@ -313,7 +313,7 @@ class Plugin(PluginBase):
                     " Cannot remove own JID from the roster.")
             return
         try:
-            item=self.cjc.roster.rm_item(user)
+            item=self.cjc.roster.remove_item(user)
         except KeyError:
             self.error(u"There is no %s in roster" % (user.as_unicode()))
             return
@@ -331,7 +331,7 @@ class Plugin(PluginBase):
             return
         name=args.all()
         try:
-            item=self.cjc.roster.item_by_jid(user)
+            item=self.cjc.roster.get_item_by_jid(user)
         except KeyError:
             self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
             return
@@ -351,7 +351,7 @@ class Plugin(PluginBase):
             self.error("Self presence subscription is automatic."
                     " Cannot group own JID in the roster.")
             return
-        item=self.cjc.roster.item_by_jid(user)
+        item=self.cjc.roster.get_item_by_jid(user)
         if not item:
             self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
             return
@@ -443,7 +443,7 @@ class Plugin(PluginBase):
         if not filter:
             filter=["all"]
 
-        rgroups=self.cjc.roster.groups()
+        rgroups=self.cjc.roster.get_groups()
         rgroups.sort()
         formatted_list=[]
         for group in rgroups:
@@ -459,7 +459,7 @@ class Plugin(PluginBase):
                     continue
             formatted_group=[]
             items=[(item.name,item.jid.as_unicode(),item) for item
-                    in self.cjc.roster.items_by_group(group)]
+                    in self.cjc.roster.get_items_by_group(group)]
             items.sort()
             for name,jid,item in items:
                 if names:

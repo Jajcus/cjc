@@ -275,7 +275,7 @@ class Plugin(PluginBase):
 
         d=delay.get_delay(stanza)
         if d:
-            timestamp=d.datetime_local()
+            timestamp=d.get_datetime_local()
         else:
             timestamp=None
         if self.settings.get("log_filename"):

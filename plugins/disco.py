@@ -58,11 +58,11 @@ class DiscoBuffer:
         else:
             cache_state="cached"
         formatted_items=[]
-        self.items=items.items()
-        for i,item in zip(indices1,items.items()):
-            params={'jid': item.jid(), 
-                    'node': item.node(), 
-                    'name': item.name(),
+        self.items=items.items
+        for i,item in zip(indices1,items.items):
+            params={'jid': item.jid, 
+                    'node': item.node, 
+                    'name': item.name,
                     'index': i
                     }
             formatted_items+=format_string("disco.item",params)
@@ -86,15 +86,15 @@ class DiscoBuffer:
         else:
             cache_state="cached"
         formatted_identities=[]
-        for identity in info.identities():
+        for identity in info.identities:
             params={
-                    'name': identity.name(),
-                    'category': identity.category(),
-                    'type': identity.type(),
+                    'name': identity.name,
+                    'category': identity.category,
+                    'type': identity.type,
                     }
             formatted_identities+=format_string("disco.identity",params)
         formatted_features=[]
-        for feature in info.features():
+        for feature in info.features:
             params={'feature': feature, }
             formatted_features+=format_string("disco.feature",params)
 
@@ -132,7 +132,10 @@ class Plugin(PluginBase):
     def cmd_disco(self,args):
         jid=args.shift()
         if not jid:
-            jid=JID(self.cjc.stream.me.domain)
+            if self.cjc.stream:
+                jid=JID(self.cjc.stream.me.domain)
+            else:
+                jid=self.cjc.settings['jid']
             node=None
         else:
             node=args.shift()
