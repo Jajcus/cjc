@@ -74,20 +74,20 @@ class ChoiceInput(InputWidget):
 
     def _keypressed(self,c,escape):
         if c>255 or c<0:
-            curses.beep()
+            self.screen.beep()
             return
         c=chr(c)
         if c in self.printable:
             self.key_char(c)
         else:
-            curses.beep()
+            self.screen.beep()
 
     def key_abort(self):
         if self.abortable:
             self.parent.abort_handler()
             return
         else:
-            curses.beep()
+            self.screen.beep()
             return
 
     def key_enter(self):
@@ -103,15 +103,15 @@ class ChoiceInput(InputWidget):
         if not ans:
             if not self.required:
                 return self.answer(None)
-            return curses.beep()
+            return self.screen.beep()
         try:
             ival=int(ans)
         except ValueError:
-            return curses.beep()
+            return self.screen.beep()
         for r in self.range_choice:
             if ival in r:
                 return self.answer(ival)
-        curses.beep()
+        self.screen.beep()
 
     def answer(self,ans):
         if ans is not None:
@@ -124,20 +124,25 @@ class ChoiceInput(InputWidget):
 
     def key_bs(self):
         if self.pos<=0:
-            curses.beep()
+            self.screen.beep()
             return
         self.content=self.content[:self.pos-1]+self.content[self.pos:]
         self.pos-=1
-        self.win.move(0,self.pos+len(self.prompt))
-        self.win.delch()
-        self.win.refresh()
+        self.screen.lock.acquire()
+        try:
+            if self.screen.active:
+                self.win.move(0,self.pos+len(self.prompt))
+                self.win.delch()
+                self.win.refresh()
+        finally:
+            self.screen.lock.release()
 
     def key_char(self,c):
         c=unicode(c,self.screen.encoding,"replace")
         if not self.string_choice and c in self.single_choice:
             return self.answer(c)
         if self.pos>=self.w-len(self.prompt)-2:
-            return curses.beep()
+            return self.screen.beep()
         newcontent=self.content+c
         if c in string.digits and self.range_choice:
             pass
@@ -150,16 +155,23 @@ class ChoiceInput(InputWidget):
                     ok=1
                     break
             if not ok:
-                return curses.beep()
+                return self.screen.beep()
 
         self.content=newcontent
         self.pos+=1
-        self.win.addstr(c.encode(self.screen.encoding))
-        self.win.refresh()
+        self.screen.lock.acquire()
+        try:
+            if self.screen.active:
+                self.win.addstr(c.encode(self.screen.encoding))
+                self.win.refresh()
+        finally:
+            self.screen.lock.release()
 
     def update(self,now=1,refresh=0):
         self.screen.lock.acquire()
         try:
+            if not active:
+                return
             if refresh:
                 self.win.move(0,0)
                 self.win.clrtoeol()

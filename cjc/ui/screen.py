@@ -35,6 +35,7 @@ class Screen:
         self.pairs={}
         self.next_pair=1
         self.content=None
+        self.active=True
         self.active_window=None
         self.windows=[]
         self.input_handler=None
@@ -51,8 +52,11 @@ class Screen:
         self.lock.acquire()
         try:
             if attr is not None:
-                self.scr.bkgdset(ord(char),attr)
-            else:
+                if char and char!=" ":
+                    self.scr.bkgdset(ord(char),attr)
+                else:
+                    self.scr.attrset(attr)
+            elif char and char!=" ":
                 self.scr.bkgdset(ord(char))
         finally:
             self.lock.release()
@@ -66,24 +70,34 @@ class Screen:
         return w,h
 
     def set_content(self,widget):
-        self.content=widget
-        self.windows=[]
-        widget.set_parent(self)
-        for b in buffer.buffer_list:
-            if b is None:
-                continue
-            if b.window and b.window not in self.windows:
-                b.set_window(None)
+        self.lock.acquire()
+        try:
+            self.content=widget
+            self.windows=[]
+            widget.set_parent(self)
+            for b in buffer.buffer_list:
+                if b is None:
+                    continue
+                if b.window and b.window not in self.windows:
+                    b.set_window(None)
+        finally:
+            self.lock.release()
 
     def place(self,child):
-        w,h=self.size()
-        if child is self.content:
-            return 0,0,w,h
-        raise "%r is not a child of mine" % (child,)
+        self.lock.acquire()
+        try:
+            w,h=self.size()
+            if child is self.content:
+                return 0,0,w,h
+            raise "%r is not a child of mine" % (child,)
+        finally:
+            self.lock.release()
 
     def update(self,now=0,redraw=0):
         self.lock.acquire()
         try:
+            if not self.active:
+                return
             if redraw:
                 self.scr.clear()
                 self.scr.noutrefresh()
@@ -101,6 +115,8 @@ class Screen:
         self.update(1,1)
 
     def _beep(self):
+        if not self.active:
+            return
         try:
             curses.beep()
         except curses.error:
@@ -126,7 +142,8 @@ class Screen:
         self.windows.append(win)
         self.lock.acquire()
         try:
-            curses.doupdate()
+            if self.active:
+                curses.doupdate()
         finally:
             self.lock.release()
 
@@ -139,7 +156,8 @@ class Screen:
         self.active_window=win
         self.lock.acquire()
         try:
-            curses.doupdate()
+            if self.active:
+                curses.doupdate()
         finally:
             self.lock.release()
 
@@ -295,6 +313,23 @@ class Screen:
                 w.update()
                 return w
         return None
+    
+    def shell_mode(self):
+        self.lock.acquire()
+        try:
+            self.active=False
+            curses.reset_shell_mode()
+        finally:
+            self.lock.release()
+
+    def prog_mode(self):
+        self.lock.acquire()
+        try:
+            curses.reset_prog_mode()
+            self.active=True
+            self.redraw()
+        finally:
+            self.lock.release()
 
 keytable.KeyTable("screen",20,(
         keytable.KeyBinding("command(next)","M-^I"),

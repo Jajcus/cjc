@@ -47,6 +47,10 @@ def init():
     curses.meta(1)
     curses.noecho()
     curses.nonl()
+    curses.def_prog_mode()
+    curses.endwin()
+    curses.def_shell_mode()
+    curses.reset_prog_mode()
     return Screen(screen)
 
 def deinit():

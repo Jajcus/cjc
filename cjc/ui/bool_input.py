@@ -47,17 +47,13 @@ class BooleanInput(InputWidget):
         if self.abortable:
             self.parent.abort_handler()
         else:
-            self.screen.lock.acquire()
-            try:
-                curses.beep()
-            finally:
-                self.screen.lock.release()
+            self.screen.beep()
 
     def key_enter(self):
         self.screen.lock.acquire()
         try:
             if self.default is None and self.required:
-                curses.beep()
+                self.screen.beep()
                 return
             if self.default:
                 self.answer_yes()
@@ -69,6 +65,8 @@ class BooleanInput(InputWidget):
     def answer_yes(self):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.content=u"y"
             self.win.addstr(self.content)
             self.update()
@@ -79,6 +77,8 @@ class BooleanInput(InputWidget):
     def answer_no(self):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.content=u"n"
             self.win.addstr(self.content)
             self.update()
@@ -89,6 +89,8 @@ class BooleanInput(InputWidget):
     def update(self,now=1,refresh=0):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             if refresh:
                 self.win.erase()
                 s=self.prompt.encode(self.screen.encoding,"replace")

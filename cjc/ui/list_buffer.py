@@ -160,26 +160,32 @@ class ListBuffer(Buffer):
         try:
             if not self.window:
                 return
-            if i<self.pos:
-                return
-            if i>=self.pos+self.window.ih:
-                return
-            self.__logger.debug("Updating item #%i" % (i,))
-            if i>=len(self.items):
-                self.window.win.move(0,i-self.pos)
-                self.window.clrtoeol()
-                return
-            view=self.items[i]
-            attr,s=view[0]
-            self.__logger.debug("Item: %r" % (view,))
-            if insert:
-                self.window.insert_line(i-self.pos)
-            self.window.write_at(0,i-self.pos,s,attr)
-            for attr,s in view[1:]:
-                self.window.write(s,attr)
-            y,x=self.window.win.getyx()
-            if x<self.window.iw-1:
-                self.window.clrtoeol()
+            self.window.screen.lock.acquire()
+            try:
+                if not self.window.screen.active:
+                    return
+                if i<self.pos:
+                    return
+                if i>=self.pos+self.window.ih:
+                    return
+                self.__logger.debug("Updating item #%i" % (i,))
+                if i>=len(self.items):
+                    self.window.win.move(0,i-self.pos)
+                    self.window.clrtoeol()
+                    return
+                view=self.items[i]
+                attr,s=view[0]
+                self.__logger.debug("Item: %r" % (view,))
+                if insert:
+                    self.window.insert_line(i-self.pos)
+                self.window.write_at(0,i-self.pos,s,attr)
+                for attr,s in view[1:]:
+                    self.window.write(s,attr)
+                y,x=self.window.win.getyx()
+                if x<self.window.iw-1:
+                    self.window.clrtoeol()
+            finally:
+                self.window.screen.lock.release()
         finally:
             self.lock.release()
 

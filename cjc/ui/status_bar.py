@@ -49,6 +49,8 @@ class StatusBar(Widget):
     def update(self,now=1,redraw=0):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             content=self.theme_manager.format_string(self.format,self.dict)
             if content==self.current_content and not redraw:
                 return

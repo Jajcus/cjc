@@ -51,6 +51,8 @@ class InputWidget:
             return
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             if now:
                 self.win.refresh()
             else:

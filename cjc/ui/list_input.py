@@ -62,12 +62,7 @@ class ListInput(InputWidget):
             self.parent.abort_handler()
             return
         else:
-            self.screen.lock.acquire()
-            try:
-                curses.beep()
-            finally:
-                self.screen.lock.release()
-                return
+            self.screen.beep()
 
     def key_enter(self):
         if self.multi:
@@ -76,11 +71,11 @@ class ListInput(InputWidget):
                 if self.selected[i]:
                     ans.append(self.keys[i])
             if not ans and self.required:
-                return curses.beep()
+                return self.screen.beep()
         else:
             if self.choice<0:
                 if self.required:
-                    return curses.beep()
+                    return self.screen.beep()
                 else:
                     ans=None
             else:
@@ -107,13 +102,15 @@ class ListInput(InputWidget):
 
     def key_select(self):
         if not self.multi:
-            return curses.beep()
+            return self.screen.beep()
         self.selected[self.choice]=not self.selected[self.choice]
         self.redraw()
 
     def update(self,now=1,refresh=0):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             if refresh:
                 if self.choice<0:
                     s=u""

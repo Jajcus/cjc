@@ -110,6 +110,8 @@ class Input(Widget):
         self.input_win=None
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             if self.prompt:
                 l=len(self.prompt)
                 if l<self.w/2:
@@ -159,18 +161,29 @@ class Input(Widget):
         return 1
 
     def update(self,now=1,redraw=0):
-        if self.prompt_win:
-            self.prompt_win.noutrefresh()
-        if self.input_widget:
-            self.input_widget.update(0,redraw)
-        if now:
-            curses.doupdate()
+        self.screen.lock.acquire()
+        try:
+            if not self.screen.active:
+                return
+            if self.prompt_win:
+                self.prompt_win.noutrefresh()
+            if self.input_widget:
+                self.input_widget.update(0,redraw)
+            if now:
+                curses.doupdate()
+        finally:
+            self.screen.lock.release()
 
     def cursync(self):
         if self.input_widget:
             return self.input_widget.cursync()
 
     def getch(self):
-        if self.input_widget:
-            return self.input_widget.win.getch()
+        self.screen.lock.acquire()
+        try:
+            if self.screen.active and self.input_widget:
+                return self.input_widget.win.getch()
+        finally:
+            self.screen.lock.release()
+        return -1
 # vi: sts=4 et sw=4

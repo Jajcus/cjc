@@ -88,6 +88,8 @@ class Window(Widget):
             return
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.win.erase()
             self.update()
         finally:
@@ -164,6 +166,8 @@ class Window(Widget):
     def draw_buffer(self):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.win.erase()
             self.win.move(0,0)
             if not self.buffer:
@@ -198,6 +202,8 @@ class Window(Widget):
     def nl(self):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.win.addstr("\n")
         finally:
             self.screen.lock.release()
@@ -205,6 +211,8 @@ class Window(Widget):
     def delete_line(self,y):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.win.move(y,0)
             self.win.deleteln()
         finally:
@@ -213,6 +221,8 @@ class Window(Widget):
     def insert_line(self,y):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.win.move(y,0)
             self.win.insertln()
         finally:
@@ -221,6 +231,8 @@ class Window(Widget):
     def clear(self):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.win.erase()
         finally:
             self.screen.lock.release()
@@ -228,6 +240,8 @@ class Window(Widget):
     def clrtoeol(self):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.win.clrtoeol()
         finally:
             self.screen.lock.release()
@@ -237,6 +251,8 @@ class Window(Widget):
             return
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             return self._write(s,attr)
         finally:
             self.screen.lock.release()
@@ -246,6 +262,8 @@ class Window(Widget):
             return
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             self.win.move(y,x)
             return self._write(s,attr)
         finally:
@@ -267,6 +285,8 @@ class Window(Widget):
         self.status_bar.update(now)
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             if redraw:
                 self.win.erase()
                 if self.buffer:

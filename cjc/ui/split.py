@@ -83,6 +83,8 @@ class VerticalSplit(Split):
     def update(self,now=1,redraw=0):
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             for div in self.divs:
                 div.noutrefresh()
             for c in self.children:

@@ -75,11 +75,23 @@ class TextInput(InputWidget):
 
     def left_scroll_mark(self):
         if self.offset>0:
-            self.win.addch(0,0,curses.ACS_LARROW,self.theme_manager.attrs["scroll_mark"])
+            self.screen.lock.acquire()
+            try:
+                if self.screen.active:
+                    self.win.addch(0,0,curses.ACS_LARROW,
+                            self.theme_manager.attrs["scroll_mark"])
+            finally:
+                self.screen.lock.release()
 
     def right_scroll_mark(self):
         if len(self.content)-self.offset>=self.w:
-            self.win.insch(0,self.w-1,curses.ACS_RARROW,self.theme_manager.attrs["scroll_mark"])
+            self.screen.lock.acquire()
+            try:
+                if self.screen.active:
+                    self.win.insch(0,self.w-1,curses.ACS_RARROW,
+                            self.theme_manager.attrs["scroll_mark"])
+            finally:
+                self.screen.lock.release()
 
     def scroll_right(self):
         while self.pos>self.offset+self.w-2:
@@ -96,6 +108,8 @@ class TextInput(InputWidget):
         self.redraw()
 
     def after_del(self):
+        if not self.screen.active:
+            return
         if len(self.content)-self.offset<self.w-1:
             self.win.move(0,self.pos-self.offset)
             return
@@ -124,9 +138,15 @@ class TextInput(InputWidget):
         self.saved_content=None
         self.pos=0
         self.offset=0
-        self.win.move(0,0)
-        self.win.clrtoeol()
-        self.win.refresh()
+        self.screen.lock.acquire()
+        try:
+            if not self.screen.active:
+                return
+            self.win.move(0,0)
+            self.win.clrtoeol()
+            self.win.refresh()
+        finally:
+            self.screen.lock.release()
         self.parent.input_handler(ans)
 
     def key_kill(self):
@@ -138,9 +158,15 @@ class TextInput(InputWidget):
         self.saved_content=None
         self.pos=0
         self.offset=0
-        self.win.move(0,0)
-        self.win.clrtoeol()
-        self.win.refresh()
+        self.screen.lock.acquire()
+        try:
+            if not self.screen.active:
+                return
+            self.win.move(0,0)
+            self.win.clrtoeol()
+            self.win.refresh()
+        finally:
+            self.screen.lock.release()
 
     def key_home(self):
         self.completing=0
@@ -151,8 +177,14 @@ class TextInput(InputWidget):
         if self.offset>0:
             self.scroll_left()
         else:
-            self.win.move(0,self.pos-self.offset)
-            self.win.refresh()
+            self.screen.lock.acquire()
+            try:
+                if not self.screen.active:
+                    return
+                self.win.move(0,self.pos-self.offset)
+                self.win.refresh()
+            finally:
+                self.screen.lock.release()
 
     def key_end(self):
         self.completing=0
@@ -163,8 +195,14 @@ class TextInput(InputWidget):
         if self.pos>self.offset+self.w-2:
             self.scroll_right()
         else:
-            self.win.move(0,self.pos-self.offset)
-            self.win.refresh()
+            self.screen.lock.acquire()
+            try:
+                if not self.screen.active:
+                    return
+                self.win.move(0,self.pos-self.offset)
+                self.win.refresh()
+            finally:
+                self.screen.lock.release()
 
     def key_left(self):
         self.completing=0
@@ -175,8 +213,14 @@ class TextInput(InputWidget):
         if self.pos and self.pos<self.offset+1:
             self.scroll_left()
         else:
-            self.win.move(0,self.pos-self.offset)
-            self.win.refresh()
+            self.screen.lock.acquire()
+            try:
+                if not self.screen.active:
+                    return
+                self.win.move(0,self.pos-self.offset)
+                self.win.refresh()
+            finally:
+                self.screen.lock.release()
 
     def key_right(self):
         self.completing=0
@@ -187,8 +231,14 @@ class TextInput(InputWidget):
         if self.pos>self.offset+self.w-2:
             self.scroll_right()
         else:
-            self.win.move(0,self.pos-self.offset)
-            self.win.refresh()
+            self.screen.lock.acquire()
+            try:
+                if not self.screen.active:
+                    return
+                self.win.move(0,self.pos-self.offset)
+                self.win.refresh()
+            finally:
+                self.screen.lock.release()
 
     def key_bs(self):
         self.completing=0
@@ -200,10 +250,16 @@ class TextInput(InputWidget):
         if self.pos and self.pos<self.offset+1:
             self.scroll_left()
         else:
-            self.win.move(0,self.pos-self.offset)
-            self.win.delch()
-            self.after_del()
-            self.win.refresh()
+            self.screen.lock.acquire()
+            try:
+                if not self.screen.active:
+                    return
+                self.win.move(0,self.pos-self.offset)
+                self.win.delch()
+                self.after_del()
+                self.win.refresh()
+            finally:
+                self.screen.lock.release()
 
     def key_del(self):
         self.completing=0
@@ -211,9 +267,15 @@ class TextInput(InputWidget):
             self.screen.beep()
             return
         self.content=self.content[:self.pos]+self.content[self.pos+1:]
-        self.win.delch()
-        self.after_del()
-        self.win.refresh()
+        self.screen.lock.acquire()
+        try:
+            if not self.screen.active:
+                return
+            self.win.delch()
+            self.after_del()
+            self.win.refresh()
+        finally:
+            self.screen.lock.release()
 
     def key_uclean(self):
         self.completing=0
@@ -254,17 +316,32 @@ class TextInput(InputWidget):
             if self.pos>self.offset+self.w-2:
                 self.scroll_right()
             else:
-                self.win.addstr(c.encode(self.screen.encoding))
+                self.screen.lock.acquire()
+                try:
+                    if self.screen.active:
+                        self.win.addstr(c.encode(self.screen.encoding))
+                finally:
+                    self.screen.lock.release()
         else:
             self.content=self.content[:self.pos]+c+self.content[self.pos:]
             self.pos+=1
             if self.pos>self.offset+self.w-2:
                 self.scroll_right()
             else:
-                self.win.insstr(c.encode(self.screen.encoding))
-                self.right_scroll_mark()
-                self.win.move(0,self.pos-self.offset)
-        self.win.refresh()
+                self.screen.lock.acquire()
+                try:
+                    if self.screen.active:
+                        self.win.insstr(c.encode(self.screen.encoding))
+                        self.right_scroll_mark()
+                        self.win.move(0,self.pos-self.offset)
+                finally:
+                    self.screen.lock.release()
+        self.screen.lock.acquire()
+        try:
+            if self.screen.active:
+                self.win.refresh()
+        finally:
+            self.screen.lock.release()
 
     def history_prev(self):
         self.completing=0
@@ -310,6 +387,8 @@ class TextInput(InputWidget):
             self.pos=len(self.content)
         self.screen.lock.acquire()
         try:
+            if not self.screen.active:
+                return
             if self.pos<0 or (self.offset and self.pos<=self.offset):
                 if self.offset:
                     self.pos=self.offset+1

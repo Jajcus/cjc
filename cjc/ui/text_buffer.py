@@ -16,7 +16,6 @@
 
 
 from types import StringType,IntType,UnicodeType
-import curses
 
 from cjc.ui.buffer import Buffer
 from cjc import common
