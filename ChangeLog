@@ -1,5 +1,8 @@
 2004-06-04  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/main.py, cjc/themes.py, cjc/ui/buffer.py, cjc/ui/window.py, plugins/chat.py, plugins/message.py, plugins/muc.py, plugins/presence.py, plugins/roster.py:
+	- configurable preference values for buffers which are used to choose which one is the 'next active buffer'
+
 	* plugins/message.py:
 	- timestamp support for 'normal' messages
 
