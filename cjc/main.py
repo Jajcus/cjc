@@ -1008,27 +1008,28 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.screen.redraw()
 
     def cmd_info(self,args):
-        jid=args.shift()
-        if not jid:
-            self.__logger.error("JID missing")
+        user=args.shift()
+        if not user:
+            self.__logger.error("User name/JID missing")
             return
         args.finish()
-        jid=self.get_user(jid)
-        if jid is None:
-            self.__logger.error("Invalid jabber id")
+        jids=self.get_users(user)
+        if not jids:
+            self.__logger.error("Invalid jabber id or user name")
             return
-        uinf=self.get_user_info(jid)
-        if uinf is None:
-            self.__logger.info(u"I know nothing about "+jid.as_unicode())
-            return
-        self.__logger.info(u"Information known about %s:" % (jid.as_unicode(),))
-        for k,v in uinf.items():
-            if not self.info_handlers.has_key(k):
-                continue
-            r=self.info_handlers[k](k,v)
-            if not r:
-                continue
-            self.__logger.info(u"  %s: %s" % r)
+        for jid in jids:
+            uinf=self.get_user_info(jid)
+            if uinf is None:
+                self.__logger.info(u"I know nothing about "+jid.as_unicode())
+                return
+            self.__logger.info(u"Information known about %s:" % (jid.as_unicode(),))
+            for k,v in uinf.items():
+                if not self.info_handlers.has_key(k):
+                    continue
+                r=self.info_handlers[k](k,v)
+                if not r:
+                    continue
+                self.__logger.info(u"  %s: %s" % r)
 
     def cmd_help(self,args):
         cmd=args.shift()
@@ -1291,7 +1292,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                 self.__logger.exception("Exception:")
         self.__logger.debug("Main loop exiting")
 
-    def get_user(self,name):
+    def get_users(self,name):
         if name.find("@")>=0:
             if self.roster:
                 try:
@@ -1302,7 +1303,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                     if len(ritems)==1:
                         return ritems[0].jid
             try:
-                return pyxmpp.JID(name)
+                return [pyxmpp.JID(name)]
             except pyxmpp.JIDError:
                 self.__logger.error(u"Invalid JID: %s" % (name,))
                 return None
@@ -1316,20 +1317,25 @@ class Application(tls.TLSMixIn,jabber.Client):
         except KeyError:
             try:
                 jid=pyxmpp.JID(name)
-                return self.roster.item_by_jid(jid).jid()
+                return [self.roster.item_by_jid(jid).jid()]
             except (ValueError,pyxmpp.JIDError,KeyError):
                 pass
             self.__logger.error(u"%s not found in roster" % (name,))
             return None
 
         if ritems:
-            if len(ritems)>1:
-                self.__logger.error("ambiguous user name")
-                return None
-            else:
-                return ritems[0].jid
+            return [item.jid for item in ritems]
         self.__logger.error(u"%s not found in roster" % (name,))
         return None
+
+    def get_user(self,name):
+        jids=self.get_users(name)
+        if not jids:
+            return None
+        if len(jids)>1:
+            self.__logger.error("ambiguous user name")
+            return None
+        return jids[0]
 
     def get_bare_user_info(self,jid,var=None):
         if jid.resource:
