@@ -379,7 +379,7 @@ class Plugin(PluginBase):
             "log_format_in": ("Format of incoming message log entries",(str,None)),
             "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of message buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
-            "auto_popup": ("When enabled each new message buffer is automaticaly made active.",bool),
+            "auto_popup": ("When enabled each new message buffer is automatically made active.",bool),
             "editor": ("Editor for message composition. Default: $EDITOR or 'vi'",str),
             "editor_encoding": ("Character encoding for edited messages. Default: locale specific",str),
             }
