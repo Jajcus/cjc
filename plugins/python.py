@@ -1,12 +1,12 @@
 
 import os
 from cjc.plugin import PluginBase
-from cjc import commands
+from cjc import ui
 
 class Plugin(PluginBase):
 	def __init__(self,app):
 		PluginBase.__init__(self,app)
-		commands.activate_table("python",self)
+		ui.activate_cmdtable("python",self)
 
 	def cmd_python(self,args):
 		code=args.all()
@@ -16,9 +16,8 @@ class Plugin(PluginBase):
 		vars={"app":self.cjc}
 		exec code in vars
 
-ctb=commands.CommandTable("python",50,(
-	commands.Command("python",Plugin.cmd_python,
+ui.CommandTable("python",50,(
+	ui.Command("python",Plugin.cmd_python,
 		"/python code...",
 		"Executes given python code"),
-	))
-commands.install_table(ctb)
+	)).install()

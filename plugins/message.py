@@ -6,7 +6,6 @@ import pyxmpp
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
-from cjc import commands
 
 theme_attrs=(
 	("message.subject", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -139,15 +138,14 @@ class MessageBuffer:
 
 		self.plugin.send_message(self.last_sender,subject,body,self.last_thread)
 
-ctb=commands.CommandTable("message buffer",50,(
-	commands.Command("close", MessageBuffer.cmd_close,
+ui.CommandTable("message buffer",50,(
+	ui.Command("close", MessageBuffer.cmd_close,
 		"/close",
 		"Closes current chat buffer"),
-	commands.Command("reply", MessageBuffer.cmd_reply,
+	ui.Command("reply", MessageBuffer.cmd_reply,
 		"/reply [-subject subject] [text]",
 		"Reply to the last message in window"),
-	))
-commands.install_table(ctb)
+	)).install()
 
 class Plugin(PluginBase):
 	def __init__(self,app):
@@ -175,6 +173,7 @@ class Plugin(PluginBase):
 						"Subject: %(subject)s\n%(body)s\n",
 				}
 		app.add_event_handler("presence changed",self.ev_presence_changed)
+		ui.activate_cmdtable("message",self)
 
 	def cmd_message(self,args):
 		arg1=args.shift()
@@ -337,10 +336,9 @@ class Plugin(PluginBase):
 		except (IOError,OSError),e:
 			self.cjc.error("Couldn't write message log: "+str(e))
 
-ctb=commands.CommandTable("message",50,(
-	commands.Command("message",Plugin.cmd_message,
+ui.CommandTable("message",50,(
+	ui.Command("message",Plugin.cmd_message,
 		"/message [-subject subject] nick|jid [text]",
 		"Compose or send message to given user"),
-	commands.CommandAlias("msg","message"),
-	))
-commands.install_table(ctb)
+	ui.CommandAlias("msg","message"),
+	)).install()

@@ -1,12 +1,12 @@
 
 import os
 from cjc.plugin import PluginBase
-from cjc import commands
+from cjc import ui
 
 class Plugin(PluginBase):
 	def __init__(self,app):
 		PluginBase.__init__(self,app)
-		commands.activate_table("shell",self)
+		ui.activate_cmdtable("shell",self)
 
 	def command_returned(self,command,ret):
 		if ret:
@@ -77,16 +77,14 @@ class Plugin(PluginBase):
 			if ret:
 				self.command_returned(command,ret)
 
-ctb=commands.CommandTable("shell",50,(
-	commands.Command("shell",Plugin.cmd_shell,
+ui.CommandTable("shell",50,(
+	ui.Command("shell",Plugin.cmd_shell,
 		"/shell command [arg...]",
 		"Executes given shelll command"),
-	commands.Command("pipe_in",Plugin.cmd_pipe_in,
+	ui.Command("pipe_in",Plugin.cmd_pipe_in,
 		"/pipe_in command [arg...]",
 		"Takes shell command output as user input"),
-	commands.Command("pipe_out",Plugin.cmd_pipe_out,
+	ui.Command("pipe_out",Plugin.cmd_pipe_out,
 		"/pipe_out command [arg...]",
 		"Feeds shell command with current buffer content"),
-	))
-
-commands.install_table(ctb)
+	)).install()

@@ -4,7 +4,6 @@ import threading
 import time
 
 from cjc import ui
-from cjc import commands
 from cjc.plugin import PluginBase
 
 class Test(threading.Thread):
@@ -12,19 +11,18 @@ class Test(threading.Thread):
 		threading.Thread.__init__(self,name=name)
 		self.plugin=plugin
 		self.buffer=ui.TextBuffer(self.plugin.cjc.theme_manager,name)
-		commands.activate_table("test buffer",self)
+		ui.activate_cmdtable("test buffer",self)
 		self.stop_it=0
 	def cmd_close(self,args):
 		args.finish()
 		self.stop_it=1
 		self.buffer.close()
 
-ctb=commands.CommandTable("test buffer",50,(
-	commands.Command("close",Test.cmd_close,
+ui.CommandTable("test buffer",50,(
+	ui.Command("close",Test.cmd_close,
 		"/close",
 		"Closes current test"),
-	))
-commands.install_table(ctb)
+	)).install()
 
 class ScrollTest(Test): 
 	def __init__(self,plugin):
@@ -119,7 +117,7 @@ class Plugin(PluginBase):
 		}
 	def __init__(self,app):
 		PluginBase.__init__(self,app)
-		commands.activate_table("test",self)
+		ui.activate_cmdtable("test",self)
 	
 	def cmd_test(self,args):
 		name=args.shift()
@@ -133,10 +131,8 @@ class Plugin(PluginBase):
 		test_thread=clas(self)
 		test_thread.start()
 
-ctb=commands.CommandTable("test",51,(
-	commands.Command("test",Plugin.cmd_test,
+ui.CommandTable("test",51,(
+	ui.Command("test",Plugin.cmd_test,
 		"/test [scroll|wrap]",
 		"Various tests of CJC engine."),
-	))
-commands.install_table(ctb)
-
+	)).install()

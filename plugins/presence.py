@@ -5,7 +5,6 @@ import pyxmpp
 
 from cjc.plugin import PluginBase
 from cjc import ui
-from cjc import commands
 
 theme_formats=(
 	("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is available\n"),
@@ -46,7 +45,7 @@ class Plugin(PluginBase):
 		app.add_info_handler("presence",self.info_presence)
 		app.add_event_handler("disconnect request",self.ev_disconnect_request)
 		app.add_event_handler("idle",self.ev_idle)
-		commands.activate_table("presence",self)
+		ui.activate_cmdtable("presence",self)
 		self.away_saved_presence=None
 
 	def info_resources(self,k,v):
@@ -391,34 +390,31 @@ class Plugin(PluginBase):
 		p=stanza.make_accept_response()
 		self.cjc.stream.send(p)
 
-ctb=commands.CommandTable("presence",50,(
-	commands.Command("online",Plugin.cmd_online,
+ui.CommandTable("presence",50,(
+	ui.Command("online",Plugin.cmd_online,
 		"/online [reason]",
 		"Set availability to 'online' with optional reason"),
-	commands.CommandAlias("back","online"),
-	commands.Command("away",Plugin.cmd_away,
+	ui.CommandAlias("back","online"),
+	ui.Command("away",Plugin.cmd_away,
 		"/away [reason]",
 		"Set availability to 'away' with optional reason"),
-	commands.Command("xa",Plugin.cmd_xa,
+	ui.Command("xa",Plugin.cmd_xa,
 		"/xa [reason]",
 		"Set availability to 'extended away' with optional reason"),
-	commands.Command("dnd",Plugin.cmd_dnd,
+	ui.Command("dnd",Plugin.cmd_dnd,
 		"/dnd [reason]",
 		"Set availability to 'do not disturb' with optional reason"),
-	commands.CommandAlias("busy","dnd"),
-	commands.Command("chatready",Plugin.cmd_chatready,
+	ui.CommandAlias("busy","dnd"),
+	ui.Command("chatready",Plugin.cmd_chatready,
 		"/chatready [reason]",
 		"Set availability to 'ready for a chat' with optional reason"),
-	commands.Command("subscribe",Plugin.cmd_subscribe,
+	ui.Command("subscribe",Plugin.cmd_subscribe,
 		"/subscribe user",
 		"Subscribe to user's presence"),
-	commands.Command("unsubscribe",Plugin.cmd_unsubscribe,
+	ui.Command("unsubscribe",Plugin.cmd_unsubscribe,
 		"/unsubscribe user",
 		"Unsubscribe from user's presence (this doesn't remove user from roster)"),
-	commands.Command("cancel",Plugin.cmd_cancel,
+	ui.Command("cancel",Plugin.cmd_cancel,
 		"/cancel user",
 		"Cancel user's subscription to your presence"),
-	))
-commands.install_table(ctb)
-
-
+	)).install()

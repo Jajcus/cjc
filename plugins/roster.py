@@ -7,7 +7,7 @@ import pyxmpp.roster
 from cjc.plugin import PluginBase
 from cjc.ui import ListBuffer
 from cjc import common
-from cjc import commands
+from cjc import ui
 
 theme_attrs=(
 	("roster.available_online", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
@@ -48,7 +48,7 @@ class Plugin(PluginBase):
 		app.theme_manager.set_default_formats(theme_formats)
 		self.buffer=ListBuffer(app.theme_manager,"Roster")
 		self.extra_items=[]
-		commands.activate_table("roster",self)
+		ui.activate_cmdtable("roster",self)
 
 	def info_rostername(self,k,v):
 		if not v:
@@ -324,18 +324,17 @@ class Plugin(PluginBase):
 		iq=item.make_roster_push()
 		self.cjc.stream.send(iq)
 
-ctb=commands.CommandTable("roster",50,(
-	commands.Command("add",Plugin.cmd_add,
+ui.CommandTable("roster",50,(
+	ui.Command("add",Plugin.cmd_add,
 		"/add [-group group]... jid [name]",
 		"Add a user to the roster (this doesn't automaticaly subscribe to his presence)."),
-	commands.Command("remove",Plugin.cmd_remove,
+	ui.Command("remove",Plugin.cmd_remove,
 		"/remove user",
 		"Remove user from the roster."),
-	commands.Command("rename",Plugin.cmd_rename,
+	ui.Command("rename",Plugin.cmd_rename,
 		"/rename user name",
 		"Change visible name of a user in the roster."),
-	commands.Command("group",Plugin.cmd_group,
+	ui.Command("group",Plugin.cmd_group,
 		"/group user [+|-]group...",
 		"Change groups a user from roster belongs to."),
-	))
-commands.install_table(ctb)
+	)).install()

@@ -7,7 +7,6 @@ import pyxmpp
 from pyxmpp.utils import from_utf8,to_utf8
 
 from cjc.plugin import PluginBase
-from cjc import commands
 from cjc import ui
 
 theme_attrs=(
@@ -36,7 +35,7 @@ class Plugin(PluginBase):
 			}
 		app.add_event_handler("stream created",self.ev_stream_created)
 		app.add_event_handler("stream closed",self.ev_stream_closed)
-		commands.activate_table("xmlconsole",self)
+		ui.activate_cmdtable("xmlconsole",self)
 		self.away_saved_presence=None
 		self.buffer=None
 		self.saved_data_in_cb=None
@@ -132,20 +131,17 @@ class Plugin(PluginBase):
 			self.saved_data_out_cb(data)
 		self.show_data(data,"out")
 
-ctb=commands.CommandTable("xmlconsole buffer",51,(
-	commands.Command("close",Plugin.cmd_close,
+ui.CommandTable("xmlconsole buffer",51,(
+	ui.Command("close",Plugin.cmd_close,
 		"/close",
 		"Closes current chat buffer"),
-	))
-commands.install_table(ctb)
+	)).install()
 
-ctb=commands.CommandTable("xmlconsole",51,(
-	commands.Command("xmlconsole",Plugin.cmd_xmlconsole,
+ui.CommandTable("xmlconsole",51,(
+	ui.Command("xmlconsole",Plugin.cmd_xmlconsole,
 		"/xmlconsole",
 		"Open raw XML console"),
-	commands.Command("rawxml",Plugin.cmd_rawxml,
+	ui.Command("rawxml",Plugin.cmd_rawxml,
 		"/rawxml xmlstring",
 		"Send raw xml element"),
-	))
-commands.install_table(ctb)
-
+	)).install()
