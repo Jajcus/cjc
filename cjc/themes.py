@@ -4,10 +4,12 @@ import re
 import time
 from types import UnicodeType,StringType
 
+import pyxmpp
+
 from command_args import CommandError,CommandArgs
 
-
-attr_sel_re=re.compile(r"^(?P<before>[^\%]|(%%)|%\()*\%\[(?P<attr>[^]]*)\](?P<after>.*)$",re.UNICODE)
+attr_sel_re=re.compile(r"(?P<before>(([^\%])|(%%)|(%\())*)\%\[(?P<attr>[^]]*)\](?P<after>.*)",
+			re.UNICODE|re.DOTALL)
 
 attributes_by_name={}
 colors_by_val={}
@@ -140,7 +142,7 @@ class ThemeManager:
 
 		if type(params) in (UnicodeType,StringType):
 			params={"msg":params}
-
+		
 		while 1:
 			try:
 				s=format % params
@@ -150,26 +152,12 @@ class ThemeManager:
 				break
 			except KeyError,key:
 				key=str(key)
-				if key.startswith("T:"):
-					param=key[2:]
-					f=param.find(":")
-					if f>0:
-						tformat=param[f+1:]
-						param=param[:f]
-					else:
-						tformat="%H:%M"
-					if params.has_key(param):
-						t=params[param]
-					elif param=="now":
-						t=time.localtime()
-					else:
-						format=format.replace("%%(%s)" % key,
-									"%%%%(%s)" % key)
-						continue
-					params=params.copy()
-					params[key]=time.strftime(tformat,t)
+				if key.find(":")>0:
+					format=self.process_format_param(format,key,params)
 				else:
-					format=format.replace("%%(%s)" % key,"%%%%(%s)" % key)
+					val=self.find_format_param(key,params)
+					if not val:
+						format=self.quote_format_param(format,key)
 		if self.attrs.has_key(attr):
 			attr=self.attrs[attr]
 		else:
@@ -181,3 +169,54 @@ class ThemeManager:
 		if next:
 			ret+=self.do_format_string(next,next_attr,params)
 		return ret
+					
+	def quote_format_param(self,format,key):
+		return format.replace("%%(%s)" % key,"%%%%(%s)" % key)
+
+	def find_format_param(self,key,params):
+		if key in ("now","timestamp"):
+			val=time.time()
+		else:
+			return None
+		params[key]=val
+		return val
+	
+	def process_format_param(self,format,key,params):
+		sp=key.split(":",2)
+		if len(sp)==2:
+			typ,param=sp
+			form=None
+		else:
+			typ,param,form=sp
+		if params.has_key(param):
+			val=params[param]
+		else:
+			val=self.find_format_param(param,params)
+			if val is None:
+				return quote_format_param(format,key)
+
+		if typ=="T":
+			if form:
+				params[key]=time.strftime(form,time.localtime(val))
+				return format
+			else:
+				params[key]=time.strftime("%H:%M",time.localtime(val))
+				return format
+		elif typ=="J":
+			if not isinstance(val,pyxmpp.JID):
+				val=pyxmpp.JID(val)
+			if form=="nick":
+				params[key]=val.node
+			elif form=="node":
+				params[key]=val.node
+			elif form=="domain":
+				params[key]=val.domain
+			elif form=="resource":
+				params[key]=val.resource
+			elif form=="bare":
+				params[key]=val.bare,as_unicode()
+			else:
+				params[key]=val.as_unicode()
+			return format
+		else:
+			return quote_format_param(format,key)
