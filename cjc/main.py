@@ -935,6 +935,8 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 		for f in table.get_unbound_functions():
 			p={ "table": table.name, "function": f.name, 
 				"description": f.descr}
+			if f.accepts_arg:
+				p["function"]=f.name+"(<arg>)"
 			r+=self.theme_manager.format_string("keyfunction",p)
 		return r
 		
@@ -1152,7 +1154,7 @@ from ui.keytable import KeyFunction
 default_ktb=ui.keytable.KeyTable("default",0,(
 			KeyFunction("command()",
 				Application.key_command,
-				"Execute command <arg>"),
+				"Execute command '<arg>'"),
 		))
 global_ktb=ui.keytable.KeyTable("global",100,(
 			KeyFunction("resize",
