@@ -37,6 +37,8 @@ class Command:
 			return self.handler(object,args)
 		except common.non_errors:
 			raise
+		except CommandError,e:
+			common.error(u"%s: %s" % (self.name,e))
 		except:
 			common.print_exception()
 
