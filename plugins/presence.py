@@ -40,7 +40,7 @@ class Plugin(PluginBase):
         app.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "priority": ("Priority of current resource",int),
-            "chat_priority": ("Priority of current resource in ready-for-chat" 
+            "chat_priority": ("Priority of current resource in ready-for-chat"
                     " mode",(int,None)),
             "dnd_priority": ("Priority of current resource in dnd mode",
                     (int,None)),
@@ -164,7 +164,7 @@ class Plugin(PluginBase):
             return
         p=self.cjc.get_user_info(self.cjc.jid,"presence")
         if (not p or p.get_type()=="unavailable"
-            or (p.get_show() in self.settings["no_auto_away_when"] 
+            or (p.get_show() in self.settings["no_auto_away_when"]
                     and not self.away_saved_presence)):
             return
 
@@ -244,9 +244,9 @@ class Plugin(PluginBase):
                     return
                 continue
             break
-                
+
         reason=args.all()
-        
+
         current=self.cjc.get_user_info(self.cjc.jid,"presence")
         if priority is None:
             priority=self.settings.get("priority",1)

@@ -321,7 +321,7 @@ class Screen:
                 w.update()
                 return w
         return None
-    
+
     def shell_mode(self):
         self.lock.acquire()
         try:

@@ -92,7 +92,7 @@ Subject: %(subject)s
                 os.unlink(self.tmpfile_name)
             except OSError:
                 pass
-            
+
     def fill_template(self,recipient,subject,body):
         if not recipient:
             recipient=u""
@@ -109,7 +109,7 @@ Subject: %(subject)s
                 "subject":subject,
                 "body":body}
         return template
-    
+
     def start(self,recipient,subject,body):
         template=self.fill_template(recipient,subject,body)
         editor_encoding=self.plugin.settings.get("editor_encoding",
@@ -117,9 +117,9 @@ Subject: %(subject)s
         try:
             template=template.encode(editor_encoding,"strict")
         except UnicodeError:
-            self.plugin.error("Cannot encode message or address to the editor encoding.") 
+            self.plugin.error("Cannot encode message or address to the editor encoding.")
             return False
-        
+
         try:
             (tmpfd,self.tmpfile_name)=tempfile.mkstemp(
                     prefix="cjc-",suffix=".txt")
@@ -131,7 +131,7 @@ Subject: %(subject)s
             tmpfile.write(template)
             tmpfile.close()
         except (IOError,OSError),e:
-            self.plugin.error("Cannot write the temporary file %r (fd: %i): %s" 
+            self.plugin.error("Cannot write the temporary file %r (fd: %i): %s"
                     % (self.tmpfile_name,tmpfd,e))
             return False
         return self.edit_message()
@@ -214,7 +214,7 @@ Subject: %(subject)s
         else:
             self.error("Could not find header or body in the message")
             ok=False
-            
+
         if not ok:
             self.buffer.ask_question(u"Errors found. [E]dit again or [C]ancel?",
                     "choice",None,self.send_edit_cancel,values=("ec"))
@@ -407,7 +407,7 @@ class Plugin(PluginBase):
         else:
             subject=None
             recipient=arg1
-        
+
         if not self.cjc.stream:
             self.error("Connect first!")
             return
@@ -419,7 +419,7 @@ class Plugin(PluginBase):
         recipient=self.cjc.get_user(recipient)
         if not recipient:
             return
-        
+
         body=args.all()
         if not body:
             self.compose_message(recipient,subject)

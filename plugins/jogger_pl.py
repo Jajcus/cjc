@@ -58,7 +58,7 @@ Level: %(level)s
                 os.unlink(self.tmpfile_name)
             except OSError:
                 pass
-            
+
     def fill_template(self,subject,level,body):
         if not subject:
             subject=u""
@@ -75,7 +75,7 @@ Level: %(level)s
                 "level":level,
                 "body":body}
         return template
-    
+
     def start(self,subject,level,body):
         template=self.fill_template(subject,level,body)
         editor_encoding=self.plugin.settings.get("editor_encoding",
@@ -83,9 +83,9 @@ Level: %(level)s
         try:
             template=template.encode(editor_encoding,"strict")
         except UnicodeError:
-            self.plugin.error("Cannot encode message to the editor encoding.") 
+            self.plugin.error("Cannot encode message to the editor encoding.")
             return False
-        
+
         try:
             (tmpfd,self.tmpfile_name)=tempfile.mkstemp(
                     prefix="cjc-",suffix=".txt")
@@ -97,7 +97,7 @@ Level: %(level)s
             tmpfile.write(template)
             tmpfile.close()
         except (IOError,OSError),e:
-            self.plugin.error("Cannot write the temporary file %r (fd: %i): %s" 
+            self.plugin.error("Cannot write the temporary file %r (fd: %i): %s"
                     % (self.tmpfile_name,tmpfd,e))
             return False
         return self.edit_message()
@@ -186,7 +186,7 @@ Level: %(level)s
         else:
             self.error("Could not find header or body in the message")
             ok=False
-            
+
         self.buffer.append_themed("info","Validating message, please wait...")
         self.buffer.update()
 
@@ -194,11 +194,11 @@ Level: %(level)s
             if ok and subject:
                 container=self.plugin.settings.get("subject_container")
                 ok=self.validate(subject,container,subject_line,subject_char)
-                
-            if ok and body:  
+
+            if ok and body:
                 container=self.plugin.settings.get("body_container")
                 ok=self.validate(body,container,body_line)
-                
+
         if not ok:
             self.buffer.ask_question(u"Errors found. [E]dit again or [C]ancel?",
                     "choice",None,self.send_edit_cancel,values=("ec"))
@@ -233,7 +233,7 @@ Level: %(level)s
 
     def validate(self,xml,container,line_offset=0,char_offset=0):
         dtd=self.plugin.settings["dtd"]
-        xml=(u"<!DOCTYPE %s %s>\n<%s>\n%s\n</%s>" 
+        xml=(u"<!DOCTYPE %s %s>\n<%s>\n%s\n</%s>"
                 % (container,dtd,container,xml,container))
         xml=xml.encode("utf-8")
         self.plugin.debug("validating %r",xml)
@@ -320,7 +320,7 @@ class Plugin(PluginBase):
 
     def cmd_jogger_pl(self,args):
         subject=args.all()
-        
+
         if not self.cjc.stream:
             self.error("Connect first!")
             return
