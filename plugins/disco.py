@@ -157,6 +157,7 @@ class DiscoBuffer:
             self.node = item.node
             self.fparams['jid'] = item.jid
             self.fparams['node'] = item.node
+            self.buffer.clear()
             self.buffer.update_info(self.fparams)
             self.start_disco()
             self.buffer.update()
