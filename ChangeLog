@@ -1,5 +1,8 @@
 2004-06-20  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/main.py, cjc/themes.py, cjc/ui/buffer.py, cjc/ui/window.py, plugins/chat.py, plugins/message.py, plugins/muc.py:
+	- cosmetics
+
 	* plugins/chat.py, plugins/message.py, plugins/presence.py:
 	- auto_popup settings
 
