@@ -5,6 +5,7 @@ Important:
 - registration and search in Jabber services and gateways
 - message composition (in external editor)
 - /whois (vCard + last activity etc.)
+- storing root CA certificates presented by server and accepted by user
 
 Less important:
 - translate the manual to english ;-)
@@ -12,6 +13,6 @@ Less important:
 - multi-user chat
 - filetransfer
 
-Least important:
+The least important:
 - XHTML
 - moods
