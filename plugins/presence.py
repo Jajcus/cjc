@@ -248,17 +248,20 @@ class Plugin(PluginBase):
         reason=args.all()
 
         current=self.cjc.get_user_info(self.cjc.jid,"presence")
-        if priority is None:
-            priority=self.settings.get("priority",1)
-        if mode=="online":
-            show=None
-        elif mode=="chatready":
-            show="chat"
-        else:
-            show=mode
         if keep and not reason:
             reason=current.get_status()
-        p=pyxmpp.Presence(show=show,status=reason,to_jid=to,priority=priority)
+        if mode=="offline":
+            p=pyxmpp.Presence(status=reason,to_jid=to,stanza_type="unavailable")
+        else:
+            if priority is None:
+                priority=self.settings.get("priority",1)
+            if mode=="online":
+                show=None
+            elif mode=="chatready":
+                show="chat"
+            else:
+                show=mode
+            p=pyxmpp.Presence(show=show,status=reason,to_jid=to,priority=priority)
         self.set_presence(p)
 
     def cmd_online(self,args):
@@ -278,6 +281,9 @@ class Plugin(PluginBase):
 
     def cmd_chatready(self,args):
         self.change_status("chatready",args,self.settings.get("chat_priority"))
+
+    def cmd_offline(self,args):
+        self.change_status("offline",args)
 
     def cmd_subscribe(self,args):
         user=args.shift()
@@ -338,9 +344,10 @@ class Plugin(PluginBase):
             self.error("Cannot change presence: Disconnected.")
             return
         self.cjc.stream.send(p)
-        self.cjc.set_user_info(self.cjc.jid,"presence",p)
-        self.compute_current_resource(self.cjc.jid.bare())
-        self.cjc.send_event("presence changed",self.cjc.jid)
+        if not p.get_to():
+            self.cjc.set_user_info(self.cjc.jid,"presence",p)
+            self.compute_current_resource(self.cjc.jid.bare())
+            self.cjc.send_event("presence changed",self.cjc.jid)
 
     def presence_error(self,stanza):
         fr=stanza.get_from()
@@ -507,6 +514,14 @@ ui.CommandTable("presence",50,(
         " '-clear' clears it, '-priority' allows setting the priority"
         " to an integer in range -128 to 127.",
         ("-to jid","-keep","-clear","-priority opaque","text")),
+    ui.Command("offline",Plugin.cmd_offline,
+        "/dnd [-to jid] [-keep | -clear] [description]",
+        "Set availability to 'offline' with optional description."
+        " '-to' option directs the presence to given user,"
+        " '-keep' forces keeping current status description,"
+        " '-clear' clears it",
+        ("-to jid","-keep","-clear","text")),
+
     ui.CommandAlias("busy","dnd"),
     ui.Command("chatready",Plugin.cmd_chatready,
         "/chatready [-to jid] [-keep | -clear] [-priority n] [description]",
