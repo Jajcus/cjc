@@ -12,6 +12,7 @@ import locale
 import pyxmpp
 
 import ui
+import version
 
 logfile=open("cjc.log","a")
 
@@ -130,7 +131,8 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		self.message_buf=ui.TextBuffer("Messages")
 		self.roster_buf=ui.TextBuffer("Roster")
 
-		self.top_bar=ui.StatusBar("CJC",{})
+		self.top_bar=ui.StatusBar("CJC ver. %(version)s by Jacek Konieczny <jajcus@bnet.pl>",
+					{"version": version.version})
 		self.status_window=ui.Window("Status",1)
 		self.main_window=ui.Window("Main")
 		self.command_line=ui.EditLine()
