@@ -1,5 +1,14 @@
 2004-06-11  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/xmlconsole.py:
+	- 'xmlconsole' plugin unloading
+
+	* cjc/main.py, cjc/ui/cmdtable.py:
+	- plugin unloading/reloading fixes
+
+	* plugins/version.py, cjc/main.py, cjc/ui/__init__.py, cjc/ui/cmdtable.py:
+	- /reaload_plugin command. 'version' plugin made reloadable
+
 	* cjc/main.py, cjc/plugin.py:
 	- plugin management: /load_plugin and /unload_plugin commands and Plugin.unload() callback
 
