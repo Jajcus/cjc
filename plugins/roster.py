@@ -2,6 +2,7 @@ import string
 import curses
 
 import pyxmpp
+import pyxmpp.roster
 
 from cjc.plugin import PluginBase
 from cjc.ui import ListBuffer
@@ -16,9 +17,16 @@ theme_attrs=(
 
 theme_formats=(
 	("roster.group", "%(group)s:"),
+	("roster.group_none", "unfiled:"),
+	("roster.group_me", "me:"),
+	("roster.group_unknown", "not in roster:"),
 	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)"),
 	("roster.available", "%[roster.available_%(show)s] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)"),
 )
+
+# virtual groups
+VG_ME=1
+VG_UNKNOWN=2
 
 class Plugin(PluginBase):
 	def __init__(self,app):
@@ -35,6 +43,7 @@ class Plugin(PluginBase):
 		app.theme_manager.set_default_attrs(theme_attrs)
 		app.theme_manager.set_default_formats(theme_formats)
 		self.buffer=ListBuffer(app.theme_manager,"Roster")
+		self.extra_items=[]
 
 	def info_rostername(self,k,v):
 		if not v:
@@ -62,14 +71,40 @@ class Plugin(PluginBase):
 			try:
 				item=self.cjc.roster.item_by_jid(item)
 			except KeyError:
-				item=self.cjc.roster.item_by_jid(item.bare())
-		for group in item.groups():
+				try:
+					item=self.cjc.roster.item_by_jid(item.bare())
+				except KeyError:
+					pass
+		if isinstance(item,pyxmpp.roster.RosterItem):
+			for group in item.groups():
+				self.write_item(group,item)
+		else:
+			if item.bare()==self.cjc.jid.bare():
+				group=VG_ME
+				if not self.buffer.has_key((group,None)):
+					self.buffer.insert_themed((group,None),"roster.group_me",{})
+			else:
+				group=VG_UNKNOWN
+				if not self.buffer.has_key((group,None)):
+					self.buffer.insert_themed((group,None),"roster.group_unknown",{})
 			self.write_item(group,item)
+			self.extra_items.append((group,item))
 		self.buffer.update()
 	
 	def write_item(self,group,item):
-		jid=item.jid()
-		name=item.name()
+		if isinstance(item,pyxmpp.JID):
+			jid=item
+			name=None
+			ask=None
+			if group==VG_ME:
+				subs="both"
+			else:
+				subs="none"
+		else:
+			jid=item.jid()
+			name=item.name()
+			ask=item.ask()
+			subs=item.subscription()
 		if not name:
 			name=jid.as_unicode()
 		if jid.resource:
@@ -86,7 +121,6 @@ class Plugin(PluginBase):
 			if not show:
 				show=""
 			p["show"]=show
-		ask=item.ask()
 		p["ask"]=ask
 		if not ask:
 			p["aflag"]=" "
@@ -94,7 +128,6 @@ class Plugin(PluginBase):
 			p["aflag"]="-"
 		else:
 			p["aflag"]="?"
-		subs=item.subscription()
 		p["subscription"]=subs
 		if subs=="both":
 			p["sflag"]=" "
@@ -112,14 +145,22 @@ class Plugin(PluginBase):
 
 	def write_all(self):
 		self.buffer.clear()
+		groups_added=[]
+		for group,item in self.extra_items:
+			if group==VG_ME and group not in groups_added:
+				self.buffer.insert_themed((group,None),"roster.group_me",p)
+			elif group==VG_UNKNOWN and group not in groups_added:
+				self.buffer.insert_themed((group,None),"roster.group_unknown",p)
+			self.write_item(group,item)
+			
 		groups=self.cjc.roster.groups()
 		groups.sort()
 		for group in groups:
 			if group:
 				p={"group":group}
+				self.buffer.insert_themed((group,None),"roster.group",p)
 			else:
-				p={"group":"unfiled"}
-			self.buffer.insert_themed((group,None),"roster.group",p)
+				self.buffer.insert_themed((group,None),"roster.group_none",{})
 			for item in self.cjc.roster.items_by_group(group):
 				self.write_item(group,item)
 		self.buffer.redraw()
