@@ -45,11 +45,26 @@ class DiscoBuffer:
                 "jid": jid,
                 "node": node,
                 }
+        self.jid = jid
+        self.node = node
         self.items=None
         self.buffer=ui.TextBuffer(plugin.cjc.theme_manager, self.fparams,
                 "disco.descr", "disco buffer", self)
         self.buffer.preference=plugin.settings["buffer_preference"]
         plugin.cjc.screen.display_buffer(self.buffer)
+
+    def start_disco(self,state="fresh"):
+        self.items = None
+        try:
+            self.plugin.cjc.cache.request_object(disco.DiscoInfo, (self.jid, self.node), state,
+                    self.got_disco_info, self.disco_info_error)
+            self.plugin.cjc.cache.request_object(disco.DiscoItems, (self.jid, self.node), state,
+                    self.got_disco_items, self.disco_items_error)
+        except TypeError:
+            self.buffer.append_themed("error",
+                    "No disco available for '%s','%s'. Maybe you should connect first?"
+                    % (self.jid, self.node))
+            self.buffer.update()
 
     def got_disco_items(self,address,items,state):
         format_string=self.plugin.cjc.theme_manager.format_string
@@ -73,10 +88,12 @@ class DiscoBuffer:
                 "cache_state": cache_state,
                 }
         self.buffer.append_themed("disco.items",params)
+        self.ask_question()
         self.buffer.update()
 
     def disco_items_error(self,address,data):
         self.buffer.append_themed("error",u"%r: %s" % (address,unicode(data)))
+        self.ask_question()
         self.buffer.update()
 
     def got_disco_info(self,address,info,state):
@@ -106,16 +123,44 @@ class DiscoBuffer:
                 "cache_state": cache_state,
                 }
         self.buffer.append_themed("disco.info",params)
+        self.ask_question()
         self.buffer.update()
 
     def disco_info_error(self,address,data):
         self.buffer.append_themed("error",u"%r: %s" % (address,unicode(data)))
+        self.ask_question()
         self.buffer.update()
 
     def cmd_close(self,args):
         if self.buffer:
             self.buffer.close()
         self.buffer=None
+
+    def ask_question(self):
+        if self.items: 
+            max_num = len(self.items)+1
+            self.buffer.ask_question("Item to discover, [R]efresh or [C]lose",
+                    "choice", None, self.response, values=[xrange(1,max_num),"r","c"], required=1)
+        else:
+            self.buffer.ask_question("Item to discover, [R]efresh or [C]lose",
+                    "choice", None, self.response, values=["r","c"], required=1)
+
+    def response(self, arg, response):
+        if response == "c":
+            self.cmd_close(None)
+        elif response == "r":
+            self.buffer.clear()
+            self.start_disco("new")
+        else:
+            item = self.items[response-1]
+            self.jid = item.jid
+            self.node = item.node
+            self.fparams['jid'] = item.jid
+            self.fparams['node'] = item.node
+            self.buffer.update_info(self.fparams)
+            self.start_disco()
+            self.buffer.update()
+
 
 
 class Plugin(PluginBase):
@@ -141,10 +186,7 @@ class Plugin(PluginBase):
             node=args.shift()
         args.finish()
         buffer=DiscoBuffer(self,jid,node)
-        self.cjc.cache.request_object(disco.DiscoInfo, (jid, node), "fresh",
-                buffer.got_disco_info, buffer.disco_info_error)
-        self.cjc.cache.request_object(disco.DiscoItems, (jid, node), "fresh",
-                buffer.got_disco_items, buffer.disco_items_error)
+        buffer.start_disco()
     
     def unload(self):
         ui.uninstall_cmdtable("disco buffer")
