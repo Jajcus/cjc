@@ -1,3 +1,8 @@
+2004-09-10  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/message.py:
+	- missing 'message.composer_descr' theme format added
+
 2004-09-09  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/python.py:
