@@ -1,11 +1,32 @@
 import string
 from cjc.plugin import PluginBase
 import pyxmpp
+import time
 
 theme_formats=(
 	("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is available\n"),
 	("presence.unavailable","%[info][%(T:timestamp)s]  %(J:user)s (%(J:user:rostername)s) is unavailable\n"),
 )
+
+commands={
+	"online": ("cmd_online",
+		"/online [reason]",
+		"Set availability to 'online' with optional reason"),
+	"back": "online",
+	"away": ("cmd_away",
+		"/away [reason]",
+		"Set availability to 'away' with optional reason"),
+	"xa": ("cmd_xa",
+		"/xa [reason]",
+		"Set availability to 'extended away' with optional reason"),
+	"dnd": ("cmd_dnd",
+		"/dnd [reason]",
+		"Set availability to 'do not disturb' with optional reason"),
+	"busy": "dnd",
+	"chatready": ("cmd_chatready",
+		"/chatready [reason]",
+		"Set availability to 'ready for a chat' with optional reason"),
+	}
 
 class Plugin(PluginBase):
 	def __init__(self,app):
@@ -29,6 +50,7 @@ class Plugin(PluginBase):
 		app.add_info_handler("resources",self.info_resources)
 		app.add_info_handler("presence",self.info_presence)
 		app.add_event_handler("disconnect request",self.ev_disconnect_request)
+		app.register_commands(commands,self)
 
 	def info_resources(self,k,v):
 		if not v:
@@ -80,6 +102,46 @@ class Plugin(PluginBase):
 
 	def ev_disconnect_request(self,event,arg):
 		p=pyxmpp.Presence(type="unavailable",status=arg)
+		self.set_presence(p)
+
+	def cmd_online(self,args):
+		if not self.cjc.stream:
+			self.error("Connect first!")
+			return
+		reason=args.all()
+		p=pyxmpp.Presence(status=reason)
+		self.set_presence(p)
+		
+	def cmd_away(self,args):
+		if not self.cjc.stream:
+			self.error("Connect first!")
+			return
+		reason=args.all()
+		p=pyxmpp.Presence(show="away",status=reason)
+		self.set_presence(p)
+
+	def cmd_xa(self,args):
+		if not self.cjc.stream:
+			self.error("Connect first!")
+			return
+		reason=args.all()
+		p=pyxmpp.Presence(show="xa",status=reason)
+		self.set_presence(p)
+		
+	def cmd_dnd(self,args):
+		if not self.cjc.stream:
+			self.error("Connect first!")
+			return
+		reason=args.all()
+		p=pyxmpp.Presence(show="dnd",status=reason)
+		self.set_presence(p)
+		
+	def cmd_chatready(self,args):
+		if not self.cjc.stream:
+			self.error("Connect first!")
+			return
+		reason=args.all()
+		p=pyxmpp.Presence(show="chat",status=reason)
 		self.set_presence(p)
 		
 	def set_presence(self,p):
