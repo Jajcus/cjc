@@ -177,7 +177,7 @@ class Plugin(PluginBase):
             "log_format_in": ("Format of incoming message log entries",(str,None)),
             "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of chat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
-            "auto_popup": ("When enabled each new chat buffer is automaticaly made active.",bool),
+            "auto_popup": ("When enabled each new chat buffer is automatically made active.",bool),
             }
         self.settings={
                 "log_filename": "%($HOME)s/.cjc/logs/chats/%(J:peer:bare)s",

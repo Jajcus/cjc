@@ -507,7 +507,7 @@ class Plugin(PluginBase):
 ui.CommandTable("roster",50,(
     ui.Command("add",Plugin.cmd_add,
         "/add [-group group]... jid [name]",
-        "Add a user to the roster (this doesn't automaticaly subscribe to his presence).",
+        "Add a user to the roster (this doesn't automatically subscribe to his presence).",
         ("-group opaque","user","text")),
     ui.Command("remove",Plugin.cmd_remove,
         "/remove user",
