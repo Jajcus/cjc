@@ -224,6 +224,9 @@ class Screen:
 			oldnum=self.active_window.buffer.get_number()
 		buffer.move(oldnum,newnum)
 
+	def cmd_beep(self,args):
+		self.beep()
+
 	def cursync(self):
 		if self.input_handler:
 			self.input_handler.cursync()
@@ -291,4 +294,7 @@ cmdtable.CommandTable("screen",90,(
 	cmdtable.Command("move",Screen.cmd_move,
 		"/move [oldnumber] number",
 		"Change buffer order"), 
+	cmdtable.Command("beep",Screen.cmd_beep,
+		"/beep",
+		"Makes the terminal 'beep'"), 
 	)).install()
