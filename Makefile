@@ -16,8 +16,7 @@ UNINSTALL_DIR=rm -r
 pkg_datadir=$(datadir)/cjc
 pkg_docdir=$(docdir)/cjc
 
-BASE_VERSION=0.2
-RELEASE=
+VERSION=0.2
 
 PY_DIRS=cjc cjc/ui plugins
 DOCS=doc/manual.html COPYING ChangeLog README TODO
@@ -32,12 +31,9 @@ doc/manual.html: doc/manual.xml
 	cd doc; make
 
 version:
-	if [ "x$(RELEASE)" != "x" ]; then \
-		SNAPSHOT="" ; \
-	else \
-		SNAPSHOT=.`find . -name "*.py" '!' -name "version.py" -printf '%TY%Tm%Td_%TH%TM\n' | sort -r | head -1 2>/dev/null || "unknown"` ; \
-	fi ; \
-	echo "version='$(BASE_VERSION)$$SNAPSHOT'" > cjc/version.py ;
+	if test -f "CVS/Entries" ; then \
+		echo "version='$(VERSION)+cvs'" > cjc/version.py ; \
+	fi
 
 cjc.inst: cjc.in
 	sed -e 's,BASE_DIR,$(pkg_datadir),' < cjc.in > cjc.inst 
