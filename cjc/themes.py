@@ -31,6 +31,8 @@ from cjc import common
 
 attr_sel_re=re.compile(r"(?<!\%)\%\[([^]]*)\]",re.UNICODE)
 formatted_re=re.compile(r"(?<!\%)\%\{([^}]*)\}",re.UNICODE)
+case_re=re.compile(r"(?<!\\)\:",re.UNICODE)
+param_re=re.compile(r"(?<!\\)\,",re.UNICODE)
 
 attributes_by_name={}
 colors_by_val={}
@@ -120,8 +122,8 @@ class ThemeManager:
             filename=os.path.join(theme_dir,filename)
         f=open(filename,"w")
         attr_names=self.attr_defs.keys()
-        attr_names1=[n for n in attr_names if n.find(".")<0]
-        attr_names2=[n for n in attr_names if n.find(".")>=0]
+        attr_names1=[n for n in attr_names if "." not in n]
+        attr_names2=[n for n in attr_names if "." in n]
         attr_names1.sort()
         attr_names2.sort()
         for name in attr_names1+attr_names2:
@@ -137,8 +139,8 @@ class ThemeManager:
                 cmd.add_quoted(attr2name(fallback))
             print >>f,cmd.all()
         format_names=self.formats.keys()
-        format_names1=[n for n in format_names if n.find(".")<0]
-        format_names2=[n for n in format_names if n.find(".")>=0]
+        format_names1=[n for n in format_names if "." not in n]
+        format_names2=[n for n in format_names if "." in n]
         format_names1.sort()
         format_names2.sort()
         for name in format_names1+format_names2:
@@ -285,7 +287,7 @@ class ThemeManager:
         if len(l)==3:
             format=l[0]
             next_attr=l[1]
-            if next_attr.find(u"%")>=0:
+            if "%" in next_attr:
                 next_attr=self.substitute(next_attr,params)
             next=l[2]
         else:
@@ -349,9 +351,9 @@ class ThemeManager:
                 break
             except KeyError,key:
                 key=key.args[0]
-                if key.find(u"?")>0:
+                if "?" in key:
                     format=self.process_format_cond(format,key,params)
-                elif key.find(u":")>0:
+                elif ":" in key:
                     format=self.process_format_param(format,key,params)
                 else:
                     val=self.find_format_param(key,params)
@@ -396,24 +398,24 @@ class ThemeManager:
         if not params.has_key(val):
             return self.quote_format_param(format,key)
         value=params[val]
-        options=expr.split(u",")
-        if not u":" in options[0]:
+        options=param_re.split(expr)
+        if not case_re.match(options[0]):
             # yes/no choice
             if value:
-                params[key]=self.substitute(options[0],params)
+                params[key]=self.substitute(options[0].replace("\\:",":"),params)
             else:
                 if len(options)>1:
-                    params[key]=self.substitute(options[1],params)
+                    params[key]=self.substitute(options[1].replace("\\:",":"),params)
                 else:
                     params[key]=u""
             return format
         # case-like choice
         retval=u""
         for opt in options:
-            if not u":" in opt:
+            if not case_re.match(opt):
                 retval=opt
                 break
-            test,val=opt.split(u":",1)
+            test,val=case_re.split(opt,1)
             if value==test:
                 retval=val
                 break
