@@ -491,7 +491,6 @@ class Application(jabber.Client,tls.TLSHandler):
             self.cmd_connect()
         self.main_loop()
 
-        logger.removeHandler(self.log_hdlr)
 
         for th in threading.enumerate():
             if th is threading.currentThread():
@@ -501,6 +500,8 @@ class Application(jabber.Client,tls.TLSHandler):
             if th is threading.currentThread():
                 continue
             th.join(1)
+
+        logger.removeHandler(self.log_hdlr)
 
     def resize_handler(self):
         self.screen.lock.acquire()
@@ -1521,6 +1522,8 @@ def usage():
     print "  --profile                Write profiling statistics"
 
 def main(base_dir,profile=False):
+    logger=logging.getLogger()
+    logger.setLevel(logging.DEBUG)
     libxml2.debugMemory(1)
     locale.setlocale(locale.LC_ALL,"")
     try:
@@ -1549,7 +1552,6 @@ def main(base_dir,profile=False):
                 mode="a"
             else:
                 mode="w"
-            logger=logging.getLogger()
             if a=="-":
                 hdlr=logging.StreamHandler(sys.stderr)
             else:
@@ -1557,18 +1559,16 @@ def main(base_dir,profile=False):
             formatter=cjclogging.UnicodeFormatter("utf-8",u'%(asctime)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
             logger.addHandler(hdlr)
-            logger.setLevel(logging.DEBUG)
         else:
             usage()
             sys.exit(0)
-
     app=Application(base_dir,config_file,theme_file,home_dir=config_dir,profile=profile)
     try:
         screen=ui.init()
         app.run(screen)
     finally:
-        logging.debug("Cleaning up")
+        #logging.debug("Cleaning up")
         ui.deinit()
-        logging.debug("Cleaned up")
+        #logging.debug("Cleaned up")
 
 # vi: sts=4 et sw=4
