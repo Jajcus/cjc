@@ -10,6 +10,7 @@ from cjc import common
 
 theme_attrs=(
     ("muc.me", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
+    ("muc.to_me", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
     ("muc.other", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
     ("muc.info", curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
 )
@@ -20,6 +21,7 @@ theme_formats=(
     ("muc.nickinfo","%(nick)s%{@muc.userinfo}"),
     ("muc.joining","[%(T:timestamp)s] %[muc.info]* Joining MUC room %(room)s...\n"),
     ("muc.me","[%(T:timestamp)s] %[muc.me]<%{@muc.nick}>%[] %(msg)s\n"),
+    ("muc.to_me","[%(T:timestamp)s] %[muc.other]<%{@muc.nick}>%[] %[muc.to_me]%(msg)s%[]\n"),
     ("muc.other","[%(T:timestamp)s] %[muc.other]<%{@muc.nick}>%[] %(msg)s\n"),
     ("muc.action","[%(T:timestamp)s] %[muc.info]* %{@muc.nick} %(msg)s\n"),
     ("muc.joined","[%(T:timestamp)s] %[muc.info]* %{@muc.nickinfo} has entered the room\n"),
@@ -85,6 +87,8 @@ class Room(muc.MucRoomHandler):
             return
         elif fr==self.room_state.room_jid:
             format="muc.me"
+        elif self.room_state.me.nick.lower() in body.lower():
+            format="muc.to_me"
         else:
             format="muc.other"
         self.buffer.append_themed(format,fparams)
