@@ -64,28 +64,16 @@ class VerticalSplit(Split):
 				return (x,self.y,w,self.h)
 		raise "%r is not a child of mine" % (child,)
 
-	def update(self,now=1):
+	def update(self,now=1,redraw=0):
 		self.screen.lock.acquire()
 		try:
 			for div in self.divs:
 				div.noutrefresh()
 			for c in self.children:
-				c.update(0)
+				c.update(0,redraw)
 			if now:
 				curses.doupdate()
-			self.screen.cursync()
-		finally:
-			self.screen.lock.release()
-
-	def redraw(self,now=1):
-		self.screen.lock.acquire()
-		try:
-			for div in self.divs:
-				div.noutrefresh()
-			for c in self.children:
-				c.redraw(0)
-			if now:
-				curses.doupdate()
+				self.screen.cursync()
 		finally:
 			self.screen.lock.release()
 
@@ -138,13 +126,7 @@ class HorizontalSplit(Split):
 				return (self.x,y,self.w,h)
 		raise "%r is not a child of mine" % (child,)
 
-	def update(self,now=1):
+	def update(self,now=1,redraw=0):
 		for c in self.children:
-			c.update(now)
+			c.update(now,redraw)
 		self.screen.cursync()
-			
-	def redraw(self,now=1):
-		for c in self.children:
-			c.redraw(now)
-		self.screen.cursync()
-			

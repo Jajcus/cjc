@@ -199,28 +199,18 @@ class EditLine(Widget):
 				self.win.move(0,self.pos-self.offset)
 		self.win.refresh()
 
-	def update(self,now=1):
+	def update(self,now=1,refresh=0):
 		self.screen.lock.acquire()
 		try:
-			if now:
-				self.win.refresh()
-			else:
-				self.win.noutrefresh()
-		finally:
-			self.screen.lock.release()
-
-	def redraw(self,now=1):
-		self.screen.lock.acquire()
-		try:
-			if self.offset>0:
-				self.left_scroll_mark()
-				self.win.addstr(self.content[self.offset+1:self.offset+self.w-1])
-			else:
-				self.win.addstr(0,0,self.content[:self.w-1])
-			self.win.clrtoeol()
-			self.right_scroll_mark()
+			if refresh:
+				if self.offset>0:
+					self.left_scroll_mark()
+					self.win.addstr(self.content[self.offset+1:self.offset+self.w-1])
+				else:
+					self.win.addstr(0,0,self.content[:self.w-1])
+				self.win.clrtoeol()
+				self.right_scroll_mark()
 			self.win.move(0,self.pos-self.offset)
-			self.win.cursyncup()
 			if now:
 				self.win.refresh()
 			else:
@@ -228,11 +218,13 @@ class EditLine(Widget):
 		finally:
 			self.screen.lock.release()
 
-	def cursync(self):
+	def cursync(self,now=1):
 		self.screen.lock.acquire()
 		try:
 			self.win.cursyncup()
-			self.win.refresh()
+			if now:
+				self.win.refresh()
+			else:
+				self.win.noutrefresh()
 		finally:
 			self.screen.lock.release()
-

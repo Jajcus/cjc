@@ -28,12 +28,12 @@ class StatusBar(Widget):
 		finally:
 			self.screen.lock.release()
 		
-	def update(self,now=1):
+	def update(self,now=1,redraw=0):
 		self.screen.lock.acquire()
 		try:
 			content=self.theme_manager.format_string(self.format,self.dict)
-			#if content==self.current_content:
-			#	return
+			if content==self.current_content and not redraw:
+				return
 			self.current_content=content
 			self.win.move(0,0)
 			x=0

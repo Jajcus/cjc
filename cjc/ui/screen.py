@@ -66,28 +66,24 @@ class Screen(commands.CommandHandler):
 			return 0,0,w,h
 		raise "%r is not a child of mine" % (child,)
 
-	def update(self):
+	def update(self,now=0,redraw=0):
 		self.lock.acquire()
 		try:
-			if self.content:
-				self.content.update(0)
-			else:
+			if redraw:
 				self.scr.clear()
-			curses.doupdate()
-			self.screen.cursync()
+				self.scr.noutrefresh()
+			if self.content:
+				self.content.update(0,redraw)
+			elif not redraw:
+				self.scr.erase()
+			if now:
+				curses.doupdate()
+				self.screen.cursync()
 		finally:
 			self.lock.release()
 
 	def redraw(self):
-		self.lock.acquire()
-		try:
-			self.scr.clear()
-			self.scr.noutrefresh()
-			if self.content:
-				self.content.redraw(0)
-			curses.doupdate()
-		finally:
-			self.lock.release()
+		self.update(1,1)
 
 	def set_default_key_handler(self,h):
 		self.default_key_handler=h

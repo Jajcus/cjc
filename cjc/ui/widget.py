@@ -14,9 +14,9 @@ class Widget:
 	def get_width(self):
 		return None
 	
-	def update(self,now=1):
+	def update(self,now=1,redraw=0):
 		pass
 
 	def redraw(self,now=1):
-		self.update()
+		self.update(now,1)
 

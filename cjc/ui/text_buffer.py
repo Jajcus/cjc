@@ -191,8 +191,11 @@ class TextBuffer(Buffer):
 			height-=self.line_length(line)/width+1
 		else:
 			ret=[]
-			
+
 		end=len(self.lines)
+		if end and self.lines[-1]==[]:
+			end-=1
+			
 		while height>0 and l<end:
 			line=self.lines[l]
 			while line is not None and height>0:

@@ -140,18 +140,6 @@ class Window(Widget):
 		self.status_bar.get_dict().update(d)
 		self.status_bar.update(now)
 
-	def update(self,now=1):
-		self.status_bar.update(now)
-		self.screen.lock.acquire()
-		try:
-			if now:
-				self.win.refresh()
-			else:
-				self.win.noutrefresh()
-			self.screen.cursync()
-		finally:
-			self.screen.lock.release()
-
 	def draw_buffer(self):
 		self.screen.lock.acquire()
 		try:
@@ -218,17 +206,19 @@ class Window(Widget):
 		s=s.encode(self.screen.encoding,"replace")
 		self.win.addstr(s,attr)
 	
-	def redraw(self,now=1):
+	def update(self,now=1,redraw=0):
+		self.status_bar.update(now)
 		self.screen.lock.acquire()
 		try:
-			self.win.erase()
-			if self.buffer:
-				self.draw_buffer()
+			if redraw:
+				self.win.erase()
+				if self.buffer:
+					self.draw_buffer()
+			self.status_bar.update(now,redraw)
 			if now:
 				self.win.refresh()
+				self.screen.cursync()
 			else:
 				self.win.noutrefresh()
-			self.status_bar.redraw(now)
 		finally:
 			self.screen.lock.release()
-
