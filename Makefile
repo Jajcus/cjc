@@ -24,7 +24,7 @@ DOCS=doc/manual.html COPYING ChangeLog README TODO
 
 EXTRA_DIST=Makefile cjc.in cjc.py doc/manual.xml doc/Makefile
 
-.PHONY: all version dist ChangeLog cosmetics
+.PHONY: all version dist cosmetics
 
 all: cjc.inst $(DOCS) version
 
@@ -39,8 +39,8 @@ version:
 cjc.inst: cjc.in
 	sed -e 's,BASE_DIR,$(pkg_datadir),' < cjc.in > cjc.inst 
 
-ChangeLog: 
-	TZ=UTC svn log -v --xml | svn2log.py -p '/(branches/[^/]+|trunk)' -x ChangeLog -u aux/users
+ChangeLog: .svn/entries
+	TZ=UTC svn log -v --xml | aux/svn2log.py -p '/(branches/[^/]+|trunk)' -x ChangeLog -u aux/users
 
 cosmetics:
 	./aux/cosmetics.sh
