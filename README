@@ -16,8 +16,8 @@ Requirements:
 
 2. PyXMPP - http://jabberstudio.org/projects/pyxmpp
 
-	If you are using CJC from CVS then probably the best choice is to use
-	latest PyXMPP from CVS too. For official releases the latest PyXMPP
+	If you are using CJC from SVN then probably the best choice is to use
+	latest PyXMPP from SVN too. For official releases the latest PyXMPP
 	release before that CJC release should work well (but newer release may
 	work better).
 
@@ -25,7 +25,7 @@ Requirements:
 	but it doesn't have to be installed (just compiled) if you want to run CJC
 	from the source tree (using cjc.py script). PyXMPP compiled sources should be
 	placed in same directory where cjc source tree is (both CJC and PyXMPP
-	tarballs unpacked or both CVS modules checked out in the same directory).
+	tarballs unpacked or both SVN modules checked out in the same directory).
 
 3. libxml2 python bindings - http://xmlsoft.org/
 
