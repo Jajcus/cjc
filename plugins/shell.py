@@ -16,6 +16,8 @@
 
 
 import os
+import locale
+
 from cjc.plugin import PluginBase
 from cjc import ui
 
@@ -120,7 +122,9 @@ class Plugin(PluginBase):
             try:
                 try:
                     if self.cjc.screen.active_window.buffer:
-                        pipe.write(self.cjc.screen.active_window.buffer.as_string())
+                        s=self.cjc.screen.active_window.buffer.as_string()
+                        s=s.encode(self.cjc.screen.encoding,"replace")
+                        pipe.write(s)
                 except (OSError,IOError),e:
                     self.error("Pipe read failed: %s" % (e,))
             finally:
