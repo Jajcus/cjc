@@ -184,7 +184,7 @@ class Plugin(PluginBase):
                 "log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "buffer_preference": 100,
-                "auto_popup": True,
+                "auto_popup": False,
                 }
         app.add_event_handler("presence changed",self.ev_presence_changed)
         app.add_event_handler("day changed",self.ev_day_changed)
