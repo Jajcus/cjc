@@ -752,8 +752,10 @@ class Application(jabber.Client,tls.TLSHandler):
 			if os.path.exists(bakfilename):
 				os.unlink(bakfilename)
 			os.rename(filename,bakfilename)
+		else:
+			bakfilename=None
 		os.rename(tmpfilename,filename)
-		if not self.settings["backup_config"]:
+		if not self.settings["backup_config"] and bakfilename:
 			os.unlink(bakfilename)
 		return 1
 
