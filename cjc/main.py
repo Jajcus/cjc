@@ -798,10 +798,10 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		return self.user_info[ujid].get(var)
 
 	def get_user_info(self,jid,var=None):
-		uinf=self.get_bare_user_info(jid)
-		if uinf is None or not uinf.has_key("resources"):
+		uinf=self.get_bare_user_info(jid).copy()
+		if uinf is None:
 			return None
-		if uinf["resources"].has_key(jid.resource):
+		if uinf.has_key("resources") and uinf["resources"].has_key(jid.resource):
 			uinf.update(uinf["resources"][jid.resource])
 		if var is None:
 			return uinf
