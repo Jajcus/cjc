@@ -103,10 +103,12 @@ class MessageBuffer:
 		args.finish()
 		if self.peer:
 			key=self.peer.bare().as_unicode()
-			if self.plugin.buffers.has_key(key):
-				l=self.plugin.buffers[key]
-				if self in l:
-					l.remove(self)
+		else:
+			key=None
+		if self.plugin.buffers.has_key(key):
+			l=self.plugin.buffers[key]
+			if self in l:
+				l.remove(self)
 		self.buffer.close()
 		return 1
 
