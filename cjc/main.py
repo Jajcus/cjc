@@ -25,6 +25,8 @@ import themes
 import common
 import tls
 
+#import lock_trace
+
 logfile=None
 
 class Exit(Exception):
@@ -357,7 +359,7 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 			self.bottom_bar.update()
 
 	def run(self,screen):
-		#signal.signal(signal.SIGINT,signal.SIG_IGN)
+		signal.signal(signal.SIGINT,signal.SIG_IGN)
 		self.screen=screen
 		self.theme_manager=themes.ThemeManager(self)
 		try:
