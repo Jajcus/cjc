@@ -453,6 +453,9 @@ class Application(jabber.Client,tls.TLSHandler):
             self.info("/connect")
             self.info("/chat jajcus@jabber.bnet.pl CJC Rulez!")
             self.info("")
+            self.info("If you don't have your JID yet then register on some Jabber server first.")
+            self.info("CJC doesn't support registration yet.")
+            self.info("")
             self.info("press Alt-Tab (or Escape Tab) to change active window")
             self.info("PgUp/PgDown to scroll window content")
 
