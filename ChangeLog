@@ -1,3 +1,8 @@
+2004-09-09  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/screen.py:
+	- don't panic on bad arguments to /move
+
 2004-09-08  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/main.py:
