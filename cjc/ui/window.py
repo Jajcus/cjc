@@ -177,6 +177,12 @@ class Window(Widget):
 			self.win.addstr("\n")
 		finally:
 			self.screen.lock.release()
+	def clrtoeol(self):
+		self.screen.lock.acquire()
+		try:
+			self.win.clrtoeol()
+		finally:
+			self.screen.lock.release()
 
 	def write(self,s,attr):
 		if not s:

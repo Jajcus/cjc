@@ -128,6 +128,9 @@ class ListBuffer(Buffer):
 		self.window.write_at(0,i-self.pos,s,attr)
 		for attr,s in view[1:]:
 			self.window.write(s,attr)
+		y,x=self.window.win.getyx()
+		if x<self.window.iw-1:
+			self.window.clrtoeol()
 
 	def page_up(self):
 		self.lock.acquire()
