@@ -58,7 +58,7 @@ class Plugin(PluginBase):
             return
         self.buffer.append_themed("xmlconsole.day_change",{},activity_level=0)
         self.buffer.update()
-    
+
     def setup_stream_callbacks(self,stream):
         if stream:
             self.saved_data_in_cb=stream.data_in

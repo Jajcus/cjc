@@ -205,7 +205,7 @@ class Plugin(PluginBase):
                 self.buffer.insert_themed((group,None),"roster.group",p)
             else:
                 self.buffer.insert_themed((group,None),"roster.group_none",{})
-                
+
         params=self.get_item_format_params(group,item,self.settings["show"])
 
         if params is None:
@@ -219,7 +219,7 @@ class Plugin(PluginBase):
             except ListBufferError:
                 pass
             return
-        
+
         common.debug("Roster.write_item: updating item")
         if params["available"]:
             self.buffer.insert_themed((group,params["jid"]),"roster.available",params)
@@ -372,7 +372,7 @@ class Plugin(PluginBase):
                 item.groups.remove(group)
         iq=item.make_roster_push()
         self.cjc.stream.send(iq)
-        
+
     def cmd_list(self,args):
         if not self.cjc.roster:
             self.cjc.error("No roster available.")

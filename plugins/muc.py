@@ -193,7 +193,7 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.nick_changed",fparams)
         self.buffer.update()
         return
-    
+
     def presence_changed(self,user,stanza):
         fr=stanza.get_from()
         available=stanza.get_type()!="unavailable"
