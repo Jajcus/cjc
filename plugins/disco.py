@@ -141,10 +141,10 @@ class Plugin(PluginBase):
             node=args.shift()
         args.finish()
         buffer=DiscoBuffer(self,jid,node)
-        self.cjc.cache.request_object(disco.DiscoItems, (jid, node), "fresh",
-                buffer.got_disco_items, buffer.disco_items_error)
         self.cjc.cache.request_object(disco.DiscoInfo, (jid, node), "fresh",
                 buffer.got_disco_info, buffer.disco_info_error)
+        self.cjc.cache.request_object(disco.DiscoItems, (jid, node), "fresh",
+                buffer.got_disco_items, buffer.disco_items_error)
     
     def unload(self):
         ui.uninstall_cmdtable("disco buffer")
