@@ -40,6 +40,7 @@ class Plugin(PluginBase):
 		app.add_info_handler("rostergroups",self.info_rostergroups)
 		app.add_event_handler("roster updated",self.ev_roster_updated)
 		app.add_event_handler("presence changed",self.ev_presence_changed)
+		app.add_event_handler("layout changed",self.ev_layout_changed)
 		app.theme_manager.set_default_attrs(theme_attrs)
 		app.theme_manager.set_default_formats(theme_formats)
 		self.buffer=ListBuffer(app.theme_manager,"Roster")
@@ -57,28 +58,37 @@ class Plugin(PluginBase):
 
 	def ev_roster_updated(self,event,arg):
 		if not arg:
+			for item in self.cjc.roster.items():
+				try:
+					self.extra_items.remove((VG_UNKNOWN,item.jid()))
+				except ValueError:
+					pass
 			self.write_all()
 			return
 		self.update_item(arg)
 
 	def ev_presence_changed(self,event,arg):
-		if self.cjc.roster:
-			if arg:
-				self.update_item(arg)
+		if arg:
+			self.update_item(arg)
+
+	def ev_layout_changed(self,event,arg):
+		if self.cjc.roster_window:
+			self.cjc.roster_window.set_buffer(self.buffer)
 
 	def update_item(self,item):
 		if isinstance(item,pyxmpp.JID):
-			try:
-				item=self.cjc.roster.item_by_jid(item)
-			except KeyError:
+			if self.cjc.roster:
 				try:
-					item=self.cjc.roster.item_by_jid(item.bare())
+					item=self.cjc.roster.item_by_jid(item)
 				except KeyError:
-					pass
+					try:
+						item=self.cjc.roster.item_by_jid(item.bare())
+					except KeyError:
+						pass
 		if isinstance(item,pyxmpp.roster.RosterItem):
 			for group in item.groups():
 				self.write_item(group,item)
-		else:
+		elif isinstance(item,pyxmpp.JID):
 			if item.bare()==self.cjc.jid.bare():
 				group=VG_ME
 				if not self.buffer.has_key((group,None)):
@@ -148,9 +158,9 @@ class Plugin(PluginBase):
 		groups_added=[]
 		for group,item in self.extra_items:
 			if group==VG_ME and group not in groups_added:
-				self.buffer.insert_themed((group,None),"roster.group_me",p)
+				self.buffer.insert_themed((group,None),"roster.group_me",{})
 			elif group==VG_UNKNOWN and group not in groups_added:
-				self.buffer.insert_themed((group,None),"roster.group_unknown",p)
+				self.buffer.insert_themed((group,None),"roster.group_unknown",{})
 			self.write_item(group,item)
 			
 		groups=self.cjc.roster.groups()
