@@ -77,7 +77,8 @@ global_settings={
 	"server": ("Server address to connect to",str,".server"),
 	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5 digest')",list,".auth_methods"),
 	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,None,"set_layout"),
-	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",int,None),
+	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float,None),
+	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float,None),
 }
 
 global_theme_attrs=(
@@ -109,7 +110,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	def __init__(self):
 		pyxmpp.Client.__init__(self)
 		commands.CommandHandler.__init__(self,global_commands)
-		self.settings={"layout":"plain","disconnect_timeout":10}
+		self.settings={"layout":"plain","disconnect_timeout":10.0,"disconnect_delay":0.25}
 		self.available_settings=global_settings
 		self.plugin_dirs=["cjc/plugins"]
 		self.plugins={}
@@ -365,6 +366,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			self.error("Connection failed: "+e.args[1])
 	
 	def cmd_disconnect(self,args):
+		if not self.stream:
+			self.error(u"Not connected")
+			return
 		reason=args.all()
 		args.finish()
 		if reason:
@@ -372,6 +376,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		else:
 			self.info(u"Disconnecting...")
 		self.send_event("disconnect request",reason)
+		time.sleep(self.settings["disconnect_delay"])
 		self.disconnect()
 	
 	def cmd_set(self,args):
@@ -695,6 +700,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			else:
 				self.info(u"Disconnecting...")
 			self.send_event("disconnect request",reason)
+			time.sleep(self.settings["disconnect_delay"])
 			self.disconnect()
 		self.state_changed.acquire()
 		self.exiting=time.time()
