@@ -50,34 +50,33 @@ class Plugin(PluginBase):
 		return name,value
 		
 	def session_started(self,stream):
-		self.stream=stream
-		self.stream.set_presence_handler("error",self.presence_error)
-		self.stream.set_presence_handler(None,self.presence_available)
-		self.stream.set_presence_handler("unavailable",self.presence_unavailable)
+		self.cjc.stream.set_presence_handler("error",self.presence_error)
+		self.cjc.stream.set_presence_handler(None,self.presence_available)
+		self.cjc.stream.set_presence_handler("unavailable",self.presence_unavailable)
 
 	def presence_error(self,stanza):
 		fr=stanza.get_from()
-		if self.get_user_info(fr):
+		if self.cjc.get_user_info(fr):
 			self.warning(u"Presence error from: "+fr.as_unicode())
 		else:
 			self.debug(u"Presence error from: "+fr.as_unicode())
 		if fr.resource:
-			self.set_user_info(fr,"presence",stanza.copy())
+			self.cjc.set_user_info(fr,"presence",stanza.copy())
 		else:	
-			self.set_bare_user_info(fr,"presence",stanza.copy())
+			self.cjc.set_bare_user_info(fr,"presence",stanza.copy())
 		
 	def presence_available(self,stanza):
 		fr=stanza.get_from()
-		if self.get_user_info(fr):
+		if self.cjc.get_user_info(fr):
 			self.info(fr.as_unicode()+u" is available")
 		else:
 			self.debug(fr.as_unicode()+u" is available")
-		self.set_user_info(fr,"presence",stanza.copy())
+		self.cjc.set_user_info(fr,"presence",stanza.copy())
 		
 	def presence_unavailable(self,stanza):
 		fr=stanza.get_from()
-		if self.get_user_info(fr):
+		if self.cjc.get_user_info(fr):
 			self.info(fr.as_unicode()+u" is unavailable")
 		else:
 			self.debug(fr.as_unicode()+u" is unavailable")
-		self.set_user_info(fr,"presence",stanza.copy())
+		self.cjc.set_user_info(fr,"presence",stanza.copy())
