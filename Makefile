@@ -21,19 +21,17 @@ BASE_VERSION=0.1
 PY_DIRS=cjc cjc/ui plugins
 DOCS=doc/manual.html COPYING ChangeLog
 
-EXTRA_DIST=Makefile cjc.in cjc.py
+EXTRA_DIST=Makefile cjc.in cjc.py doc/manual.xml doc/Makefile
 
 .PHONY: all cvs-version dist
 
-all: cjc.inst cjc/version.py $(DOCS) 
+all: cjc.inst $(DOCS) cvs-version
 
 doc/manual.html: doc/manual.xml 
 	cd doc; make
 
-cjc/version.py: cvs-version
-
 cvs-version:
-	SNAPSHOT=.`find . -name "*.py" '!' -name "version.py" -printf '%TY%Tm%Td/%TH:%TM\n' | sort -r | head -1` ; \
+	SNAPSHOT=.`find . -name "*.py" '!' -name "version.py" -printf '%TY%Tm%Td_%TH%TM\n' | sort -r | head -1` ; \
 	echo "version='$(BASE_VERSION)$$SNAPSHOT'" > cjc/version.py ;
 
 version:
@@ -59,3 +57,18 @@ uninstall:
 	$(UNINSTALL_DIR) $(DESTDIR)$(pkg_datadir) || :
 	$(UNINSTALL_DIR) $(DESTDIR)$(pkg_docdir) || :
 	$(UNINSTALL) $(DESTDIR)$(bindir)/cjc || :
+
+dist: all
+	version=`python -c "import cjc.version; print cjc.version.version"` ; \
+	distname=cjc-$$version ; \
+	for d in $(PY_DIRS) ; do \
+		$(INSTALL_DIR) $$distname/$$d || exit 1 ; \
+		cp $$d/*.py $$distname/$$d || exit 1 ; \
+	done || exit 1 ; \
+	for f in $(DOCS) $(EXTRA_DIST) ; do \
+		d=`dirname $$f` ; \
+		$(INSTALL_DIR) $$distname/$$d || exit 1; \
+		cp $$f $$distname/$$d || exit 1; \
+	done ; \
+	tar czf $${distname}.tar.gz $$distname && \
+	rm -r $$distname
