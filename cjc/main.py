@@ -151,8 +151,7 @@ class Application(jabber.Client,tls.TLSHandler):
         completions.UserCompletion(self).register("user")
         completions.CommandCompletion(self).register("command")
 
-    def load_plugin(self,name):
-        self.info("  %s" % (name,))
+    def _load_plugin(self,name):
         try:
             mod=__import__(name)
             plugin=mod.Plugin(self)
@@ -161,22 +160,59 @@ class Application(jabber.Client,tls.TLSHandler):
             self.print_exception()
             self.info("Plugin load failed")
 
+    def load_plugin(self,name):
+        sys_path=sys.path
+        try:
+            for path in self.plugin_dirs:
+                sys.path=[path]+sys_path
+                f=os.path.join(path,name+".py")
+                if not os.path.exists(f):
+                    continue
+                if self.plugins.has_key(name):
+                    self.error("Plugin %s already loaded!" % (name,))
+                    return
+                self.info("Loading plugin %s..." % (name,))
+                self._load_plugin(name)
+                return
+            self.error("Couldn't find plugin %s" % (name,))
+        finally:
+            sys.path=sys_path
+
+    def unload_plugin(self,name):
+        try:
+            plugin=self.plugins[name]
+        except KeyError:
+            self.error("Plugin %s is not loaded" % (name,))
+            return False
+        self.info("Unloading plugin %s..." % (name,))
+        r=plugin.unload()
+        if not r:
+            self.error("Plugin %s cannot be unloaded" % (name,))
+            return False
+        del self.plugins[name]
+        return True
+
     def load_plugins(self):
         sys_path=sys.path
-        for path in self.plugin_dirs:
-            sys.path=[path]+sys_path
-            try:
-                d=os.listdir(path)
-            except (OSError,IOError),e:
-                self.debug("Couldn't get plugin list: %s" % (e,))
-                self.info("Skipping plugin directory %s" % (path,))
-                continue
-            self.info("Loading plugins from %s:" % (path,))
-            for f in d:
-                if f[0]=="." or not f.endswith(".py"):
+        try:
+            for path in self.plugin_dirs:
+                sys.path=[path]+sys_path
+                try:
+                    d=os.listdir(path)
+                except (OSError,IOError),e:
+                    self.debug("Couldn't get plugin list: %s" % (e,))
+                    self.info("Skipping plugin directory %s" % (path,))
                     continue
-                self.load_plugin(os.path.join(f[:-3]))
-        sys.path=sys_path
+                self.info("Loading plugins from %s:" % (path,))
+                for f in d:
+                    if f[0]=="." or not f.endswith(".py"):
+                        continue
+                    name=os.path.join(f[:-3])
+                    if not self.plugins.has_key(name):
+                        self.info("  %s" % (name,))
+                        self._load_plugin(name)
+        finally:
+            sys.path=sys_path
 
     def add_event_handler(self,event,handler):
         self.lock.acquire()
@@ -948,6 +984,22 @@ class Application(jabber.Client,tls.TLSHandler):
             table,keyname=None,arg1
         ui.unbind(keyname,table)
 
+    def cmd_load_plugin(self,args):
+        name=args.shift()
+        args.finish()
+        if not name:
+            self.error("Plugin name missing.")
+            return
+        self.load_plugin(name)
+
+    def cmd_unload_plugin(self,args):
+        name=args.shift()
+        args.finish()
+        if not name:
+            self.error("Plugin name missing.")
+            return
+        self.unload_plugin(name)
+
     def format_keytables(self,attr,params):
         r=[]
         for table in ui.keytable.keytables:
@@ -1312,6 +1364,12 @@ ui.CommandTable("global",100,(
     ui.Command("unbind",Application.cmd_unbind,
         "/unbind [table] keyname",
         "Unbinds given key."),
+    ui.Command("load_plugin",Application.cmd_load_plugin,
+        "/load_plugin name",
+        "Loads a plugin."),
+    ui.Command("unload_plugin",Application.cmd_unload_plugin,
+        "/unload_plugin name",
+        "Unloads a plugin."),
     )).install()
 
 def usage():
