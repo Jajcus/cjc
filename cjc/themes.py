@@ -293,7 +293,9 @@ class ThemeManager:
                 break
             except KeyError,key:
                 key=key.args[0]
-                if key.find(":")>0:
+                if key.find("?")>0:
+                    format=self.process_format_cond(format,key,params)
+                elif key.find(":")>0:
                     format=self.process_format_param(format,key,params)
                 else:
                     val=self.find_format_param(key,params)
@@ -329,6 +331,38 @@ class ThemeManager:
             return None
         params[key]=val
         return val
+
+    def process_format_cond(self,format,key,params):
+        sp=key.split(u"?",1)
+        val,expr=sp
+        if not params.has_key(val) and u":" in val:
+            self.process_format_param(format,val,params)
+        if not params.has_key(val):
+            return self.quote_format_param(format,key)
+        value=params[val]
+        options=expr.split(u",")
+        if not u":" in options[0]:
+            # yes/no choice
+            if value:
+                params[key]=options[0]
+            else:
+                if len(options)>1:
+                    params[key]=options[1]
+                else:
+                    params[key]=u""
+            return format
+        # case-like choice
+        retval=u""
+        for opt in options:
+            if not u":" in opt:
+                retval=opt
+                break
+            test,val=opt.split(":",1)
+            if value==test:
+                retval=val
+                break
+        params[key]=retval
+        return format
 
     def process_format_param(self,format,key,params):
         sp=key.split(":",2)
@@ -409,5 +443,5 @@ class ThemeManager:
                 params[key]=val
             return format
         else:
-            return quote_format_param(format,key)
+            return self.quote_format_param(format,key)
 # vi: sts=4 et sw=4
