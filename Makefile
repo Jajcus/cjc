@@ -31,7 +31,7 @@ doc/manual.html: doc/manual.xml
 	cd doc; make
 
 version:
-	if test -f "CVS/Entries" ; then \
+	if test -d ".svn" ; then \
 		echo "version='$(VERSION)+cvs'" > cjc/version.py || : ; \
 	fi
 

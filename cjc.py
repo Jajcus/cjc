@@ -41,8 +41,8 @@ for p in l:
         else:
             print >>sys.stderr,"Not compiled, skipping",
 
-if os.path.exists(os.path.join(base_dir,"CVS/Entries")):
-    print >>sys.stderr,"Running from CVS, updating version"
+if os.path.exists(os.path.join(base_dir,".svn/entries")):
+    print >>sys.stderr,"Running from SVN, updating version"
     try:
         cwd=os.getcwd()
         try:
@@ -56,7 +56,7 @@ if os.path.exists(os.path.join(base_dir,"CVS/Entries")):
         try:
             p=os.path.join(base_dir,"cjc/version.py")
             f=file(p,"w")
-            print >>f,"version='unknown CVS'"
+            print >>f,"version='unknown SVN'"
             f.close()
         except (OSError,IOError):
             pass
