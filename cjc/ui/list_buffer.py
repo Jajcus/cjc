@@ -135,40 +135,48 @@ class ListBuffer(Buffer):
 		return ret
 	
 	def display(self,i,insert=0):
-		if not self.window:
-			return
-		if i<self.pos:
-			return
-		if i>=self.pos+self.window.ih:
-			return
-		common.debug("Updating item #%i" % (i,))
-		if i>=len(self.items):
-			self.window.win.move(0,i-self.pos)
-			self.window.clrtoeol()
-			return
-		view=self.items[i]
-		attr,s=view[0]
-		common.debug("Item: %r" % (view,))
-		if insert:
-			self.window.insert_line(i-self.pos)
-		self.window.write_at(0,i-self.pos,s,attr)
-		for attr,s in view[1:]:
-			self.window.write(s,attr)
-		y,x=self.window.win.getyx()
-		if x<self.window.iw-1:
-			self.window.clrtoeol()
+		self.lock.acquire()
+		try:
+			if not self.window:
+				return
+			if i<self.pos:
+				return
+			if i>=self.pos+self.window.ih:
+				return
+			common.debug("Updating item #%i" % (i,))
+			if i>=len(self.items):
+				self.window.win.move(0,i-self.pos)
+				self.window.clrtoeol()
+				return
+			view=self.items[i]
+			attr,s=view[0]
+			common.debug("Item: %r" % (view,))
+			if insert:
+				self.window.insert_line(i-self.pos)
+			self.window.write_at(0,i-self.pos,s,attr)
+			for attr,s in view[1:]:
+				self.window.write(s,attr)
+			y,x=self.window.win.getyx()
+			if x<self.window.iw-1:
+				self.window.clrtoeol()
+		finally:
+			self.lock.release()
 
 	def undisplay(self,i):
-		if not self.window:
-			return
-		if i<self.pos:
-			return
-		if i>=self.pos+self.window.ih:
-			return
-		common.debug("Erasing item #%i" % (i,))
-		self.window.delete_line(i-self.pos)
-		if len(self.items)>=self.pos+self.window.ih:
-			self.display(self,self.pos+self.window.ih-1)
+		self.lock.acquire()
+		try:
+			if not self.window:
+				return
+			if i<self.pos:
+				return
+			if i>=self.pos+self.window.ih:
+				return
+			common.debug("Erasing item #%i" % (i,))
+			self.window.delete_line(i-self.pos)
+			if len(self.items)>=self.pos+self.window.ih:
+				self.display(self,self.pos+self.window.ih-1)
+		finally:
+			self.lock.release()
 
 	def page_up(self):
 		self.lock.acquire()
@@ -178,10 +186,10 @@ class ListBuffer(Buffer):
 			self.pos-=self.window.ih
 			if self.pos<0:
 				self.pos=0
+			self.window.draw_buffer()
+			self.window.update()
 		finally:
 			self.lock.release()
-		self.window.draw_buffer()
-		self.window.update()
 
 	def page_down(self):
 		self.lock.acquire()
@@ -189,10 +197,10 @@ class ListBuffer(Buffer):
 			if self.pos>=len(self.keys)-self.window.ih+1:
 				return
 			self.pos+=self.window.ih
+			self.window.draw_buffer()
+			self.window.update()
 		finally:		
 			self.lock.release()
-		self.window.draw_buffer()
-		self.window.update()
 
 	def keypressed(self,ch,escape):
 		if escape:

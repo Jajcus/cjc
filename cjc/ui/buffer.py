@@ -34,9 +34,13 @@ class Buffer(CommandHandler):
 		self.question=None
 
 	def set_window(self,win):
-		self.window=win
-		if win:
-			self.activity(0)
+		self.lock.acquire()
+		try:
+			self.window=win
+			if win:
+				self.activity(0)
+		finally:
+			self.lock.release()
 
 	def update_info(self,info):
 		self.info.update(info)
