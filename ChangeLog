@@ -1,6 +1,15 @@
 2004-06-06  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py:
+	- themable join/leave message. more information included in the standard join/leave messages
+
+	* cjc/themes.py:
+	- recursive conditional substitutions
+
+	* cjc/ui/buffer.py:
+	- don't break when closing a buffer not in the list of buffers
+
+	* plugins/muc.py:
 	- use the already existing MUC buffer only if the chat is active
 
 2004-06-04  Jacek Konieczny  <jajcus@bnet.pl>
