@@ -30,6 +30,7 @@ import signal
 import getopt
 import datetime
 import logging
+import logging.config
 
 import pyxmpp
 from pyxmpp import jabber
@@ -1204,6 +1205,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         p.dump_stats("cjc-ui.prof")
 
     def ui_loop(self):
+        self.__logger.debug("UI thread started")
         last_time=datetime.datetime.now()
         last_active=last_time
         idle=0
@@ -1242,6 +1244,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         p.dump_stats("cjc-stream.prof")
 
     def stream_loop(self):
+        self.__logger.debug("Stream thread started")
         while not self.exit_time():
             self.state_changed.acquire()
             stream=self.stream
@@ -1535,6 +1538,7 @@ def usage():
     print "  --log-file=filename      File where debug log should be written"
     print "  -L filename"
     print "  --append-log-file=filename  File where debug log should be appended"
+    print "  --log-config=filename    File with debug log configuration."
     print "  -P"
     print "  --profile                Write profiling statistics"
 
@@ -1545,7 +1549,8 @@ def main(base_dir,profile=False):
     locale.setlocale(locale.LC_ALL,"")
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hc:C:t:l:",
-                    ["help","config-file=","config-directory=","theme-file=","log-file="])
+                    ["help","config-file=","config-directory=",
+                    "theme-file=","log-file=","log-config="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -1576,6 +1581,8 @@ def main(base_dir,profile=False):
             formatter=cjclogging.UnicodeFormatter("utf-8",u'%(asctime)s %(levelname)s %(message)s')
             hdlr.setFormatter(formatter)
             logger.addHandler(hdlr)
+        elif o in ("--log-config",):
+            logging.config.fileConfig(a)
         else:
             usage()
             sys.exit(0)

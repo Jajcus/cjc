@@ -1,0 +1,21 @@
+[loggers]
+keys=root
+[handlers]
+keys=hndlr
+[formatters]
+keys=form
+
+[logger_root]
+level=DEBUG
+handlers=hndlr
+
+[handler_hndlr]
+class=FileHandler
+level=DEBUG
+formatter=form
+args=("cjc-detailed.log",)
+
+[formatter_form]
+class=cjclogging.UnicodeFormatter
+format=%(asctime)s %(filename)15s:%(lineno)4d th#%(thread)-5d %(levelname)7s %(message)s
+
