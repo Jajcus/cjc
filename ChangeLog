@@ -1,6 +1,15 @@
 2004-06-04  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/message.py:
+	- timestamp support for 'normal' messages
+
+	* cjc/main.py:
+	- treat '#' as the begining of a comment only if it is the first non-whitespace character in the line (fixes bug: #3749)
+
+	* cjc/ui/screen.py, cjc/ui/status_bar.py, cjc/ui/text_buffer.py, cjc/ui/window.py, cjc/themes.py:
+	- theme engine improvements: 'none' color and possibility to use 'attr name empty' attribute definition (meaning no attribute change)
+
+	* plugins/message.py:
 	- default theme fixed
 
 	* plugins/vcard.py:
