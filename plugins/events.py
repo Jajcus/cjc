@@ -21,7 +21,8 @@ class Plugin(PluginBase):
                 "event_handlers": [
                         "chat message received:beep *.*",
                         "message received:beep *.*.*",
-                        "groupchat message to me received:beep *",
+                        "groupchat message to me received:beep *.*",
+                        "groupchat message received:beep *",
                         ],
                 }
         app.add_event_handler("*",self.handle_event)
@@ -57,8 +58,9 @@ class Plugin(PluginBase):
             ev,command=s
             try:
                 if re.match(ev,event):
-                   ui.run_command(command)
-                   return
+                    if command:
+                        ui.run_command(command)
+                    return
             except re.error:
                 continue
 
