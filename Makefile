@@ -19,7 +19,7 @@ pkg_docdir=$(docdir)/cjc
 BASE_VERSION=0.1
 
 PY_DIRS=cjc cjc/ui plugins
-DOCS=doc/manual.html COPYING ChangeLog
+DOCS=doc/manual.html COPYING ChangeLog README TODO
 
 EXTRA_DIST=Makefile cjc.in cjc.py doc/manual.xml doc/Makefile
 

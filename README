@@ -1,0 +1,51 @@
+			     Console Jabber Client
+		   (c) 2003 Jacek Konieczny <jajcus@bnet.pl>
+
+CJC is a Jabber/XMPP client for text terminals. It uses pyxmpp library for XMPP
+comunication and curses for screen output. It is not finished yet, but still
+quite usable. Its user interface is resembling those of popular IRC clients
+like irssi or BitchX.
+
+Requirements:
+-------------
+
+1. Python interpreter
+
+	PyXMPP and CJC were tested with Python 2.2.3, but probably it will also
+	work with some older Python versions.
+
+2. PyXMPP - http://jabberstudio.org/projects/pyxmpp
+
+	If you are using CJC from CVS then probably the best choice is to use
+	latest PyXMPP from CVS too. For official releases the latest PyXMPP
+	release before that CJC release should work well (but newer release may
+	work better).
+
+3. libxml2 python bindings - http://xmlsoft.org/
+
+	This is rather pyxmpp requirement and the libxml2 module should match
+	libxml2 library version used to compile PyXMPP. CJC was tested with
+	libxml2-2.5.8 and libxml2-2.5.9.
+
+When Psyco (a kind of just-in-time (JIT) compiler) is available it will be used
+to improve CJC speed.
+
+
+Usage:
+------
+
+See the attached manual (doc/manual.html). Some day it may be complete :-)
+
+
+Bug reports and feature requests:
+---------------------------------
+
+The best place to send those is the CJC page on JabberStudio:
+
+	http://jabberstudio.org/projects/cjc
+
+But you can write to me directly via e-mail: jajcus@bnet.pl 
+or jabber: jajcus@jabber.bnet.pl
+
+But if you don't describe your problem or wish on JabberStudio I may forget
+about it.
