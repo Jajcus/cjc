@@ -26,8 +26,6 @@ import themes
 import common
 import tls
 
-#import lock_trace
-
 logfile=None
 
 class Exit(Exception):
@@ -140,6 +138,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		self.top_bar=None
 		self.bottom_bar=None
 		self.resize_request=0
+		self.disconnecting=0
 		ui.activate_keytable("default",self)
 		ui.activate_keytable("global",self)
 		ui.activate_cmdtable("global",self)
@@ -361,7 +360,9 @@ class Application(jabber.Client,tls.TLSHandler):
 
 		self.update_status_bars()
 		self.ui_thread=threading.Thread(None,self.ui_loop,"UI")
+		self.ui_thread.setDaemon(1)
 		self.stream_thread=threading.Thread(None,self.stream_loop,"Stream")
+		self.stream_thread.setDaemon(1)
 
 		self.ui_thread.start()
 		self.stream_thread.start()
@@ -377,7 +378,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		for th in threading.enumerate():
 			if th is threading.currentThread():
 				continue
-			th.join(0)
+			th.join(1)
 
 	def resize_handler(self):
 		self.screen.lock.acquire()
@@ -421,6 +422,7 @@ class Application(jabber.Client,tls.TLSHandler):
 				% (self.stream.peer,))
 		
 	def disconnected(self):
+		self.disconnecting=0
 		for user,info in self.user_info.items():
 			if info.has_key("presence"):
 				del info["presence"]
@@ -477,13 +479,25 @@ class Application(jabber.Client,tls.TLSHandler):
 			return
 		reason=args.all()
 		args.finish()
-		if reason:
-			self.info(u"Disconnecting (%s)..." % (reason,))
+		if self.disconnecting:
+			self.force_disconnect()
 		else:
-			self.info(u"Disconnecting...")
-		self.send_event("disconnect request",reason)
-		time.sleep(self.settings["disconnect_delay"])
-		self.disconnect()
+			self.disconnecting=1
+			if reason:
+				self.info(u"Disconnecting (%s)..." % (reason,))
+			else:
+				self.info(u"Disconnecting...")
+			self.send_event("disconnect request",reason)
+			time.sleep(self.settings["disconnect_delay"])
+			self.disconnect()
+
+	def force_disconnect(self):
+		self.info(u"Forcing disconnect...")
+		self.lock.acquire()
+		self.stream.close()
+		self.stream=None
+		self.lock.release()
+		self.disconnected()
 	
 	def cmd_set(self,args):
 		self.debug("args: "+`args.args`)
@@ -873,7 +887,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		if not keyname:
 			self.error("Not implemented yet (you must give keyname argument).")
 			return
-		ui.keytable.bind(keyname,function,table)
+		ui.bind(keyname,function,table)
 
 	def cmd_unbind(self,args):
 		arg1=args.shift()
@@ -883,7 +897,7 @@ class Application(jabber.Client,tls.TLSHandler):
 			table,keyname=arg1,arg2
 		else:
 			table,keyname=None,arg1
-		ui.keytable.unbind(keyname,table)
+		ui.unbind(keyname,table)
 
 	def format_keytables(self,attr,params):
 		r=[]
@@ -916,13 +930,17 @@ class Application(jabber.Client,tls.TLSHandler):
 
 	def exit_request(self,reason):
 		if self.stream:
-			if reason:
-				self.info(u"Disconnecting (%s)..." % (reason,))
+			if self.disconnecting:
+				self.force_disconnect()
 			else:
-				self.info(u"Disconnecting...")
-			self.send_event("disconnect request",reason)
-			time.sleep(self.settings["disconnect_delay"])
-			self.disconnect()
+				self.disconnecting=1
+				if reason:
+					self.info(u"Disconnecting (%s)..." % (reason,))
+				else:
+					self.info(u"Disconnecting...")
+				self.send_event("disconnect request",reason)
+				time.sleep(self.settings["disconnect_delay"])
+				self.disconnect()
 		self.state_changed.acquire()
 		self.exiting=time.time()
 		self.state_changed.notify()
@@ -942,7 +960,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		idle=0
 		while not self.exit_time():
 			try:
-				act=ui.keytable.keypressed()
+				act=ui.keypressed()
 			except (KeyboardInterrupt,SystemExit),e:
 				self.exit_request(str(e))
 				self.print_exception()
