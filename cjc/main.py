@@ -85,8 +85,11 @@ global_settings={
 	"password": ("Jabber ID to use.",unicode),
 	"port": ("Port number to connect to",int),
 	"server": ("Server address to connect to",str),
-	"enable_tls": ("Enable TLS (encrypted) connections",int),
-	"require_tls": ("Require TLS (encrypted) connections",int),
+	"tls_enable": ("Enable TLS (encrypted) connections",int),
+	"tls_require": ("Require TLS (encrypted) connections",int),
+	"tls_cert_file": ("Path to user certificate file",(str,None)),
+	"tls_key_file": ("Path to user private key file (default: same to tls_cert_file)",(str,None)),
+	"tls_ca_cert_file": ("Path to CA certificates file",(str,None)),
 	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5,digest')",list),
 	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,"set_layout"),
 	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
@@ -134,8 +137,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			"disconnect_timeout":10.0,
 			"disconnect_delay":0.25,
 			"autoconnect":0,
-			"enable_tls":1,
-			"require_tls":0,
+			"tls_enable":1,
+			"tls_require":0,
 			"keepalive":15*60,
 			"debug":0}
 		self.aliases={}
@@ -466,10 +469,15 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		if not self.port:
 			self.port=5222
 		self.server=self.settings.get("server")
-		self.enable_tls=self.settings.get("enable_tls")
-		self.require_tls=self.settings.get("require_tls")
-		self.auth_methods=self.settings.get("auth_methods")
-		self.keepalive=self.settings.get("keepalive")
+		if self.settings.get("tls_enable"):
+			self.tls_settings=pyxmpp.TLSSettings(
+					require=self.settings.get("tls_require"),
+					cert_file=self.settings.get("tls_cert_file"),
+					key_file=self.settings.get("tls_key_file"),
+					cacert_file=self.settings.get("tls_ca_cert_file")
+					)
+		else:
+			self.tls_settings=None
 		self.info(u"Connecting...")
 		try:
 			self.connect()
