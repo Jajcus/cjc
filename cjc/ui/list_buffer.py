@@ -68,6 +68,7 @@ class ListBuffer(Buffer):
 				i=self.keys.index(key)
 			except ValueError:
 				raise ListBufferError,"Item not found"
+			view=self.clean_item(view)
 			self.items[i]=view
 			self.activity(1)
 			self.display(i)
