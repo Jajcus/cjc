@@ -42,6 +42,11 @@ class Conversation:
 		self.buffer.user_input=self.user_input
 		self.buffer.append_themed("chat.started",self.fparams)
 		self.buffer.update()
+
+	def change_peer(self,peer):
+		self.peer=peer
+		self.fparams["peer"]=peer
+		self.buffer.update_info(self.fparams)
 		
 	def add_msg(self,s,format,who):
 		self.fparams["jid"]=who
@@ -163,7 +168,7 @@ class Plugin(PluginBase):
 			return
 		for conv in self.conversations[key]:
 			if conv.peer==arg or conv.peer==arg.bare():
-				conv.buffer.update()
+				conv.buffer.update_info(conv.fparams)
 
 	def session_started(self,stream):
 		self.cjc.stream.set_message_handler("chat",self.message_chat)
@@ -231,6 +236,9 @@ class Plugin(PluginBase):
 			else:
 				self.conversations[key]=[conv]
 			self.cjc.screen.display_buffer(conv.buffer)
+		else:
+			if fr!=conv.peer:
+				conv.change_peer(fr)
 		conv.add_received(body)
 		return 1
 
