@@ -2,13 +2,26 @@ import string
 from cjc import ui
 from cjc.plugin import PluginBase
 import pyxmpp
+import curses
+
+theme_attrs=(
+	("chat.me", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
+	("chat.peer", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
+	("chat.info", curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
+)
+
+theme_formats=(
+	("chat.started","[%(T:timestamp)s] %[chat.info]* Chat with %(peer)s started\n"),
+	("chat.me","[%(T:timestamp)s] %[chat.me]<%(J:me:nick)s>%[] %(msg)s\n"),
+	("chat.peer","[%(T:timestamp)s] %[chat.peer]<%(J:peer:nick)s>%[] %(msg)s\n"),
+	("chat.action","[%(T:timestamp)s] %[chat.info]* %(J:jid:nick)s %(msg)s\n"),
+)
 
 class Conversation:
-	def __init__(self,plugin,myname,peer,thread=None):
+	def __init__(self,plugin,me,peer,thread=None):
 		self.plugin=plugin
-		self.myname=myname
+		self.me=me
 		self.peer=peer
-		self.peername=peer.node
 		if thread:
 			self.thread=thread
 			self.thread_inuse=1
@@ -16,34 +29,38 @@ class Conversation:
 			plugin.last_thread+=1
 			self.thread="thread-%i" % (plugin.last_thread,)
 			self.thread_inuse=0
-		self.buffer=ui.TextBuffer(u"Chat with %s" % (peer.as_unicode(),))
+		self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,
+						u"Chat with %s" % (peer.as_unicode(),))
 		self.buffer.user_input=self.user_input
-		self.add_info(u"Chat with %s started" % (peer.as_unicode(),))
+		self.fparams={
+			"me":self.me,
+			"peer":self.peer,
+			"jid":self.me,
+		}
+		self.buffer.append_themed("chat.started","default",self.fparams)
+		self.buffer.update()
 		self.buffer.register_commands({"me": (self.cmd_me,
 							"/me text",
 							"Sends /me text")
 						})
 		
-	def add_received(self,s):
+	def add_msg(self,s,format,who):
+		self.fparams["jid"]=who
 		if s.startswith(u"/me "):
-			self.add_info("%s %s" % (self.peername,s[4:]))
+			self.fparams["msg"]=s[4:]
+			self.buffer.append_themed("chat.action","default",self.fparams)
+			self.buffer.update()
 			return
-		self.buffer.append("<%s> " % (self.peername,),"warning")
-		self.buffer.append_line(s,"default")
+		self.fparams["msg"]=s
+		self.buffer.append_themed(format,"default",self.fparams)
 		self.buffer.update()
-		
+
 	def add_sent(self,s):
-		if s.startswith(u"/me "):
-			self.add_info("%s %s" % (self.myname,s[4:]))
-			return
-		self.buffer.append("<%s> " % (self.myname,),"error")
-		self.buffer.append_line(s,"default")
-		self.buffer.update()
-
-	def add_info(self,s):
-		self.buffer.append_line("* %s" % (s,),"warning")
-		self.buffer.update()
-
+		self.add_msg(s,"chat.me",self.me)
+		
+	def add_received(self,s):
+		self.add_msg(s,"chat.peer",self.peer)
+		
 	def user_input(self,s):
 		if not s:
 			return 0
@@ -63,6 +80,8 @@ class Plugin(PluginBase):
 		PluginBase.__init__(self,app)
 		self.conversations={}
 		self.last_thread=0
+		app.theme_manager.set_default_attrs(theme_attrs)
+		app.theme_manager.set_default_formats(theme_formats)
 		app.register_commands({"chat": (self.cmd_chat,
 					"/chat nick|jid [text]",
 					"Start chat with given user")
@@ -82,7 +101,7 @@ class Plugin(PluginBase):
 		if peer is None:
 			return
 
-		conversation=Conversation(self,self.cjc.jid.node,peer)
+		conversation=Conversation(self,self.cjc.jid,peer)
 		key=peer.bare().as_unicode()
 		if self.conversations.has_key(key):
 			self.conversations[key].append(conversation)
@@ -125,7 +144,7 @@ class Plugin(PluginBase):
 				conv.thread_inuse=1
 
 		if not conv:
-			conv=Conversation(self,self.cjc.stream.jid.node,fr,thread)
+			conv=Conversation(self,self.cjc.jid,fr,thread)
 			if self.conversations.has_key(key):
 				self.conversations[key].append(conv)
 			else:
