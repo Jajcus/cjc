@@ -92,7 +92,10 @@ class Conversation:
 	def cmd_me(self,args):
 		if not args:
 			return 1
-		self.user_input(u"/me "+args.all())
+		args=args.all()
+		if not args:
+			return 1
+		self.user_input(u"/me "+args)
 		return 1
 
 	def cmd_close(self,args):
