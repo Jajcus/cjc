@@ -2,7 +2,7 @@ import curses
 import string
 import re
 import datetime
-from types import UnicodeType,StringType
+from types import UnicodeType,StringType,ListType
 import version
 import os
 import locale
@@ -283,6 +283,8 @@ class ThemeManager:
                     ret+=self.do_format_string(before,attr,params)
                 if callable(val):
                     ret+=val(attr,params)
+                elif type(val) is ListType:
+                    ret+=val
                 elif self.formats.has_key(val):
                     f=self.formats[val]
                     ret+=self.do_format_string(f,attr,params)

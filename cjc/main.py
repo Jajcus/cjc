@@ -79,6 +79,8 @@ global_theme_formats=(
     ("buffer_inactive",""),
     ("buffer_active1","%[default]%(buffer_num)i"),
     ("buffer_active2","%[warning]%(buffer_num)i"),
+    ("buffer_list","[%(T:now)s] Buffers: \n%{buffers_on_list}"),
+    ("buffer_on_list","[%(T:now)s] %(buffer_num)i. %{buffer_descr}\n"),
     ("keybindings","%[info]Current key bindings:\n%{tables}"),
     ("keytable","%[info] table %(name)s:\n%{bindings}%{unbound}"),
     ("keybinding","%[info]  %(key)-10s %(function)-20s %(description)s\n"),
@@ -1052,6 +1054,20 @@ class Application(jabber.Client,tls.TLSHandler):
             table,keyname=None,arg1
         ui.unbind(keyname,table)
 
+    def cmd_buffer_list(self,args):
+        args.finish()
+        formatted_list=[]
+        i=1
+        for b in ui.buffer.buffer_list:
+            formatted_list+=self.theme_manager.format_string("buffer_on_list",b.info)
+            i+=1
+        params={
+                "buffers_on_list": formatted_list,
+                "buffer_count": len(ui.buffer.buffer_list),
+        }
+        self.status_buf.append_themed("buffer_list",params)
+        self.status_buf.update(1)
+
     def cmd_load_plugin(self,args):
         name=args.shift()
         args.finish()
@@ -1444,6 +1460,11 @@ ui.CommandTable("global",100,(
     ui.Command("unbind",Application.cmd_unbind,
         "/unbind [table] keyname",
         "Unbinds given key."),
+    ui.Command("buffer_list",Application.cmd_buffer_list,
+        "/buffer_list",
+        "List all buffers"),
+    ui.CommandAlias("listbuf","buffer_list"),
+    ui.CommandAlias("buflist","buffer_list"),
     ui.Command("load_plugin",Application.cmd_load_plugin,
         "/load_plugin name",
         "Loads a plugin."),
