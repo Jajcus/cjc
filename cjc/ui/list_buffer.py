@@ -89,7 +89,6 @@ class ListBuffer(Buffer):
 		finally:
 			self.lock.release()
 
-
 	def clean_item(self,view):
 		ret=[]
 		for attr,s in view:
