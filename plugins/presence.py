@@ -24,7 +24,10 @@ class Plugin(PluginBase):
 		app.theme_manager.set_default_formats(theme_formats)
 		self.available_settings={
 			"priority": ("Priority of current resource",int),
-			"away_priority": ("Priority of current resource in away or xa mode",(int,None)),
+			"chat_priority": ("Priority of current resource in ready-for-chat mode",(int,None)),
+			"dnd_priority": ("Priority of current resource in dnd mode",(int,None)),
+			"away_priority": ("Priority of current resource in away mode",(int,None)),
+			"xa_priority": ("Priority of current resource in xa mode",(int,None)),
 			"auto_away": ("Time in minutes after set presence should be set to 'away' (unset or 0 to disable)",(int,None)),
 			"auto_xa": ("Time in minutes after set presence should be set to 'xa' (unset or 0 to disable)",(int,None)),
 			"auto_away_msg": ("Auto-away status description",(unicode,None)),
@@ -133,17 +136,19 @@ class Plugin(PluginBase):
 			if p.get_show()=="xa":
 				return
 			show="xa"
+			prio=self.settings.get("xa_priority",
+				self.settings.get("away_priority",self.settings.get("priority",0)))
 			status=self.settings.get("auto_xa_msg","")
 		elif auto_away and idle>=auto_away:
 			if p.get_show()=="away":
 				return
 			show="away"
+			prio=self.settings.get("away_priority",self.settings.get("priority",0))
 			status=self.settings.get("auto_away_msg","")
 		else:
 			return
 
 		self.cjc.add_event_handler("keypressed",self.ev_keypressed)
-		prio=self.settings.get("away_priority",self.settings.get("priority",0))
 		p=pyxmpp.Presence(priotity=prio, show=show, status=status % (idle,))
 		self.set_presence(p)
 		
@@ -186,7 +191,8 @@ class Plugin(PluginBase):
 			self.error("Connect first!")
 			return
 		reason=args.all()
-		prio=self.settings.get("away_priority",self.settings.get("priority",0))
+		prio=self.settings.get("xa_priority",self.settings.get("away_priority",
+				self.settings.get("priority",0)))
 		p=pyxmpp.Presence(show="xa",status=reason,priority=prio)
 		self.set_presence(p)
 		
@@ -198,7 +204,7 @@ class Plugin(PluginBase):
 			self.error("Connect first!")
 			return
 		reason=args.all()
-		prio=self.settings.get("priority",0)
+		prio=self.settings.get("dnd_priority",self.settings.get("priority",0))
 		p=pyxmpp.Presence(show="dnd",status=reason,priority=prio)
 		self.set_presence(p)
 		
@@ -210,7 +216,7 @@ class Plugin(PluginBase):
 			self.error("Connect first!")
 			return
 		reason=args.all()
-		prio=self.settings.get("priority",0)
+		prio=self.settings.get("chat_priority",self.settings.get("priority",0))
 		p=pyxmpp.Presence(show="chat",status=reason,priority=prio)
 		self.set_presence(p)
 
