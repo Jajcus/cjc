@@ -35,7 +35,7 @@ class Completion:
 
 class GenericCompletion(Completion):
     def __init__(self,words=[]):
-        ui.Completion.__init__(self)
+        Completion.__init__(self)
         self.words=words
     def complete(self,word):
         matches=[]
@@ -46,7 +46,7 @@ class GenericCompletion(Completion):
 
 class ActiveBufferDefinedCompletion(Completion):
     def __init__(self,screen):
-        ui.Completion.__init__(self)
+        Completion.__init__(self)
         self.__logger=logging.getLogger("cjc.ui.ActiveBufferDefinedCompletion")
         self.screen=screen
     def complete(self,word):
