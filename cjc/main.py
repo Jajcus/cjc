@@ -472,7 +472,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		except (socket.error),e:
 			self.error("Connection failed: "+e.args[1])
 		else:
-			self.disco_identity=DiscoIdentity(self.disco_info,
+			self.disco_identity=pyxmpp.DiscoIdentity(self.disco_info,
 								"Jabber client",
 								"client","console")
 	
