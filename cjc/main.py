@@ -6,14 +6,16 @@ import traceback
 import sys,os
 import select
 import string
-from types import StringType,UnicodeType
+from types import StringType,UnicodeType,IntType,ListType,TupleType
 import locale
+import curses
 
 import pyxmpp
 
 import ui
 import version
 import command_args
+import themes
 
 logfile=open("cjc.log","a")
 
@@ -59,6 +61,9 @@ global_commands={
 	"help": ("cmd_help",
 		"/help [command]",
 		"Show simple help"),
+	"theme": ("cmd_theme",
+		("/theme load [filename]","/theme save [filename]"),
+		"Theme management. Default theme filename is \".cjc-theme\"")
 }
 
 global_settings={
@@ -68,6 +73,30 @@ global_settings={
 	"server": ("Server address to connect to",str,".server"),
 	"auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5 digest')",list,".auth_methods"),
 }
+
+global_theme_attrs=(
+	("default", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
+	("error", curses.COLOR_RED,curses.COLOR_BLACK,curses.A_BOLD, curses.A_STANDOUT),
+	("warning", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
+	("info", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
+	("debug", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_DIM),
+	("bar", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_STANDOUT, curses.A_STANDOUT),
+	("online", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
+	("away", curses.COLOR_BLUE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("xa", curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("chat", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_BOLD),
+	("unavailable", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
+)
+
+global_theme_formats=(
+	("window_status",u" %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s)"),
+	("title_bar",u"%(name)s ver. %(version)s by %(author)s"),
+	("status_bar",u"%(name)s"),
+	("error",u"[%(T:now)s] %(msg)s\n"),
+	("warning",u"[%(T:now)s] %(msg)s\n"),
+	("info",u"[%(T:now)s] %(msg)s\n"),
+	("debug",u"[%(T:now)s] %(msg)s\n"),
+)
 
 class Application(pyxmpp.Client,ui.CommandHandler):
 	def __init__(self):
@@ -131,19 +160,26 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 
 	def run(self,screen):
 		self.screen=screen
+		self.theme_manager=themes.ThemeManager()
+		self.theme_manager.set_default_attrs(global_theme_attrs)
+		self.theme_manager.set_default_formats(global_theme_formats)
 		screen.set_default_command_handler(self)
 		
-		self.status_buf=ui.TextBuffer("Status")
-		self.message_buf=ui.TextBuffer("Messages")
-		self.roster_buf=ui.TextBuffer("Roster")
+		self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
+		self.message_buf=ui.TextBuffer(self.theme_manager,"Messages")
+		self.roster_buf=ui.TextBuffer(self.theme_manager,"Roster")
 
-		self.top_bar=ui.StatusBar("CJC ver. %(version)s by Jacek Konieczny <jajcus@bnet.pl>",
-					{"version": version.version})
-		self.status_window=ui.Window("Status",1)
-		self.main_window=ui.Window("Main")
+		status_bar_params={
+			"name": "CJC",
+			"version": version.version,
+			"author": "Jacek Konieczny <jajcus@bnet.pl>",
+			}
+		self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
+		self.status_window=ui.Window(self.theme_manager,"Status",1)
+		self.main_window=ui.Window(self.theme_manager,"Main")
 		self.command_line=ui.EditLine()
-		self.bottom_bar=ui.StatusBar("CJC",{})
-		self.roster_window=ui.Window("Roster",1)
+		self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
+		self.roster_window=ui.Window(self.theme_manager,"Roster",1)
 
 		sp=ui.VerticalSplit(self.main_window,self.roster_window)
 		sp=ui.HorizontalSplit(self.top_bar,self.status_window,
@@ -496,8 +532,15 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 					return
 		
 		self.info("Usage:")
-		self.info(u"   "+usage)
+		if type(usage) in (ListType,TupleType):
+			for u in usage:
+				self.info(u"   "+u)
+		else:
+			self.info(u"   "+usage)
 		self.info(u"  "+descr)
+
+	def cmd_theme(self,args):
+		self.theme_manager.command(args)
 
 	def loop(self,timeout):
 		while 1:
@@ -603,25 +646,25 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 	def error(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"ERROR",s.encode("utf-8","replace")
-		self.status_buf.append_line(s,"error")
+		self.status_buf.append_themed("error","error",s)
 		self.status_buf.update(1)
 		
 	def warning(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"WARNING",s.encode("utf-8","replace")
-		self.status_buf.append_line(s,"warning")
+		self.status_buf.append_themed("warning","warning",s)
 		self.status_buf.update(1)
 		
 	def info(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"INFO",s.encode("utf-8","replace")
-		self.status_buf.append_line(s,"info")
+		self.status_buf.append_themed("info","info",s)
 		self.status_buf.update(1)
 
 	def debug(self,s):
 		if logfile:
 			print >>logfile,time.asctime(),"DEBUG",s.encode("utf-8","replace")
-		#self.status_buf.append_line(s,"debug")
+		#self.status_buf.append_themed("debug","debug",s)
 		#self.status_buf.update(1)
 
 

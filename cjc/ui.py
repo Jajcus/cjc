@@ -1,7 +1,7 @@
 
 import sys
 import locale
-from types import StringType,UnicodeType
+from types import StringType,UnicodeType,IntType
 import curses
 import curses.textpad
 import traceback
@@ -127,13 +127,16 @@ def buffer_activity(buffer):
 	pass
 
 class TextBuffer(Buffer):
-	def __init__(self,name,length=200):
+	def __init__(self,theme_manager,name,length=200):
 		Buffer.__init__(self,name)
+		self.theme_manager=theme_manager
 		self.length=length
 		self.lines=[[]]
 		self.pos=None
 		
 	def append(self,s,attr="default"):
+		if type(attr) is not IntType:
+			attr=self.theme_manager.attrs[attr]
 		if self.window and self.pos is None:
 			self.window.write(s,attr)
 		else:
@@ -149,10 +152,16 @@ class TextBuffer(Buffer):
 		self.lines=self.lines[-self.length:]
 	
 	def append_line(self,s,attr="default"):
+		if type(attr) is not IntType:
+			attr=self.theme_manager.attrs[attr]
 		self.append(s,attr)
 		self.lines.append([])
 		if self.window and self.pos is None:
 			self.window.write(u"\n",attr)
+
+	def append_themed(self,format,attr,params):
+		for attr,s in self.theme_manager.format_string(format,attr,params):
+			self.append(s,attr)
 
 	def write(self,s):
 		self.append(s)
@@ -471,8 +480,9 @@ class HorizontalSplit(Split):
 			c.redraw(now)
 			
 class StatusBar(Widget):
-	def __init__(self,format,dict):
+	def __init__(self,theme_manager,format,dict):
 		Widget.__init__(self)
+		self.theme_manager=theme_manager
 		self.format=format
 		self.dict=dict
 
@@ -485,28 +495,33 @@ class StatusBar(Widget):
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
 		self.win=curses.newwin(self.h,self.w,self.y,self.x)
-		self.win.bkgdset(ord(" "),self.screen.attrs["bar"])
+		self.win.bkgdset(ord(" "),self.theme_manager.attrs["bar"])
 		
 	def update(self,now=1):
 		self.win.clear()
 		self.win.move(0,0)
-		s=(self.format % self.dict).encode(self.screen.encoding,"replace")
-		s=s[:self.w]
-		self.win.addstr(s)
+		x=0
+		for attr,s in self.theme_manager.format_string(self.format,"bar",self.dict):
+			x+=len(s)
+			if x>=self.w:
+				s=s[:x-self.w]
+				self.win.addstr(s,attr)
+				break
+			self.win.addstr(s,attr)
 		if now:
 			self.win.refresh()
 		else:
 			self.win.noutrefresh()
 
 class Window(Widget):
-	def __init__(self,title,lock=0):
+	def __init__(self,theme_manager,title,lock=0):
 		Widget.__init__(self)
 		self.buffer=None
 		if lock:
 			l="!"
 		else:
 			l=""
-		self.status_bar=StatusBar(u" %(active)s %(winname)s:%(locked)s%(bufname)s(%(bufnum)s)",
+		self.status_bar=StatusBar(theme_manager,"window_status",
 						{"active":"",
 						 "winname":title,
 						 "bufname":"",
@@ -634,7 +649,6 @@ class Window(Widget):
 				self.win.addstr("\n")
 			for attr,s in line:
 				s=s.encode(self.screen.encoding,"replace")
-				attr=self.screen.attrs[attr]
 				self.win.addstr(s,attr)
 			self.newline=1
 		if not has_eol:
@@ -643,7 +657,6 @@ class Window(Widget):
 	def write(self,s,attr):
 		if not s:
 			return
-		attr=self.screen.attrs[attr]
 		y,x=self.win.getyx()
 		if self.newline:
 			if y==self.h-2:
@@ -763,60 +776,13 @@ class Screen(CommandHandler):
 		lc,self.encoding=locale.getlocale()
 		if self.encoding is None:
 			self.encoding="us-ascii"
-		self.make_attr("default",
-				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL,
-				curses.A_NORMAL)
-		self.make_attr("error",
-				curses.COLOR_RED,curses.COLOR_BLACK,curses.A_BOLD,
-				curses.A_STANDOUT)
-		self.make_attr("warning",
-				curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD,
-				curses.A_UNDERLINE)
-		self.make_attr("info",
-				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL,
-				curses.A_NORMAL)
-		self.make_attr("debug",
-				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL,
-				curses.A_DIM)
-		self.make_attr("bar",
-				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_STANDOUT,
-				curses.A_STANDOUT)
-		self.make_attr("online",
-				curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_BOLD,
-				curses.A_BOLD)
-		self.make_attr("away",
-				curses.COLOR_BLUE,curses.COLOR_BLACK,curses.A_NORMAL,
-				curses.A_BOLD)
-		self.make_attr("xa",
-				curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL,
-				curses.A_BOLD)
-		self.make_attr("chat",
-				curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL,
-				curses.A_BOLD)
-		self.make_attr("unavailable",
-				curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_NORMAL,
-				curses.A_NORMAL)
-		self.scr.bkgdset(ord(" "),self.attrs["default"])
+
+	def set_background(self,char,attr):
+		self.scr.bkgdset(ord(char),attr)
 		
 	def size(self):
 		h,w=self.scr.getmaxyx()
 		return w-1,h-1
-
-	def make_attr(self,name,fg,bg,attr,fallback):
-		if not curses.has_colors():
-			self.attrs[name]=fallback
-			return
-		if self.pairs.has_key((fg,bg)):
-			pair=self.pair[fg,bg]
-		elif self.next_pair>curses.COLOR_PAIRS:
-			self.attrs[name]=fallback
-			return
-		else:
-			curses.init_pair(self.next_pair,fg,bg)
-			pair=self.next_pair
-			self.next_pair+=1
-		attr|=curses.color_pair(pair)
-		self.attrs[name]=attr
 
 	def set_content(self,widget):
 		self.content=widget
