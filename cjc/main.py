@@ -13,6 +13,7 @@ import pyxmpp
 
 import ui
 import version
+import command_args
 
 logfile=open("cjc.log","a")
 
@@ -162,7 +163,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		
 		self.load_plugins()
 
-		self.cmd_load()
+		self.load()
 		if not self.jid:
 			self.info("")
 			self.info("Quickstart:")
@@ -187,7 +188,6 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			except:
 				self.print_exception()
 				self.info("Plugin call failed")
-		self.request_roster()
 		self.stream.set_message_handler("error",self.message_error)
 		self.stream.set_message_handler("normal",self.message_normal)
 
@@ -221,7 +221,8 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		self.disconnect()
 	
 	def cmd_set(self,args):
-		if not args:
+		fvar=args.shift()
+		if not fvar:
 			for plugin in [None]+self.plugins.keys():
 				if plugin is None:
 					obj=self
@@ -243,21 +244,15 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 					if type(typ) is tuple:
 						typ=typ[0]
 					if typ is list:
-						self.info(u"%s = %s" % (var,string.join(val," ")))
+						self.info(u"%s = %s" % (var,string.join(val,",")))
 					elif typ is pyxmpp.JID:
 						self.info(u"%s = %s" % (var,val.as_unicode()))
 					else:
 						self.info(u"%s = %s" % (var,val))
 			return
 
-		sp=args.split(None,1)
-		if sp[0].find("=")>0:
-			sp=args.split("=",1)
-
-		if len(sp)==1:
-			fvar,val=sp[0],None
-		else:
-			fvar,val=sp
+		val=args.shift()
+		args.finish()
 
 		if fvar.find(".")>0:
 			plugin,var=fvar.split(".",1)
@@ -290,7 +285,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			if type(typ) is tuple:
 				typ=typ[0]
 			if typ is list:
-				self.info(u"%s = %s" % (fvar,string.join(val," ")))
+				self.info(u"%s = %s" % (fvar,string.join(val,",")))
 			elif typ is pyxmpp.JID:
 				self.info(u"%s = %s" % (fvar,val.as_unicode()))
 			else:
@@ -309,7 +304,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 				break
 			try:
 				if t is list:
-					val=val.split()
+					val=val.split(",")
 				else:
 					val=t(val)
 				valid=1
@@ -329,10 +324,11 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		self.screen.update()
 
 	def cmd_unset(self,args):
-		if not args:
+		fvar=args.shift()
+		
+		if not fvar:
 			return self.cmd_set(args)
 
-		fvar=args
 		if fvar.find(".")>0:
 			plugin,var=fvar.split(".",1)
 			try:
@@ -363,7 +359,12 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		elif location.startswith("."):
 			setattr(obj,location[1:],None)
 			
-	def cmd_save(self,filename=None):
+	def cmd_save(self,args):
+		filename=args.shift()
+		args.finish()
+		self.save(filename)
+		
+	def save(self,filename=None):
 		if filename is None:
 			filename=".cjcrc"
 		self.info(u"Saving settings to "+filename)
@@ -390,18 +391,26 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 					continue
 				if plugin is not None:
 					var="%s.%s" % (plugin,var)
+				args=command_args.CommandArgs(var)
 				if type(typ) is tuple:
 					typ=typ[0]
 				if typ is list:
-					print >>f,var,string.join(val," ")
+					val=string.join(val,",")
 				elif typ is pyxmpp.JID:
-					print >>f,var,val.as_string()
+					val=val.as_string()
 				elif typ is unicode:
-					print >>f,var,val.encode("utf-8")
-				else:
-					print >>f,var,val
+					val=val.encode("utf-8")
+				args.add_quoted(str(val))
+				print >>f,args.all()
 
-	def cmd_load(self,filename=".cjcrc"):
+	def cmd_load(self,args):
+		filename=args.shift()
+		args.finish()
+		self.load(filename)
+		
+	def load(self,filename=None):
+		if filename is None:
+			filename=".cjcrc"
 		try:
 			f=file(".cjcrc","r")
 		except IOError,e:
@@ -415,7 +424,8 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			if not l:
 				continue
 			try:
-				self.cmd_set(unicode(l,"utf-8"))
+				args=command_args.CommandArgs(unicode(l,"utf-8"))
+				self.cmd_set(args)
 			except (ValueError,UnicodeError):
 				self.warning(
 					"Invalid config directive %r ignored" % (l,))
@@ -426,7 +436,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 	
 	def cmd_info(self,args):
 		try:
-			jid=pyxmpp.JID(args)
+			jid=pyxmpp.JID(args.all())
 		except pyxmpp.JIDError:
 			self.error("Invalid jabber id")
 		uinf=self.get_user_info(jid)
@@ -443,7 +453,8 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			self.info(u"  %s: %s" % r)
 
 	def cmd_help(self,args):
-		if not args:
+		cmd=args.shift()
+		if not cmd:
 			self.info("Available commands:")
 			commands=self.commands()
 			if commands:
@@ -465,23 +476,23 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 					self.info(u"    /"+cmd)
 			return
 
-		if args[0]=="/":
-			args=args[1:]
+		if cmd[0]=="/":
+			cmd=cmd[1:]
 		try:
-			handler,usage,descr=self.get_command_info(args)
+			handler,usage,descr=self.get_command_info(cmd)
 		except KeyError:
 			try:
-				handler,usage,descr=self.screen.get_command_info(args)
+				handler,usage,descr=self.screen.get_command_info(cmd)
 			except KeyError:
 				if self.screen.active_window:
 					win=self.screen.active_window
 					try:
-						handler,usage,descr=win.get_command_info(args)
+						handler,usage,descr=win.get_command_info(cmd)
 					except KeyError:
-						self.error(u"Unknown command: "+`args`)
+						self.error(u"Unknown command: "+`cmd`)
 						return
 				else:
-					self.error(u"Unknown command: "+`args`)
+					self.error(u"Unknown command: "+`cmd`)
 					return
 		
 		self.info("Usage:")
@@ -575,28 +586,12 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			self.user_info[ubare]=uinf
 		uinf[var]=val
 
-	def roster_updated(self):
-		self.info("Got roster")
-		self.roster_buf.clear()
-		groups=self.roster.groups()
-		groups.sort()
-		for group in groups:
-			if group:
-				self.roster_buf.append(group+u":\n","default")
-			else:
-				self.roster_buf.append(u"unfiled:\n","default")
-			for item in self.roster.items_by_group(group):
-				jid=item.jid()
-				name=item.name()
-				if not name:
-					name=jid.as_unicode()
-				if jid.resource:
-					self.set_user_info(jid,"rostername",name)
-				else:
-					self.set_bare_user_info(jid,"rostername",name)
-				self.roster_buf.append_line(" "+name)
-		self.roster_buf.redraw()
-		self.send_event("roster updated")
+	def roster_updated(self,jid=None):
+		if jid is None:
+			self.info("Got roster")
+		else:
+			self.debug("Roster updated")
+		self.send_event("roster updated",jid)
 
 	def idle(self):
 		pyxmpp.Client.idle(self)
