@@ -33,6 +33,7 @@ class Buffer:
         self.preference=10
         self.command_table=command_table
         self.command_table_object=command_table_object
+        self.command_table_active=True
         try:
             buffer_list[buffer_list.index(None)]=self
         except ValueError:
@@ -64,7 +65,7 @@ class Buffer:
             if win:
                 self.activity(0)
             if self.command_table:
-                if win:
+                if win and self.command_table_active:
                     cmdtable.activate(self.command_table,
                             self.command_table_object)
                 else:
@@ -72,6 +73,17 @@ class Buffer:
                             self.command_table_object)
         finally:
             self.lock.release()
+
+    def activate_command_table(self):
+        self.command_table_active=True
+        if self.window:
+                cmdtable.activate(self.command_table,
+                        self.command_table_object)
+
+    def deactivate_command_table(self):
+        self.command_table_active=False
+        cmdtable.deactivate(self.command_table,
+                        self.command_table_object)
 
     def update_info(self,info):
         self.info.update(info)

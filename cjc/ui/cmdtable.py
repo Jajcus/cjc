@@ -152,12 +152,14 @@ def deactivate(name,object=None):
     table.active=0
     table.object=None
 
-def lookup_command(name,active_only=0):
+def lookup_command(name,active_only=0,with_help_only=0):
     for ctb in command_tables:
         if active_only and not ctb.active:
             continue
         try:
-            return ctb.lookup_command(name)
+            cmd=ctb.lookup_command(name)
+            if not with_help_only or cmd.descr:
+                return cmd
         except KeyError:
             pass
     raise KeyError,name

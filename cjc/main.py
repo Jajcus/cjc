@@ -1047,10 +1047,10 @@ class Application(jabber.Client,tls.TLSHandler):
             cmd=cmd[1:]
 
         try:
-            cmd=ui_cmdtable.lookup_command(cmd,1)
+            cmd=ui_cmdtable.lookup_command(cmd,1,1)
         except KeyError:
             try:
-                cmd=ui_cmdtable.lookup_command(cmd,0)
+                cmd=ui_cmdtable.lookup_command(cmd,0,1)
             except KeyError:
                 self.__logger.error(u"Unknown command: "+`cmd`)
                 return
@@ -1429,7 +1429,7 @@ ui.KeyTable("global",100,(
         "RESIZE"),
     )).install()
 
-ui.CommandTable("global",100,(
+ui.CommandTable("global",10,(
     ui.Command("quit",Application.cmd_quit,
         "/quit [reason]",
         "Exit CJC",

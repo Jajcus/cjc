@@ -130,6 +130,25 @@ class Conversation:
         self.buffer.close()
         return 1
 
+    def cmd_whois(self,args):
+        self.buffer.deactivate_command_table()
+        try:
+            if not args.get():
+                args=ui.CommandArgs(self.peer.as_unicode())
+            ui.run_command("whois",args)
+        finally:
+            self.buffer.activate_command_table()
+
+    def cmd_info(self,args):
+        self.buffer.deactivate_command_table()
+        try:
+            if not args.get():
+                args=ui.CommandArgs(self.peer.as_unicode())
+            ui.run_command("info",args)
+        finally:
+            self.buffer.activate_command_table()
+
+
 ui.CommandTable("chat buffer",50,(
     ui.Command("me",Conversation.cmd_me,
         "/me text",
@@ -138,6 +157,12 @@ ui.CommandTable("chat buffer",50,(
     ui.Command("close",Conversation.cmd_close,
         "/close",
         "Closes current chat buffer"),
+    ui.Command("whois",Conversation.cmd_whois,
+        "/whois [options] [user]",
+        None),
+    ui.Command("info",Conversation.cmd_info,
+        "/info [options] [user]",
+        None),
     )).install()
 
 class Plugin(PluginBase):
