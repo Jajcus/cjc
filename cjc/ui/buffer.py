@@ -4,6 +4,7 @@ from types import StringType,UnicodeType
 
 from cjc.commands import CommandHandler
 from cjc import common
+from input import InputError
 
 buffer_list=[]
 activity_handlers=[]
