@@ -233,7 +233,10 @@ class Plugin(PluginBase):
 		user=self.cjc.get_user(user)
 		if user is None:
 			return
-		
+		if user.bare()==self.cjc.stream.jid.bare():
+			self.error("Self presence subscription is automatic."
+					" Cannot subscribe own presence.")
+			return
 		p=pyxmpp.Presence(type="subscribe",to=user)
 		self.cjc.stream.send(p)
 	
@@ -242,11 +245,14 @@ class Plugin(PluginBase):
 		if not user:
 			self.error("/unsubscribe without an argument")
 			return
-
 		args.finish()
 
 		user=self.cjc.get_user(user)
 		if user is None:
+			return
+		if user.bare()==self.cjc.stream.jid.bare():
+			self.error("Self presence subscription is automatic."
+					" Cannot unsubscribe own presence.")
 			return
 		
 		p=pyxmpp.Presence(type="unsubscribe",to=user)
@@ -263,7 +269,10 @@ class Plugin(PluginBase):
 		user=self.cjc.get_user(user)
 		if user is None:
 			return
-		
+		if user.bare()==self.cjc.stream.jid.bare():
+			self.error("Self presence subscription is automatic."
+					" Cannot cancel own presence subscription.")
+			return
 		p=pyxmpp.Presence(type="unsubscribed",to=user)
 		self.cjc.stream.send(p)
 		
@@ -352,6 +361,9 @@ class Plugin(PluginBase):
 	
 	def presence_subscribe(self,stanza):
 		fr=stanza.get_from()
+		if fr.bare()==self.cjc.stream.jid.bare():
+			self.debug("Ignoring own presence subscription request")
+			return
 		reason=stanza.get_status()
 		buf=ui.TextBuffer(self.cjc.theme_manager,{"user":fr},"presence.subscribe_buffer")
 		buf.append_themed("presence.subscribe",{"user":fr,"reason":reason})
@@ -393,6 +405,9 @@ class Plugin(PluginBase):
 									
 	def presence_subscription_change(self,stanza):
 		fr=stanza.get_from()
+		if fr.bare()==self.cjc.stream.jid.bare():
+			self.debug("Ignoring own presence subscription change request")
+			return
 		typ=stanza.get_type()
 		self.cjc.status_buf.append_themed("presence.%s" % (typ,),{"user":fr})
 		p=stanza.make_accept_response()
