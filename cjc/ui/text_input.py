@@ -26,17 +26,12 @@ class TextInput:
 		if win:
 			self.win=win
 			self.h,self.w=win.getmaxyx()
-			self.h+=1
-			self.w+=1
 			self.screen=self.parent.screen
 			self.printable=string.digits+string.letters+string.punctuation+" "
 			self.win.keypad(1)
 			self.win.leaveok(0)
 		else:
 			self.win=None
-
-	def get_height(self):
-		return 1
 
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
@@ -128,7 +123,7 @@ class TextInput:
 				self.history_pos=0
 			self.history.append(self.content)
 			self.history=self.history[-self.history_len:]
-		self.parent.input_handler(self.content)
+		ans=self.content
 		self.content=u""
 		self.saved_content=None
 		self.pos=0
@@ -136,6 +131,7 @@ class TextInput:
 		self.win.move(0,0)
 		self.win.clrtoeol()
 		self.win.refresh()
+		self.parent.input_handler(ans)
 
 	def key_home(self):
 		if self.pos<=0:
