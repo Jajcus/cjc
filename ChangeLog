@@ -1,3 +1,9 @@
+2004-02-24  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/presence.py:
+	- default theme changed so status and "show" is displayed in presence change message
+	- presence handling fixed so themed messages "knows" about current presence
+
 2004-02-09  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/chat.py:
