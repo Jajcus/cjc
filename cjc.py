@@ -1,8 +1,42 @@
 #!/usr/bin/python
 
+"""Startup script for running CJC directly from the "source" tree."""
+
 import sys
 import os
-from cjc import main
+import glob
 
-base_dir=os.path.join(sys.path[0],"cjc")
+base_dir=sys.path[0]
+
+l=glob.glob(os.path.join(base_dir,"../pyxmpp*"))
+for p in l:
+	if os.path.exists(os.path.join(p,"pyxmpp/__init__.py")):
+		print >>sys.stderr,"PyXMPP sources found in:", p
+		l=glob.glob(os.path.join(p,"build/lib.*"))
+		if l:
+			sys.path+=l
+		else:
+			print >>sys.stderr,"Not compiled, skipping",
+
+if os.path.exists(os.path.join(base_dir,"CVS/Entries")):
+	print >>sys.stderr,"Running from CVS, updating version"
+	try:
+		cwd=os.getcwd()
+		try:
+			os.chdir(base_dir)
+			if os.system("make cvs-version"):
+				raise OSError,"make failed"
+		finally:
+			os.chdir(cwd)
+	except (OSError,IOError):
+		print >>sys.stderr,"failed"
+		try:
+			p=os.path.join(base_dir,"cjc/version.py")
+			f=file(p,"w")
+			print >>f,"version='unknown CVS'"
+			f.close()
+		except (OSError,IOError):
+			pass
+
+from cjc import main
 main.main(base_dir)
