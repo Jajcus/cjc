@@ -1,6 +1,15 @@
 2004-06-09  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py:
+	- highlight MUC messages containing our nick
+
+	* cjc/completions.py, cjc/ui/buffer.py, cjc/ui/complete.py, cjc/ui/screen.py, plugins/muc.py:
+	- nick completion for MUC
+
+	* plugins/muc.py:
+	- muc.default_nick setting added
+
+	* plugins/muc.py:
 	- don't display role and affiliation in leave messages
 
 2004-06-07  Jacek Konieczny  <jajcus@bnet.pl>
