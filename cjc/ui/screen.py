@@ -31,7 +31,6 @@ class Screen(commands.CommandHandler):
 		self.default_command_handler=None
 		self.escape=0
 		self.lock=threading.RLock()
-		screen.nodelay(1)
 		lc,self.encoding=locale.getlocale()
 		if self.encoding is None:
 			self.encoding="us-ascii"
@@ -92,6 +91,7 @@ class Screen(commands.CommandHandler):
 
 	def set_default_key_handler(self,h):
 		self.default_key_handler=h
+		h.win.timeout(100)
 
 	def set_default_command_handler(self,h):
 		self.default_command_handler=h
