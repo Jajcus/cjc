@@ -1,3 +1,8 @@
+2004-09-16  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/muc.py:
+	- typo fixed
+
 2004-09-14  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/presence.py:
