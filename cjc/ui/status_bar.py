@@ -43,6 +43,7 @@ class StatusBar(Widget):
 					s=s[:x-self.w]
 					self.win.addstr(s,attr)
 					break
+				s=s.encode(self.screen.encoding,"replace")
 				self.win.addstr(s,attr)
 			self.win.clrtoeol()
 			if now:
