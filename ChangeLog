@@ -1,5 +1,11 @@
 2004-08-29  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/ui/complete.py, cjc/completions.py:
+	- call Completion.__init__ in constructors of classes derived from Completion
+
+	* plugins/chat.py, plugins/events.py, plugins/message.py, plugins/muc.py, plugins/presence.py, plugins/python.py, plugins/roster.py, plugins/shell.py, plugins/test.py, plugins/vcard.py, plugins/version.py, plugins/xmlconsole.py, cjc/ui/buffer.py, cjc/ui/cmdtable.py, cjc/ui/complete.py, cjc/ui/input.py, cjc/ui/keytable.py, cjc/ui/list_buffer.py, cjc/ui/screen.py, cjc/ui/window.py, cjc/cjclogging.py, cjc/common.py, cjc/completions.py, cjc/main.py, cjc/plugin.py, cjc/tls.py:
+	- debug/info/error messages processing switched to 'logging' module from standard Python library
+
 	* cjc/main.py:
 	- don't panic on unhandled exception in the stream loop
 
