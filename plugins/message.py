@@ -112,8 +112,11 @@ Subject: %(subject)s
 
     def start(self,recipient,subject,body):
         template=self.fill_template(recipient,subject,body)
-        editor_encoding=self.plugin.settings.get("editor_encoding",
-                locale.getlocale()[1])
+        editor_encoding=self.plugin.settings.get("editor_encoding")
+        if not editor_encoding:
+            editor_encoding=locale.getlocale()[1]
+        if not editor_encoding:
+            editor_encoding="utf-8"
         try:
             template=template.encode(editor_encoding,"strict")
         except UnicodeError:
