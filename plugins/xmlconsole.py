@@ -140,5 +140,5 @@ class Plugin(PluginBase):
 
 	def data_out(self,data):
 		if self.saved_data_in_cb:
-			self.saved_data_in_cb(data)
+			self.saved_data_out_cb(data)
 		self.show_data(data,"out")
