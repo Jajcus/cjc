@@ -55,6 +55,14 @@ class Window(Widget,CommandHandler):
 			old.update()
 		return 1
 
+	def switch_to_active_buffer(self):
+		for b in buffer.buffer_list:
+			if b and b.active>0 and not b.window:
+				self.set_buffer(b)
+				self.update()
+				return 1
+		return 1
+
 	def commands(self):
 		if self.buffer:
 			return self.buffer.commands()+CommandHandler.commands(self)
@@ -270,7 +278,13 @@ class Window(Widget,CommandHandler):
 
 from keytable import KeyFunction,KeyBinding
 ktb=keytable.KeyTable("window",60,(
-		KeyFunction("switch-to-buffer()",Window.switch_to_buffer,"Switch to buffer <arg>"),
+		KeyFunction("switch-to-active-buffer",
+			Window.switch_to_active_buffer,
+			"Switch to the first active buffer",
+			"M-a"),
+		KeyFunction("switch-to-buffer()",
+			Window.switch_to_buffer,
+			"Switch to buffer <arg>"),
 		KeyBinding("switch-to-buffer(1)","M-1"),
 		KeyBinding("switch-to-buffer(2)","M-2"),
 		KeyBinding("switch-to-buffer(3)","M-3"),
