@@ -18,6 +18,7 @@
 import curses
 import curses.textpad
 import string
+import logging
 from types import StringType,UnicodeType,IntType,XRangeType
 
 from cjc.ui import keytable

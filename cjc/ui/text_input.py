@@ -18,6 +18,7 @@
 import curses
 import curses.textpad
 import string
+import logging
 
 from cjc import common
 from cjc.ui.input_widget import InputWidget

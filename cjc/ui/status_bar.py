@@ -16,6 +16,7 @@
 
 
 import curses
+import logging
 
 from cjc.ui.widget import Widget
 from cjc import common

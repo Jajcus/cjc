@@ -18,6 +18,7 @@
 import curses
 import curses.textpad
 import string
+import logging
 from types import ListType,TupleType
 
 from cjc.ui import keytable
