@@ -411,6 +411,16 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	
 	def stream_closed(self,stream):
 		self.send_event("stream closed",stream)
+
+	def stream_error(self,err):
+		msg=u"Stream error"
+		emsg=err.get_message()
+		if emsg:
+			msg+=": %s" % emsg
+		etxt=err.get_text()
+		if etxt:
+			msg+=" ('%s')" % etxt
+		self.error(msg)
 		
 	def disconnected(self):
 		for user,info in self.user_info.items():
