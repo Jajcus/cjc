@@ -442,23 +442,26 @@ class Plugin(PluginBase):
                 if not ok:
                     continue
             formatted_group=[]
-            for item in self.cjc.roster.items_by_group(group):
+            items=[(item.name,item.jid.as_unicode(),item) for item 
+                    in self.cjc.roster.items_by_group(group)]
+            items.sort()
+            for name,jid,item in items:
                 if names:
-                    if item.name is None:
+                    if name is None:
                         continue
                     ok=False
                     for g in names:
-                        if g.search(item.name):
+                        if g.search(name):
                             ok=True
                             break
                     if not ok:
                         continue
                 if jids:
-                    if item.jid is None:
+                    if jid is None:
                         continue
                     ok=False
                     for g in jids:
-                        if g.search(item.jid.as_unicode()):
+                        if g.search(jid):
                             ok=True
                             break
                     if not ok:
