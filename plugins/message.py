@@ -323,7 +323,7 @@ class Plugin(PluginBase):
         buff.add_received(fr,subject,body,thread,timestamp)
         return 1
 
-    def log_message(self,dir,sender,recipient,subject,body,thread,timestamp):
+    def log_message(self,dir,sender,recipient,subject,body,thread,timestamp=None):
         format=self.settings["log_format_"+dir]
         filename=self.settings["log_filename"]
         d={
