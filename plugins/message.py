@@ -6,8 +6,10 @@ import pyxmpp
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
+from pyxmpp.jabber import delay
 
 theme_attrs=(
+    ("message.date", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
     ("message.subject", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
     ("message.sender", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
     ("message.body", curses.COLOR_WHITE,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
@@ -16,6 +18,7 @@ theme_attrs=(
 theme_formats=(
     ("message.received",
 """------------------
+%[message.date]Date:    %(T:timestamp:%c)s
 %[message.sender]From:    %(from)s
 %[message.subject]Subject: %(subject)s
 
@@ -24,6 +27,7 @@ theme_formats=(
 """),
     ("message.sent",
 """------------------
+%[message.date]Date:    %(T:timestamp:%c)s
 %[message.sender]To:      %(to)s
 %[message.subject]Subject: %(subject)s
 
@@ -32,6 +36,7 @@ theme_formats=(
 """),
     ("message.composing",
 """------------------
+%[message.date]Date:    %(T:timestamp:%c)s
 %[message.sender]To:      %(from)s
 %[message.subject]Subject: %(subject)s
 
@@ -59,13 +64,16 @@ class MessageBuffer:
         self.last_body=None
         self.last_thread=None
 
-    def add_received(self,sender,subject,body,thread):
-        self.buffer.append_themed("message.received",{
+    def add_received(self,sender,subject,body,thread,timestamp):
+        d={ 
                 "from": sender,
                 "subject": subject,
                 "thread": thread,
                 "body": body,
-                })
+                }
+        if timestamp:
+            d["timestamp"]=timestamp
+        self.buffer.append_themed("message.received",d)
         self.buffer.update()
         self.last_sender=sender
         self.last_subject=subject
@@ -301,14 +309,18 @@ class Plugin(PluginBase):
         body=stanza.get_body()
         if body is None:
             body=u""
-
+        d=delay.get_delay(stanza)
+        if d:
+            timestamp=d.datetime_local()
+        else:
+            timestamp=None
         if self.settings.get("log_filename"):
-            self.log_message("in",fr,self.cjc.jid,subject,body,thread)
+            self.log_message("in",fr,self.cjc.jid,subject,body,thread,timestamp)
         buff=self.find_or_make(fr,thread)
-        buff.add_received(fr,subject,body,thread)
+        buff.add_received(fr,subject,body,thread,timestamp)
         return 1
 
-    def log_message(self,dir,sender,recipient,subject,body,thread):
+    def log_message(self,dir,sender,recipient,subject,body,thread,timestamp):
         format=self.settings["log_format_"+dir]
         filename=self.settings["log_filename"]
         d={
@@ -322,6 +334,8 @@ class Plugin(PluginBase):
             d["peer"]=sender
         else:
             d["peer"]=recipient
+        if timestamp:
+            d["timestamp"]=timestamp
         filename=self.cjc.theme_manager.substitute(filename,d)
         s=self.cjc.theme_manager.substitute(format,d)
         try:
