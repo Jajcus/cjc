@@ -269,7 +269,7 @@ class ThemeManager:
 				s="[%s: %r, %r]" % (str(e),format,params)
 				break
 			except KeyError,key:
-				key=str(key)
+				key=key.args[0]
 				if key.find(":")>0:
 					format=self.process_format_param(format,key,params)
 				else:
@@ -279,7 +279,7 @@ class ThemeManager:
 		return s
 					
 	def quote_format_param(self,format,key):
-		return format.replace("%%(%s)" % key,"%%%%(%s)" % key)
+		return format.replace(u"%%(%s)" % (key,),u"%%%%(%s)" % (key,))
 
 	def find_format_param(self,key,params):
 		if key.startswith("$"):
