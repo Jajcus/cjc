@@ -278,6 +278,7 @@ def install(keytable):
             break
     keytables.insert(pos,keytable)
     find_default_handler()
+    global unhandled_keys
     unhandled_keys={}
 
 def lookup_table(name):
@@ -310,6 +311,7 @@ def activate(name,object,default_handler=None,input_window=None):
     table.input_window=input_window
     find_active_input_window()
     find_default_handler()
+    global unhandled_keys
     unhandled_keys={}
 
 def deactivate(name,object=None):
@@ -321,6 +323,7 @@ def deactivate(name,object=None):
     table.default_handler=None
     table.input_window=None
     find_default_handler()
+    global unhandled_keys
     unhandled_keys={}
 
 def lookup_function(name,active_only=0):
