@@ -140,6 +140,12 @@ class TextBuffer(Buffer):
 		
 	def append(self,s,attr="default"):
 		self.lock.acquire()
+		try:
+			return self._append(s,attr)
+		finally:
+			self.lock.release()
+
+	def _append(self,s,attr):
 		if type(attr) is not IntType:
 			attr=self.theme_manager.attrs[attr]
 		if self.window and self.pos is None:
@@ -155,17 +161,21 @@ class TextBuffer(Buffer):
 				self.lines[-1].append((attr,l))
 			newl=1
 		self.lines=self.lines[-self.length:]
-		self.lock.release()
 	
 	def append_line(self,s,attr="default"):
 		self.lock.acquire()
+		try:
+			return self._append_line(s,attr)
+		finally:
+			self.lock.release()
+		
+	def _append_line(self,s,attr):
 		if type(attr) is not IntType:
 			attr=self.theme_manager.attrs[attr]
-		self.append(s,attr)
+		self._append(s,attr)
 		self.lines.append([])
 		if self.window and self.pos is None:
 			self.window.write(u"\n",attr)
-		self.lock.release()
 
 	def append_themed(self,format,params):
 		for attr,s in self.theme_manager.format_string(format,params):
@@ -173,9 +183,11 @@ class TextBuffer(Buffer):
 
 	def write(self,s):
 		self.lock.acquire()
-		self.append(s)
-		self.update()
-		self.lock.release()
+		try:
+			self._append(s,"default")
+			self.update()
+		finally:
+			self.lock.release()
 
 	def clear(self):
 		self.lock.acquire()
@@ -189,14 +201,12 @@ class TextBuffer(Buffer):
 		return ret
 
 	def offset_back(self,width,back,l=None,c=0):
-		self.lock.acquire()
-		if l is None:
+		if l is None or l>=len(self.lines):
 			if self.lines[-1]==[]:
 				l=len(self.lines)-1
 			else:
 				l=len(self.lines)
 			if l<=0:
-				self.lock.release()
 				return 0,0
 		while back>0 and l>1:
 			l-=1
@@ -205,7 +215,6 @@ class TextBuffer(Buffer):
 			h=ln/width+1
 			back-=h
 
-		self.lock.release()
 		if back>0:
 			return 0,0
 		if back==0:
@@ -213,16 +222,14 @@ class TextBuffer(Buffer):
 		return l,(-back)*width
 
 	def offset_forward(self,width,forward,l=0,c=0):
-		self.lock.acquire()
 		if l>=len(self.lines):
 			l=len(self.lines)-1
 			if self.lines[-1]==[]:
 				l-=1
-			self.lock.release()
 			if l>0:
-				return l
+				return l,0
 			else:
-				return 0
+				return 0,0
 
 		if c>0:
 			left,right=self.split_line(self.lines[l],c)
@@ -242,7 +249,6 @@ class TextBuffer(Buffer):
 			h=ln/width+1
 			forward-=h
 
-		self.lock.release()
 		if forward>=0:
 			return l,0
 
@@ -270,6 +276,12 @@ class TextBuffer(Buffer):
 			
 	def format(self,width,height):
 		self.lock.acquire()
+		try:
+			return self._format(width,height)
+		finally:
+			self.lock.release()
+	
+	def _format(self,width,height):
 		if self.pos is None:
 			l,c=self.offset_back(width,height)
 		else:
@@ -298,51 +310,50 @@ class TextBuffer(Buffer):
 		if height>=0:
 			if self.lines[-1]==[]:
 				ret.append([])
-			self.lock.release()
 			return ret
 
 		cut=(-height)*width
 		ret[-1],x=self.cut_line(ret[-1],cut)
 		ret.append([])
-		self.lock.release()
 		return ret
 
 	def page_up(self):
 		self.lock.acquire()
-		if self.pos is None:
-			l,c=self.offset_back(self.window.w,self.window.h-2)
-		else:
-			l,c=self.pos
+		try:
+			if self.pos is None:
+				l,c=self.offset_back(self.window.w,self.window.h-2)
+			else:
+				l,c=self.pos
 
-		if (l,c)==(0,0):
-			self.pos=l,c
-			formatted=self.format(self.window.w,self.window.h-1)
-			if len(formatted)<=self.window.h-1:
-				self.pos=None
+			if (l,c)==(0,0):
+				self.pos=l,c
+				formatted=self._format(self.window.w,self.window.h-1)
+				if len(formatted)<=self.window.h-1:
+					self.pos=None
+				return
+			l1,c1=self.offset_back(self.window.w,self.window.h-2,l,c)
+			self.pos=l1,c1
+		finally:
 			self.lock.release()
-			return
-		l1,c1=self.offset_back(self.window.w,self.window.h-2,l,c)
-		self.pos=l1,c1
-		self.lock.release()
 		self.window.draw_buffer()
 		self.window.update()
 
 	def page_down(self):
 		self.lock.acquire()
-		if self.pos is None:
+		try:
+			if self.pos is None:
+				return
+
+			l,c=self.pos
+				
+			l1,c1=self.offset_forward(self.window.w,self.window.h-2,l,c)
+			self.pos=l1,c1
+
+			formatted=self.format(self.window.w,self.window.h-1)
+			if len(formatted)<=self.window.h-1:
+				self.pos=None
+		finally:		
 			self.lock.release()
-			return
-
-		l,c=self.pos
-			
-		l1,c1=self.offset_forward(self.window.w,self.window.h-2,l,c)
-		self.pos=l1,c1
-
-		formatted=self.format(self.window.w,self.window.h-1)
-		if len(formatted)<=self.window.h-1:
-			self.pos=None
-		
-		self.lock.release()
 		self.window.draw_buffer()
 		self.window.update()
 
@@ -507,27 +518,31 @@ class StatusBar(Widget):
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
 		self.screen.lock.acquire()
-		self.win=curses.newwin(self.h,self.w,self.y,self.x)
-		self.win.bkgdset(ord(" "),self.theme_manager.attrs["bar"])
-		self.screen.lock.release()
+		try:
+			self.win=curses.newwin(self.h,self.w,self.y,self.x)
+			self.win.bkgdset(ord(" "),self.theme_manager.attrs["bar"])
+		finally:
+			self.screen.lock.release()
 		
 	def update(self,now=1):
 		self.screen.lock.acquire()
-		self.win.clear()
-		self.win.move(0,0)
-		x=0
-		for attr,s in self.theme_manager.format_string(self.format,self.dict):
-			x+=len(s)
-			if x>=self.w:
-				s=s[:x-self.w]
+		try:
+			self.win.clear()
+			self.win.move(0,0)
+			x=0
+			for attr,s in self.theme_manager.format_string(self.format,self.dict):
+				x+=len(s)
+				if x>=self.w:
+					s=s[:x-self.w]
+					self.win.addstr(s,attr)
+					break
 				self.win.addstr(s,attr)
-				break
-			self.win.addstr(s,attr)
-		if now:
-			self.win.refresh()
-		else:
-			self.win.noutrefresh()
-		self.screen.lock.release()
+			if now:
+				self.win.refresh()
+			else:
+				self.win.noutrefresh()
+		finally:
+			self.screen.lock.release()
 
 class Window(Widget):
 	def __init__(self,theme_manager,title,lock=0):
@@ -604,9 +619,11 @@ class Window(Widget):
 		Widget.set_parent(self,parent)
 		self.status_bar.set_parent(self)
 		self.screen.lock.acquire()
-		self.win=curses.newwin(self.h-1,self.w,self.y,self.x)
-		self.win.scrollok(1)
-		self.screen.lock.release()
+		try:
+			self.win=curses.newwin(self.h-1,self.w,self.y,self.x)
+			self.win.scrollok(1)
+		finally:
+			self.screen.lock.release()
 		if self.buffer:
 			self.draw_buffer()
 			
@@ -646,41 +663,50 @@ class Window(Widget):
 	def update(self,now=1):
 		self.status_bar.update(now)
 		self.screen.lock.acquire()
-		if now:
-			self.win.refresh()
-		else:
-			self.win.noutrefresh()
-		self.screen.lock.release()
+		try:
+			if now:
+				self.win.refresh()
+			else:
+				self.win.noutrefresh()
+		finally:
+			self.screen.lock.release()
 
 	def draw_buffer(self):
 		self.screen.lock.acquire()
-		self.win.clear()
-		self.win.move(0,0)
-		lines=self.buffer.format(self.w,self.h-1)
-		if not lines:
-			self.screen.lock.release()
-			return
-		if lines[-1]==[]:
-			lines=lines[:-1]
-			has_eol=1
-		else:
-			has_eol=0
-		self.newline=0
-		for line in lines:
-			if self.newline:
-				self.win.addstr("\n")
-			for attr,s in line:
-				s=s.encode(self.screen.encoding,"replace")
-				self.win.addstr(s,attr)
-			self.newline=1
-		if not has_eol:
+		try:
+			self.win.clear()
+			self.win.move(0,0)
+			lines=self.buffer.format(self.w,self.h-1)
+			if not lines:
+				return
+			if lines[-1]==[]:
+				lines=lines[:-1]
+				has_eol=1
+			else:
+				has_eol=0
 			self.newline=0
-		self.screen.lock.release()
+			for line in lines:
+				if self.newline:
+					self.win.addstr("\n")
+				for attr,s in line:
+					s=s.encode(self.screen.encoding,"replace")
+					self.win.addstr(s,attr)
+				self.newline=1
+			if not has_eol:
+				self.newline=0
+		finally:
+			self.screen.lock.release()
 
 	def write(self,s,attr):
 		if not s:
 			return
 		self.screen.lock.acquire()
+		try:
+			return self._write(s,attr)
+		finally:
+			self.screen.lock.release()
+		
+	def _write(self,s,attr):
 		y,x=self.win.getyx()
 		if self.newline:
 			if y==self.h-2:
@@ -707,7 +733,6 @@ class Window(Widget):
 			s=s.encode(self.screen.encoding,"replace")
 			self.win.addstr(s,attr)
 			if len(paras)==1:
-				self.screen.lock.release()
 				return
 
 		y+=1
@@ -726,19 +751,20 @@ class Window(Widget):
 				y+=1
 			s=s.encode(self.screen.encoding,"replace")
 			self.win.addstr(s,attr)
-		self.screen.lock.release()
 	
 	def redraw(self,now=1):
 		self.screen.lock.acquire()
-		self.status_bar.redraw(now)
-		self.win.clear()
-		if self.buffer:
-			self.draw_buffer()
-		if now:
-			self.win.refresh()
-		else:
-			self.win.noutrefresh()
-		self.screen.lock.release()
+		try:
+			self.status_bar.redraw(now)
+			self.win.clear()
+			if self.buffer:
+				self.draw_buffer()
+			if now:
+				self.win.refresh()
+			else:
+				self.win.noutrefresh()
+		finally:
+			self.screen.lock.release()
 
 class EditLine(Widget):
 	def __init__(self):
@@ -749,16 +775,24 @@ class EditLine(Widget):
 	def set_parent(self,parent):
 		Widget.set_parent(self,parent)
 		self.screen.lock.acquire()
-		self.win=curses.newwin(self.h,self.w,self.y,self.x)
-		self.textpad=curses.textpad.Textbox(self.win)
-		self.screen.set_default_key_handler(self)
-		self.screen.lock.release()
+		try:
+			self.win=curses.newwin(self.h,self.w,self.y,self.x)
+			self.textpad=curses.textpad.Textbox(self.win)
+			self.screen.set_default_key_handler(self)
+		finally:
+			self.screen.lock.release()
 
 	def get_height(self):
 		return 1
 
 	def keypressed(self,c,escape):
 		self.screen.lock.acquire()
+		try:
+			return self._keypressed(c,escape)
+		finally:
+			self.screen.lock.release()
+		
+	def _keypressed(self,c,escape):
 		if escape:
 			self.textpad.do_command(27)
 		if c in (curses.KEY_ENTER,ord("\n"),ord("\r")):
@@ -770,16 +804,17 @@ class EditLine(Widget):
 		else:
 			self.textpad.do_command(c)
 		self.win.refresh()
-		self.screen.lock.release()
 
 	def update(self,now=1):
 		self.screen.lock.acquire()
-		self.win.cursyncup()
-		if now:
-			self.win.refresh()
-		else:
-			self.win.noutrefresh()
-		self.screen.lock.release()
+		try:
+			self.win.cursyncup()
+			if now:
+				self.win.refresh()
+			else:
+				self.win.noutrefresh()
+		finally:
+			self.screen.lock.release()
 
 screen_commands={
 	"next": ("focus_next",
@@ -814,13 +849,17 @@ class Screen(CommandHandler):
 
 	def set_background(self,char,attr):
 		self.lock.acquire()
-		self.scr.bkgdset(ord(char),attr)
-		self.lock.release()
+		try:
+			self.scr.bkgdset(ord(char),attr)
+		finally:
+			self.lock.release()
 		
 	def size(self):
 		self.lock.acquire()
-		h,w=self.scr.getmaxyx()
-		self.lock.release()
+		try:
+			h,w=self.scr.getmaxyx()
+		finally:
+			self.lock.release()
 		return w-1,h-1
 
 	def set_content(self,widget):
@@ -835,21 +874,25 @@ class Screen(CommandHandler):
 
 	def update(self):
 		self.lock.acquire()
-		if self.content:
-			self.content.update(0)
-		else:
-			self.scr.clear()
-		curses.doupdate()
-		self.lock.release()
+		try:
+			if self.content:
+				self.content.update(0)
+			else:
+				self.scr.clear()
+			curses.doupdate()
+		finally:
+			self.lock.release()
 
 	def redraw(self):
 		self.lock.acquire()
-		if self.content:
-			self.content.redraw(0)
-		else:
-			self.scr.clear()
-		curses.doupdate()
-		self.lock.release()
+		try:
+			if self.content:
+				self.content.redraw(0)
+			else:
+				self.scr.clear()
+			curses.doupdate()
+		finally:
+			self.lock.release()
 
 	def set_default_key_handler(self,h):
 		self.default_key_handler=h
@@ -863,8 +906,10 @@ class Screen(CommandHandler):
 			self.active_window=win
 		self.windows.append(win)
 		self.lock.acquire()
-		curses.doupdate()
-		self.lock.release()
+		try:
+			curses.doupdate()
+		finally:
+			self.lock.release()
 
 	def focus_window(self,win):
 		if not win or win is self.active_window:
@@ -874,8 +919,10 @@ class Screen(CommandHandler):
 		win.set_active(1)
 		self.active_window=win
 		self.lock.acquire()
-		curses.doupdate()
-		self.lock.release()
+		try:
+			curses.doupdate()
+		finally:
+			self.lock.release()
 				
 	def focus_next(self,args=None):
 		if len(self.windows)<=1:
