@@ -1,3 +1,8 @@
+2004-09-03  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/vcard.py:
+	- /whois without arguments should display users own vCard
+
 2004-08-29  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/ui/input.py, cjc/ui/keytable.py, cjc/ui/list_buffer.py, cjc/ui/list_input.py, cjc/ui/screen.py, cjc/ui/split.py, cjc/ui/status_bar.py, cjc/ui/text_buffer.py, cjc/ui/text_input.py, cjc/ui/window.py, cjc/ui/__init__.py, cjc/ui/bool_input.py, cjc/ui/buffer.py, cjc/ui/choice_input.py, cjc/ui/complete.py, cjc/completions.py, cjc/main.py, cjc/themes.py, cjc/tls.py:
