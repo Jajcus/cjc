@@ -777,8 +777,15 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 				print >>f,"set",args.all()
 		for alias,value in self.aliases.items():
 			print >>f,"alias",alias,value
+
+		for table in ui.keytable.keytables:
+			for keyname,funame,descr in table.get_changed_bindings():
+				if funame:
+					print >>f,"bind",funame,table.name,keyname
+				else:
+					print >>f,"unbind",table.name,keyname
+
 		return 1
-				
 
 	def cmd_load(self,args):
 		filename=args.shift()
@@ -815,6 +822,14 @@ class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 					args.shift()
 					self.debug("set %r" % (args.args,))
 					self.cmd_set(args)
+				elif cmd=="bind":
+					args.shift()
+					self.debug("bind %r" % (args.args,))
+					self.cmd_bind(args)
+				elif cmd=="unbind":
+					args.shift()
+					self.debug("unbind %r" % (args.args,))
+					self.cmd_unbind(args)
 				else:
 					self.debug("set %r" % (args.args,))
 					self.cmd_set(args)

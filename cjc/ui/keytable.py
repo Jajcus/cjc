@@ -82,7 +82,7 @@ class KeyTable:
 			if binding:
 				for k in binding.keys:
 					self.orig_keytable[k]=(fun,binding.arg)
-		self.keytable=self.orig_keytable
+		self.keytable=dict(self.orig_keytable)
 		self.object=None
 		self.active=0
 		self.default_handler=None
@@ -122,18 +122,23 @@ class KeyTable:
 	def get_bindings(self,only_new=0):
 		ret=[]
 		for (c,meta),(fun,arg) in self.keytable.items():
+			if not isinstance(fun,KeyFunction):
+				try:
+					fun=self.lookup_function(fun)
+				except KeyError:
+					fun=lookup_function(fun)
 			if only_new and self.orig_keytable.has_key((c,meta)):
 				# function name from original keybindings may 
 				# have not be resolved yet
 				ofun,arg=self.orig_keytable[c,meta]
+				common.debug("checking if %r is %r..." % ((fun,arg),(ofun,arg)))
 				if isinstance(ofun,KeyFunction):
 					if (ofun,arg)==(fun,arg):
 						continue
 				elif (ofun,arg)==(fun.name,arg):
 					continue
+				common.debug("it is not")
 			keyname=keycode_to_name(c,meta)
-			if not isinstance(fun,KeyFunction):
-				fun=lookup_function(fun)
 			if fun.accepts_arg:
 				if arg:
 					funame="%s(%s)"  % (fun.name,arg)
@@ -152,7 +157,7 @@ class KeyTable:
 		ret=self.get_bindings(1)
 		for (c,meta) in self.orig_keytable.keys():
 			if not self.keytable.has_key((c,meta)):
-				ret.append(keycode_to_name(c,meta),None,None)
+				ret.append((keycode_to_name(c,meta),None,None))
 		return ret
 
 	def get_unbound_functions(self):
@@ -195,9 +200,9 @@ def keyname_to_code(name):
 	if name.upper()=="ESCAPE":
 		return 27,meta
 	if len(name)==2 and name[0]=="^":
-		c=ord(name[1].upper())
-		if c=="?":
+		if name[1]=="?":
 			return 0x7f,meta
+		c=ord(name[1].upper())
 		if c<64 or c>95:
 			raise KeytableError,"Bad key name: "+`name`
 		return c-64,meta
@@ -339,6 +344,7 @@ def keypressed():
 def bind(keyname,fun,table=None):
 	binding=KeyBinding(fun,keyname)
 	if table:
+		table=lookup_table(table)
 		return table.bind(binding)
 	for t in keytables:
 		if t.has_function(binding.fun):
@@ -346,6 +352,7 @@ def bind(keyname,fun,table=None):
 
 def unbind(keyname,table=None):
 	if table:
+		table=lookup_table(table)
 		return table.unbind(keyname)
 	for t in keytables:
 		t.unbind(keyname)
