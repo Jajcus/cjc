@@ -20,8 +20,8 @@ theme_formats=(
 	("roster.group_none", "unfiled:"),
 	("roster.group_me", "me:"),
 	("roster.group_unknown", "not in roster:"),
-	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)"),
-	("roster.available", "%[roster.available_%(show)s] %(aflag)s%(sflag)s%(name)s (%(J:jid)s)"),
+	("roster.unavailable", "%[roster.unavailable] %(aflag)s%(sflag)s%(name)s (%(J:jid)s) %(J:jid:status)s"),
+	("roster.available", "%[roster.available_%(J:jid:show)s] %(aflag)s%(sflag)s%(name)s (%(J:jid)s) %(J:jid:status)s"),
 )
 
 # virtual groups

@@ -255,6 +255,8 @@ class ThemeManager:
 	def find_format_param(self,key,params):
 		if key in ("now","timestamp"):
 			val=time.time()
+		elif key in ("me","jid"):
+			val=self.app.jid()
 		else:
 			return None
 		params[key]=val
@@ -298,6 +300,23 @@ class ThemeManager:
 				params[key]=val.resource
 			elif form=="bare":
 				params[key]=val.bare().as_unicode()
+			elif form in ("show","status"):
+				pr=self.app.get_user_info(val,"presence")
+				if form=="show":
+					if pr is None or pr.get_type()=="unavailable":
+						val="offline"
+					else:
+						val=pr.get_show()
+						if not val:
+							val="online"
+				elif form=="status":
+					if pr is None:
+						val=""
+					else:
+						val=pr.get_status()
+						if val is None:
+							val=""
+				params[key]=val
 			elif form in ("full",None):
 				params[key]=val.as_unicode()
 			else:
