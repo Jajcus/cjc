@@ -346,7 +346,7 @@ class Plugin(PluginBase):
         return composer.start(subject,level,body)
 
     def send_message(self,recipient,subject,body):
-        m=pyxmpp.Message(to=recipient,typ="normal",subject=subject,body=body)
+        m=pyxmpp.Message(to_jid=recipient,stanza_type="normal",subject=subject,body=body)
         self.cjc.stream.send(m)
         self.info("Your entry has been sent to Jogger.PL")
 

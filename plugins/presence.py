@@ -143,7 +143,7 @@ class Plugin(PluginBase):
         self.set_presence(pyxmpp.Presence(priority=self.settings["priority"]))
 
     def ev_disconnect_request(self,event,arg):
-        p=pyxmpp.Presence(typ="unavailable",status=arg)
+        p=pyxmpp.Presence(stanza_type="unavailable",status=arg)
         self.set_presence(p)
 
     def ev_idle(self,event,arg):
@@ -258,7 +258,7 @@ class Plugin(PluginBase):
             show=mode
         if keep and not reason:
             reason=current.get_status()
-        p=pyxmpp.Presence(show=show,status=reason,to=to,priority=priority)
+        p=pyxmpp.Presence(show=show,status=reason,to_jid=to,priority=priority)
         self.set_presence(p)
 
     def cmd_online(self,args):
@@ -294,7 +294,7 @@ class Plugin(PluginBase):
             self.error("Self presence subscription is automatic."
                     " Cannot subscribe own presence.")
             return
-        p=pyxmpp.Presence(typ="subscribe",to=user)
+        p=pyxmpp.Presence(stanza_type="subscribe",to_jid=user)
         self.cjc.stream.send(p)
 
     def cmd_unsubscribe(self,args):
@@ -312,7 +312,7 @@ class Plugin(PluginBase):
                     " Cannot unsubscribe own presence.")
             return
 
-        p=pyxmpp.Presence(typ="unsubscribe",to=user)
+        p=pyxmpp.Presence(stanza_type="unsubscribe",to_jid=user)
         self.cjc.stream.send(p)
 
     def cmd_cancel(self,args):
@@ -330,7 +330,7 @@ class Plugin(PluginBase):
             self.error("Self presence subscription is automatic."
                     " Cannot cancel own presence subscription.")
             return
-        p=pyxmpp.Presence(typ="unsubscribed",to=user)
+        p=pyxmpp.Presence(stanza_type="unsubscribed",to_jid=user)
         self.cjc.stream.send(p)
 
     def set_presence(self,p):
@@ -458,7 +458,7 @@ class Plugin(PluginBase):
     def subscribe_back_decision(self,arg,accept):
         stanza,buf=arg
         if accept:
-            p=pyxmpp.Presence(typ="subscribe",to=stanza.get_from())
+            p=pyxmpp.Presence(stanza_type="subscribe",to_jid=stanza.get_from())
             self.cjc.stream.send(p)
         buf.close()
         stanza.free()
