@@ -34,6 +34,7 @@ theme_formats=(
     ("muc.my_affiliation_changed","[%(T:timestamp)s] %[muc.info]* Your affiliation is now: %(affiliation)s\n"),
     ("muc.nick_changed","[%(T:timestamp)s] %[muc.info]* %(old_nick)s is now known as: %(nick)s\n"),
     ("muc.my_nick_changed","[%(T:timestamp)s] %[muc.info]* Your are now known as: %(nick)s\n"),
+    ("muc.presence_changed","[%(T:timestamp)s] %[muc.info]* %(nick)s is now: [%(show)s?%(show)s,online] %(status)s\n"),
     ("muc.info","[%(T:timestamp)s] %[muc.info]* %(msg)s\n"),
     ("muc.descr","Conference on %(J:room:bare)s"),
 )
@@ -58,8 +59,23 @@ class Room(muc.MucRoomHandler):
 
     def user_format_params(self,user):
         fparams=dict(self.fparams)
-        fparams.update({"nick": user.nick,"jid": user.room_jid,"real_jid": user.real_jid,
-                "role": user.role, "affiliation": user.affiliation})
+        fparams.update({
+                "nick": user.nick,"jid": user.room_jid,
+                "real_jid": user.real_jid, "role": user.role,
+                "affiliation": user.affiliation,
+                })
+        if user.presence:
+            fparams.update({
+                    "show": user.presence.get_show(),
+                    "status": user.presence.get_status(),
+                    "available": user.presence.get_type()!="unavailable",
+                    })
+        else:
+            fparams.update({
+                    "show": u"",
+                    "status": u"",
+                    "available": False,
+                    })
         return fparams
 
     def message_received(self,user,stanza):
@@ -176,6 +192,19 @@ class Room(muc.MucRoomHandler):
             self.buffer.append_themed("muc.nick_changed",fparams)
         self.buffer.update()
         return
+    
+    def presence_changed(self,user,stanza):
+        fr=stanza.get_from()
+        old_presence=self.plugin.cjc.get_user_info(fr,"presence")
+        self.plugin.cjc.set_user_info(fr,"presence",stanza.copy())
+        if not old_presence:
+            return
+        if (stanza.get_type()!=old_presence.get_type()
+                or stanza.get_show()!=old_presence.get_show()
+                or stanza.get_status()!=old_presence.get_status()):
+            fparams=self.user_format_params(user)
+            self.buffer.append_themed("muc.nick_changed",fparams)
+            self.buffer.update()
 
     def user_input(self,s):
         if not self.plugin.cjc.stream:
@@ -292,6 +321,9 @@ class Plugin(PluginBase):
         self.room_manager=None
 
     def cmd_join(self,args):
+        if not self.cjc.stream:
+            self.error("Connect first!")
+            return
         arg1=args.shift()
         if not arg1:
             self.error("/join without arguments")
