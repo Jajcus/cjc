@@ -133,7 +133,7 @@ class MessageBuffer:
 		body=args.all()
 		if not body:
 			self.buffer.append_themed("error","Message composition not supported yet"
-				" - you mast include message body on the command line")
+				" - you must include message body on the command line")
 			return
 
 		self.plugin.send_message(self.last_sender,subject,body,self.last_thread)
@@ -202,7 +202,7 @@ class Plugin(PluginBase):
 		body=args.all()
 		if not body:
 			self.error("Message composition not supported yet"
-				" - you mast include message body on the command line")
+				" - you must include message body on the command line")
 			return
 
 		self.send_message(recipient,subject,body)
