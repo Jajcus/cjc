@@ -399,7 +399,7 @@ class ThemeManager:
             return self.quote_format_param(format,key)
         value=params[val]
         options=param_re.split(expr)
-        if not case_re.match(options[0]):
+        if not case_re.search(options[0]):
             # yes/no choice
             if value:
                 params[key]=self.substitute(options[0].replace("\\:",":"),params)
@@ -412,12 +412,13 @@ class ThemeManager:
         # case-like choice
         retval=u""
         for opt in options:
-            if not case_re.match(opt):
-                retval=opt
+            if not case_re.search(opt):
+                retval=opt.replace("\\:",":")
                 break
             test,val=case_re.split(opt,1)
+            test=test.replace("\\:",":")
             if value==test:
-                retval=val
+                retval=val.replace("\\:",":")
                 break
         if retval:
             retval=self.substitute(retval,params)
