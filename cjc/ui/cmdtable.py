@@ -133,7 +133,7 @@ def run_command(cmd,args=None):
 			continue
 	if default_handler:
 		return default_handler(cmd,args)
-	common.error("Unknown command: "+cmd)
+	common.error("Unknown command: /"+cmd)
 	try:
 		curses.beep()
 	except curses.error:
