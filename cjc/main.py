@@ -87,6 +87,7 @@ global_settings={
 	"layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,"set_layout"),
 	"disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
 	"disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
+	"autoconnect": ("Automatically connect on startup.",int),
 }
 
 global_theme_attrs=(
@@ -125,7 +126,8 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 			"auth_methods":self.auth_methods,
 			"layout":"plain",
 			"disconnect_timeout":10.0,
-			"disconnect_delay":0.25}
+			"disconnect_delay":0.25,
+			"autoconnect":0}
 		self.aliases={}
 		self.available_settings=global_settings
 		self.plugin_dirs=["cjc/plugins"]
@@ -354,6 +356,9 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 
 		self.ui_thread.start()
 		self.stream_thread.start()
+
+		if self.settings["autoconnect"]:
+			self.cmd_connect()
 		self.main_loop()
 
 		for th in threading.enumerate():
@@ -391,7 +396,7 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 		args.finish()
 		self.exit_request(reason)
 
-	def cmd_connect(self,args):
+	def cmd_connect(self,args=None):
 		if self.stream:
 			self.error(u"Already connected")
 			return
