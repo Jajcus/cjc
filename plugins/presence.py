@@ -1,5 +1,6 @@
 import string
 from cjc.plugin import PluginBase
+import pyxmpp
 
 class Plugin(PluginBase):
 	def __init__(self,app):
@@ -43,7 +44,6 @@ class Plugin(PluginBase):
 			return None
 
 		name="Presence"
-		
 		if not v.get_type() or v.get_type()=="available":
 			value="Available"
 			if v.get_show():
@@ -90,8 +90,10 @@ class Plugin(PluginBase):
 			self.debug(msg)
 		if fr.resource:
 			self.cjc.set_user_info(fr,"presence",stanza.copy())
-		else:	
+			self.compute_current_resource(fr.bare())
+		elif not self.cjc.get_bare_user_info(fr,"resources"):
 			self.cjc.set_bare_user_info(fr,"presence",stanza.copy())
+		self.cjc.send_event("presence changed",fr)
 		
 	def presence_available(self,stanza):
 		fr=stanza.get_from()
@@ -101,6 +103,8 @@ class Plugin(PluginBase):
 		else:
 			self.debug(fr.as_unicode()+u" is unavailable")
 		self.cjc.set_user_info(fr,"presence",stanza.copy())
+		self.compute_current_resource(fr.bare())
+		self.cjc.send_event("presence changed",fr)
 		
 	def presence_unavailable(self,stanza):
 		fr=stanza.get_from()
@@ -109,3 +113,30 @@ class Plugin(PluginBase):
 		else:
 			self.debug(fr.as_unicode()+u" is unavailable")
 		self.cjc.set_user_info(fr,"presence",stanza.copy())
+		self.compute_current_resource(fr.bare())
+		self.cjc.send_event("presence changed",fr)
+
+	def compute_current_resource(self,jid):
+		resources=self.cjc.get_bare_user_info(jid,"resources")
+		if not resources:
+			p=self.cjc.get_bare_user_info(jid,"presence")
+			if p and p.get_type()!="error":
+				self.cjc.set_bare_user_info(jid,"presence",None)
+			return
+		presence=None
+		max_prio=-129
+		for r,d in resources.items():
+			fjid=pyxmpp.JID(jid.node,jid.domain,r,check=0)
+			if not d.has_key("presence"):
+				continue
+			p=d["presence"]
+			if not p:
+				continue
+			typ=p.get_type()
+			if typ and p.get_type()!="available":
+				continue
+			prio=p.get_priority()
+			if prio>max_prio:
+				max_prio=prio
+				presence=p
+		self.cjc.set_bare_user_info(jid,"presence",presence)
