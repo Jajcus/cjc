@@ -518,6 +518,10 @@ class Application(jabber.Client,tls.TLSHandler):
         tls=self.stream.get_tls_connection()
         if tls:
             self.tls_connected(tls)
+        elif self.settings.get("tls_require"):
+            self.error("Couldn't start encryption."
+                    " Are you sure your server supports it?")
+            self.disconnect()
         else:
             self.info("Unencrypted connection to %s established."
                 % (self.stream.peer,))
@@ -1186,7 +1190,7 @@ class Application(jabber.Client,tls.TLSHandler):
                 continue
             try:
                 self.stream.loop_iter(1)
-            except pyxmpp.FatalStreamError,e:
+            except (pyxmpp.FatalStreamError,pyxmpp.StreamEncryptionRequired),e:
                 self.state_changed.acquire()
                 try:
                     self.error(str(e))
@@ -1203,6 +1207,7 @@ class Application(jabber.Client,tls.TLSHandler):
             except (KeyboardInterrupt,SystemExit),e:
                 self.exit_request(unicode(str(e)))
                 self.print_exception()
+                self.error("Other error cought")
         if logfile:
             print >>logfile,"Stream loop exiting"
 
