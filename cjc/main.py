@@ -273,6 +273,10 @@ class Application(pyxmpp.Client,commands.CommandHandler):
 	def run(self,screen):
 		self.screen=screen
 		self.theme_manager=themes.ThemeManager(self)
+		try:
+			self.theme_manager.load(".cjc-theme")
+		except (IOError,OSError):
+			pass
 		self.theme_manager.set_default_attrs(global_theme_attrs)
 		self.theme_manager.set_default_formats(global_theme_formats)
 		screen.set_default_command_handler(self)
