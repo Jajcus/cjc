@@ -315,7 +315,7 @@ class Plugin(PluginBase):
         try:
             item=self.cjc.roster.rm_item(user)
         except KeyError:
-            self.cjc.error(u"There is no %s in roster" % (user.as_unicode()))
+            self.error(u"There is no %s in roster" % (user.as_unicode()))
             return
         iq=item.make_roster_push()
         self.cjc.stream.send(iq)
@@ -391,7 +391,7 @@ class Plugin(PluginBase):
 
     def cmd_list(self,args):
         if not self.cjc.roster:
-            self.cjc.error("No roster available.")
+            self.error("No roster available.")
             return
         groups=[]
         jids=[]
@@ -405,7 +405,7 @@ class Plugin(PluginBase):
                 try:
                     names.append(re.compile(arg))
                 except re.error:
-                    self.cjc.error(u"Invalid regular expression: %r" % (arg,))
+                    self.error(u"Invalid regular expression: %r" % (arg,))
                     return
                 continue
             if arg=="-group":
@@ -413,14 +413,14 @@ class Plugin(PluginBase):
                 try:
                     groups.append(re.compile(arg))
                 except re.error:
-                    self.cjc.error(u"Invalid regular expression: %r" % (arg,))
+                    self.error(u"Invalid regular expression: %r" % (arg,))
                     return
             elif arg=="-jid":
                 arg=args.shift()
                 try:
                     jids.append(re.compile(arg))
                 except re.error:
-                    self.cjc.error(u"Invalid regular expression: %r" % (arg,))
+                    self.error(u"Invalid regular expression: %r" % (arg,))
                     return
             elif arg=="-state" or arg=="-show":
                 arg=args.shift()
@@ -433,10 +433,10 @@ class Plugin(PluginBase):
                 try:
                     names.append(re.compile(arg))
                 except re.error:
-                    self.cjc.error(u"Invalid regular expression: %r" % (arg,))
+                    self.error(u"Invalid regular expression: %r" % (arg,))
                     return
             else:
-                self.cjc.error("Bad /list option: %r" % (arg,))
+                self.error("Bad /list option: %r" % (arg,))
                 return
         args.finish()
 
@@ -501,7 +501,7 @@ class Plugin(PluginBase):
             params={"roster_groups":formatted_list}
             self.cjc.status_buf.append_themed("roster.list",params)
         else:
-            self.cjc.error("No roster items matches your filter")
+            self.error("No roster items matches your filter")
         self.cjc.status_buf.update()
 
 ui.CommandTable("roster",50,(
