@@ -2,11 +2,11 @@
 
 base_dir='BASE_DIR'
 
-try:
-	import psyco
-	psyco.profile()
-except ImportError:
-	pass
+#try:
+#	import psyco
+#	psyco.profile()
+#except ImportError:
+#	pass
 
 import sys
 sys.path.insert(0,base_dir)

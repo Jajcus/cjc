@@ -2,11 +2,11 @@
 
 """Startup script for running CJC directly from the "source" tree."""
 
-try:
-	import psyco
-	psyco.profile()
-except ImportError:
-	pass
+#try:
+#	import psyco
+#	psyco.profile()
+#except ImportError:
+#	pass
 
 import sys
 import os
