@@ -2,6 +2,11 @@
 
 base_dir='BASE_DIR'
 
+try:
+	import psyco
+except ImportError:
+	pass
+
 import sys
 sys.path.insert(0,base_dir)
 from cjc import main
