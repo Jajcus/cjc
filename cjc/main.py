@@ -1521,7 +1521,7 @@ ui.CommandTable("global",10,(
 
 def usage():
     print
-    print "Console Jabber Client (c) 2003 Jacek Konieczny <jajcus@bnet.pl>"
+    print "Console Jabber Client (c) 2003-2004 Jacek Konieczny <jajcus@bnet.pl>"
     print
     print "Usage:"
     print "  %s [OPTIONS]" % (sys.argv[0],)

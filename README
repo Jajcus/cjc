@@ -1,5 +1,5 @@
 			     Console Jabber Client
-		   (c) 2003,2004 Jacek Konieczny <jajcus@bnet.pl>
+		   (c) 2003-2004 Jacek Konieczny <jajcus@bnet.pl>
 
 CJC is a Jabber/XMPP client for text terminals. It uses pyxmpp library for XMPP
 comunication and curses for screen output. It is not finished yet, but still
