@@ -51,12 +51,13 @@ def color2name(color):
 	return colors_by_val[color]
 
 class ThemeManager:
-	def __init__(self):
+	def __init__(self,app):
 		self.attrs={}
 		self.attr_defs={}
 		self.formats={}
 		self.pairs={}
 		self.next_pair=1
+		self.app=app
 	def load(self,filename):
 		f=open(filename,"r")
 		for l in f.xreadlines():
@@ -256,7 +257,11 @@ class ThemeManager:
 			if not isinstance(val,pyxmpp.JID):
 				val=pyxmpp.JID(val)
 			if form=="nick":
-				params[key]=val.node
+				rostername=self.app.get_user_info(val,"rostername")
+				if rostername:
+					params[key]=rostername
+				else:
+					params[key]=val.node
 			elif form=="node":
 				params[key]=val.node
 			elif form=="domain":
@@ -264,9 +269,19 @@ class ThemeManager:
 			elif form=="resource":
 				params[key]=val.resource
 			elif form=="bare":
-				params[key]=val.bare,as_unicode()
-			else:
+				params[key]=val.bare().as_unicode()
+			elif form in ("full",None):
 				params[key]=val.as_unicode()
+			else:
+				ival=self.app.get_user_info(val,form)
+				if not ival:
+					val=""
+				elif ival not in (StringType,UnicodeType):
+					if self.app.info_handlers.has_key(form):
+						val=self.app.info_handlers[form](form,ival)[1]
+					else:
+						val=str(ival)
+				params[key]=val
 			return format
 		else:
 			return quote_format_param(format,key)
