@@ -375,18 +375,36 @@ class Plugin(PluginBase):
 		fr=stanza.get_from()
 		if accept:
 			p=stanza.make_accept_response()
+			self.cjc.stream.send(p)
 			self.cjc.status_buf.append_themed("presence.subscribe_accepted",{"user":fr})
+			try:
+				item=self.cjc.roster.item_by_jid(fr)
+			except KeyError:
+				item=None
+			if item and item.subscription() in ("both","to"):
+				buf.close()
+				stanza.free()
+			else:
+				buf.ask_question(u"Subscribe to %s?" % (fr.as_unicode(),),
+						"boolean",None,self.subscribe_back_decision,None,
+									(stanza,buf),None,1)
 		else:
 			p=stanza.make_deny_response()
+			self.cjc.stream.send(p)
 			self.cjc.status_buf.append_themed("presence.subscribe_denied",{"user":fr})
-		self.cjc.stream.send(p)
+			buf.close()
+			stanza.free()
+	
+	def subscribe_back_decision(self,arg,accept):
+		stanza,buf=arg
+		if accept:
+			p=pyxmpp.Presence(type="subscribe",to=stanza.get_from())
+			self.cjc.stream.send(p)
 		stanza.free()
-		buf.close()
-										
+									
 	def presence_subscription_change(self,stanza):
 		fr=stanza.get_from()
 		typ=stanza.get_type()
 		self.cjc.status_buf.append_themed("presence.%s" % (typ,),{"user":fr})
 		p=stanza.make_accept_response()
 		self.cjc.stream.send(p)
-	
