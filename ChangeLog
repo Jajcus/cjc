@@ -1,0 +1,986 @@
+2003-11-30  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/presence.py:
+	- don't fail on auto-away message without '%i'
+
+	* plugins/roster.py:
+	- don't break on uninitialized item in cmd_remove()
+
+	* cjc/themes.py:
+	- default terminal color patch by Beeth. Requires patched curses module
+
+	* cjc/themes.py:
+	- use locale encoding for time formatting
+
+2003-11-27  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/message.py:
+	- typo fixed
+
+2003-11-23  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/keytable.py:
+	- s/upper/lower/ in lowercase curses key constants support
+
+	* cjc/ui/keytable.py:
+	- on solaris KEY_* seem to be key_*
+
+2003-11-20  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- keepalive is back
+
+2003-11-11  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- pass auth_methods to Client when connecting
+	- new connection states: 'binding', 'authorized'
+
+	* cjc/ui/screen.py:
+	- /beep command may be usefull for even binding (when implemented)
+
+	* plugins/message.py:
+	- typo in buffer command table name fixed
+
+	* plugins/roster.py:
+	- don't panic on /group without arguments
+
+	* cjc/main.py:
+	- fixed behaviour when writting config file for the first time with bakups disabled
+
+	* plugins/message.py:
+	- typo fixed by agaran
+
+2003-11-10  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- support for SRV records
+
+	* cjc/ui/complete.py, cjc/completions.py:
+	- support for completed command argument quoting and spaces in completed arguments
+
+2003-11-09  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/complete.py, cjc/completions.py:
+	- completion improvements
+
+	* plugins/chat.py, plugins/message.py, plugins/presence.py, plugins/roster.py, plugins/version.py, cjc/ui/cmdtable.py, cjc/ui/complete.py, cjc/completions.py, cjc/main.py:
+	- most completions moved to cjc/completions
+	- aliases are completed like regular commands
+	- completion hints for most commands
+
+	* plugins/message.py, cjc/ui/complete.py, cjc/main.py:
+	- basic command options and user name/jid completion
+
+2003-11-08  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/__init__.py, cjc/ui/complete.py, cjc/main.py:
+	- tab-completion for setting names (/set and /unset commands)
+
+	* cjc/ui/keytable.py:
+	- less debuging
+
+	* .cvsignore:
+	- ignore logs
+
+	* plugins/presence.py:
+	- presence priority settings for all <show/> values
+
+2003-11-05  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/cmdtable.py:
+	- include slash in 'Unknown command' error message
+
+2003-11-04  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/complete.py:
+	- ignore commands from inactive tables while completing
+
+2003-11-03  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/complete.py, cjc/ui/input.py, cjc/ui/list_input.py, cjc/ui/text_input.py:
+	- multiple-choice completion
+
+2003-11-02  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/chat.py, plugins/message.py, plugins/presence.py, plugins/python.py, plugins/roster.py, plugins/shell.py, plugins/test.py, plugins/version.py, plugins/xmlconsole.py:
+	- updated for new cmdtable/keytable API
+
+	* cjc/ui/input.py, cjc/ui/text_input.py:
+	- basic tab-completion
+	- use screen.beep() for beeping
+
+	* cjc/ui/complete.py:
+	- basic tab-completion
+
+	* cjc/ui/screen.py:
+	- beep() method for safe beeping
+
+	* cjc/main.py:
+	- /disconnect or /quit when already disconnecting will force unclean disconnection
+
+	* cjc/ui/__init__.py, cjc/ui/buffer.py, cjc/ui/cmdtable.py, cjc/ui/keytable.py, cjc/ui/screen.py, cjc/ui/window.py, cjc/main.py, cjc/themes.py:
+	- cleaner cmdtable/keytable API. plugins not updated yet.
+
+	* plugins/chat.py, plugins/message.py, plugins/presence.py, plugins/python.py, plugins/roster.py, plugins/shell.py, plugins/test.py, plugins/version.py, plugins/xmlconsole.py, cjc/ui/buffer.py, cjc/ui/list_buffer.py, cjc/ui/screen.py, cjc/ui/text_buffer.py, cjc/ui/window.py, cjc/main.py, cjc/ui/cmdtable.py:
+	- new command handling, similar to keybindings code
+
+2003-11-01  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/lock_trace.py:
+	- this will never work
+
+2003-10-27  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc.in, cjc.py:
+	- use of psyco disabled (causes SIGSEGV on Python 2.3)
+
+2003-10-10  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/python.py:
+	- handle empty code (show error)
+
+	* plugins/shell.py:
+	- handle empty command (show error)
+
+2003-10-09  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/shell.py:
+	- new plugin, implements /shell /pipe_in and /pipe_out commands
+
+	* cjc/ui/list_buffer.py, cjc/ui/text_buffer.py:
+	- as_string() method added
+
+	* cjc/ui/screen.py:
+	'\/' may be used to escape empty input or '/' at the begining of user input
+
+	* plugins/chat.py:
+	- allow empty user input
+
+	* plugins/python.py:
+	- the simplest plugin: executes any python code from command-line (any security risk?)
+
+	* cjc/ui/window.py:
+	- Alt-a switches to the first active buffer
+
+2003-10-08  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- connection progress information
+
+2003-10-07  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/list_buffer.py:
+	- scrolling of roster buffer works again (new keyboard handling)
+
+	* cjc/main.py:
+	- safer config saving (will not corrupt old config if save fails)
+
+	* cjc/ui/bool_input.py, cjc/ui/choice_input.py, cjc/ui/list_input.py, cjc/ui/text_input.py:
+	- better description of accept-input and abort-input key-commands
+
+	* cjc/main.py, cjc/ui/keytable.py:
+	- saving and loading of keybindings
+
+	* cjc/ui/cmdtable.py:
+	- fix in error handling code
+
+	* cjc/common.py, cjc/ui/cmdtable.py, cjc/ui/keytable.py, cjc/ui/screen.py:
+	- improved exception handling
+
+	* cjc/ui/text_input.py:
+	- right function bound to unix-word-rubout and unix-line-discard key-functions
+
+2003-10-05  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/ui/keytable.py:
+	- basic /bind and /unbind functionality
+
+	* cjc/main.py:
+	- keybinding list cosmetics
+
+	* cjc/ui/window.py:
+	- show buffer number in keybinding description
+
+	* cjc/ui/bool_input.py, cjc/ui/choice_input.py, cjc/ui/list_input.py:
+	- escape is ESCAPE
+
+	* cjc/ui/keytable.py, cjc/main.py:
+	- /bind without arguments implemented (lists current keybindings)
+
+2003-10-03  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/bool_input.py, cjc/ui/choice_input.py, cjc/ui/input.py, cjc/ui/input_widget.py, cjc/ui/keytable.py, cjc/ui/list_input.py, cjc/ui/screen.py, cjc/ui/text_buffer.py, cjc/ui/text_input.py, cjc/ui/window.py, plugins/test.py, cjc.py, cjc/main.py:
+	- new keyboard input handling - now keybindings are configurable (but no commands for that yet)
+
+2003-10-02  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/lock_trace.py, cjc/main.py:
+	- trying to make some lock debuging (no success)
+
+	* cjc/main.py, cjc/themes.py:
+	- ignore_activity setting
+
+	* cjc/ui/buffer.py:
+	- allow to /move buffers past the last one
+
+	* cjc/ui/buffer.py, cjc/ui/list_buffer.py:
+	- more thread safety
+
+	* cjc/main.py:
+	- updated for latest pyxmpp
+
+	* TODO:
+	- updated
+
+2003-10-01  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/tls.py:
+	- more TLS support (ask user about invalid certificate, offer to remember it)
+
+	* cjc/themes.py:
+	- handling of multiple 'preformatted strings' in one format string
+
+	* cjc/ui/buffer.py:
+	- missing 'import' added
+
+	* plugins/xmlconsole.py:
+	- typo fixed
+
+2003-09-29  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/presence.py:
+	- close buffer in subscribe_back_decision()
+
+	* plugins/presence.py:
+	- do not try to change presence from auto-away when not connected
+	- display error when not connected and trying to change presence
+
+	* cjc/ui/text_input.py:
+	- Ctrl-U keybinding [uriel]
+
+2003-09-22  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- StartTLS basics
+
+2003-09-21  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- starting StartTLS support (not finished yet)
+
+2003-09-18  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/common.py:
+	- libxml2.treeError added to standard_errors
+
+2003-09-16  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py: s/DiscoIdentity/pyxmpp.DiscoIdentity/
+
+	* cjc/main.py:
+	- use client/console as default disco category/type
+
+2003-09-15  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/themes.py:
+	- python-2.3 compatibility fix
+
+2003-08-15  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* Makefile: *** Version: 0.2 ***
+
+	* Makefile:
+	- preserve timestamps making dist
+
+	* Makefile:
+	- more s/cvs-version/version/
+
+	* Makefile, cjc.py:
+	- RELEASE variable in Makefile to make releases
+
+	* README:
+	- installation notes
+
+2003-08-14  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- properly handle auth_methods setting
+
+	* Makefile, README:
+	- README added
+
+	* TODO:
+	- more todo
+
+	* TODO:
+	- added
+
+	* cjc.in, cjc.py:
+	- really do use psyco if available
+
+	* Makefile:
+	- compile installed python modules
+
+	* cjc.in, cjc.py:
+	- use psyco if available
+
+	* Makefile:
+	- make dist
+
+	* COPYING:
+	- the license
+
+	* cjc.py:
+	- startup script for running CJC directly from source tree
+
+	* .cvsignore, Makefile, cjc.in:
+	- new 'build'/install system
+
+	* cjc/.cvsignore, cjc/version.py:
+	- version.py is autogenerated
+
+2003-08-12  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/window.py:
+	- return 1 from command() if command was available and successful
+
+	* plugins/message.py:
+	- small fix
+
+	* plugins/message.py:
+	- /close made work in single-buffer mode
+
+	* doc/.cvsignore:
+	- more ignores
+
+2003-08-11  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/version.py:
+	- updated
+
+	* plugins/chat.py, plugins/message.py:
+	- return 1 from cmd_close()
+
+	* cjc/ui/status_bar.py:
+	- translate unicode content to local encoding
+
+	* doc/manual.xml:
+	- updated, some spelling fixes
+
+2003-08-10  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* doc/.cvsignore, doc/Makefile, doc/manual.xml:
+	- CJC manual - a work in progress
+
+	* cjc/main.py:
+	- some bugs, found while writting manual, fixed
+
+	* cjc/ui/screen.py:
+	- Alt-Tab is working again
+
+	* plugins/chat.py, plugins/message.py:
+	- encode messages UTF-8 befor writting them to log file
+
+2003-08-09  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/version.py:
+	- update
+
+	* plugins/chat.py, plugins/message.py:
+	- message logging
+
+	* plugins/roster.py:
+	- catch exception when removing item not in roster
+
+	* cjc/themes.py:
+	- now environment variables may be used in theme substitutions
+
+	* cjc/ui/window.py:
+	- Window is now a CommandHandler
+
+2003-08-08  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/buffer.py, cjc/ui/screen.py:
+	- buffer moving and switching (/nextbuf,/prevbuf,/move commands)
+
+	* cjc/ui/text_input.py:
+	- Ctrl-W = readline's unix-word-rubout
+
+	* cjc/version.py:
+	- updated
+
+	* plugins/xmlconsole.py:
+	- XML console
+
+	* cjc/main.py:
+	- show stream errors
+
+	* cjc/main.py:
+	- 'stream created' and 'stream closed' events
+
+	* cjc/main.py:
+	- 'debug' setting to enable debug logging to status window
+
+	* plugins/presence.py:
+	- new settings: presence.show_errors and presence.show_changes, for those who want CJC quiet
+
+2003-08-07  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/themes.py, cjc.py:
+	- testing phase is ending:
+	- config and theme files in ~/.cjc/ instead of current directory
+	- plugins and themes may be loaded from global data dir or ~/.cjc/
+	- debug log is optional
+
+	* cjc/ui/screen.py, cjc/main.py:
+	- command_handler made function instead of object
+
+	* cjc/ui/screen.py:
+	- terminal window resize support
+
+	* cjc/main.py:
+	- ignore SIGINT (Ctrl-C)
+	- terminal window resize support
+
+	* cjc/ui/text_buffer.py:
+	- s/split_line/split_text/ (there is no split_line here)
+
+2003-08-06  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- autoconnect setting
+
+	* cjc/ui/screen.py, plugins/chat.py, cjc/main.py, cjc/ui/cmdtable.py:
+	- command handling improvements
+	- command aliases (/alias)
+
+	* cjc/ui/window.py:
+	- /clear command (ugly hack, but I think this is enough)
+
+	* cjc/ui/screen.py:
+	- Ctrl-L - redraw
+
+	* cjc/ui/text_input.py:
+	- some readline(1) keybindings
+
+	* plugins/presence.py:
+	- announce 'presence' feature
+
+	* plugins/message.py:
+	- announce 'message' feature
+
+2003-08-05  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/version.py:
+	- probably these should be updated more frequently :)
+
+	* plugins/roster.py:
+	- don't try to get bare JID from None
+
+	* plugins/presence.py:
+	- ask if subscribe user who subscribed to us
+
+	* plugins/roster.py:
+	- remove item from VG_UNKNOWN when it is known
+
+	* cjc/ui/list_buffer.py, plugins/presence.py, plugins/roster.py:
+	- roster and presence subscription management
+
+2003-08-03  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/presence.py:
+	- incoming subscribe/unsubscribe/subscribed/unsubscribed presence handling
+
+	* plugins/test.py:
+	- invalid comment removed
+
+	* cjc/main.py:
+	- clear presence information after disconnect
+
+	* cjc/ui/list_buffer.py:
+	- cosmetics
+
+	* cjc/ui/bool_input.py, cjc/ui/buffer.py, cjc/ui/choice_input.py, cjc/ui/input.py, cjc/ui/list_input.py, cjc/ui/screen.py, cjc/ui/text_input.py, cjc/ui/window.py, plugins/test.py:
+	- link questions to buffers
+
+	* cjc/ui/input_widget.py:
+	- base class for all input widgets
+
+	* cjc/ui/bool_input.py, cjc/ui/choice_input.py, cjc/ui/input.py, cjc/ui/list_input.py, cjc/ui/text_input.py, plugins/test.py:
+	- 'required' flag for input widgets
+
+	* cjc/ui/input.py, cjc/ui/list_input.py, plugins/test.py:
+	- list-multi input
+
+	* plugins/test.py:
+	- updated
+
+	* cjc/ui/input.py, cjc/ui/text_input.py:
+	- use arrow characters from the alternate charcter set
+
+	* cjc/ui/list_input.py:
+	- list-single input
+
+	* cjc/ui/bool_input.py, cjc/ui/choice_input.py, cjc/ui/input.py, plugins/test.py:
+	- more input widgets
+
+	* cjc/ui/text_input.py:
+	- do not update screen after answer handler was called
+	- getmaxyx returns window size not maximum coordinates (of course)
+
+2003-08-02  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/input.py, cjc/ui/line_input.py, cjc/ui/text_input.py, plugins/test.py:
+	- basic 'text-single' input
+
+	* cjc/main.py:
+	- s/command_line/self.command_line/g
+
+	* cjc/themes.py:
+	- some debug output removed
+
+	* cjc/main.py:
+	- use new Input class for command line
+
+	* cjc/ui/__init__.py, cjc/ui/edit_line.py, cjc/ui/input.py, cjc/ui/line_input.py:
+	- input handling modified for asking questions
+
+2003-07-28  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/edit_line.py:
+	- command line history handling fixed (long lines and lines containing non-ascii characters)
+
+	* cjc/ui/list_buffer.py:
+	- remove control characters from items
+
+2003-07-27  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/roster.py:
+	- nicer default theme
+
+	* plugins/message.py:
+	- a new plugin - 'normal' messages handling
+
+	* plugins/chat.py:
+	- s/thread-/chat-thread-/
+
+	* cjc/ui/text_buffer.py:
+	- line breaks handling in append() improved
+
+	* cjc/ui/cmdtable.py:
+	- new get() method for reading arguments without removing them from the command line
+
+	* cjc/main.py:
+	- 'normal' messages handling moved to a plugin
+	- 'choice' setting type added
+	- handling for stream errors in stream_loop
+
+	* plugins/roster.py:
+	- 'roster.show' setting and displaying of item removal implemented
+
+	* cjc/ui/list_buffer.py, cjc/ui/window.py:
+	- proper display of items added to and removed from list buffer
+
+	* plugins/chat.py, plugins/presence.py, cjc/main.py:
+	- presence and message handlers updated for changes in pyxmpp
+	- message errors are routed to the right chat window
+
+	* cjc/ui/buffer.py:
+	- a debug message removed
+
+	* cjc/themes.py:
+	- treat error message as status of presence errors
+
+	* cjc/ui/buffer.py, cjc/ui/text_buffer.py, cjc/ui/window.py, plugins/chat.py, cjc/main.py, cjc/themes.py:
+	- nicer buffer descriptions in windows' status bars
+	- longer format variable names (eg. "buffer_name" instead of "bufname")
+
+	* cjc/themes.py:
+	- more generic %{} handling
+
+	* plugins/test.py:
+	- /close command for tests
+
+	* cjc/ui/text_buffer.py:
+	- do not display empty line at the start of empty buffer
+
+	* cjc/main.py:
+	- do not redraw whole screen when only status bars may need update
+
+	* cjc/ui/buffer.py:
+	- after closing a buffer replace it with buffer not visible in other window
+
+	* cjc/ui/buffer.py, plugins/chat.py:
+	- /close command for closing unused buffers
+
+2003-07-26  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- redraw the screen after all settings are read
+
+	* cjc/ui/edit_line.py:
+	- set cursor position at the end of the input in key_down()
+
+	* plugins/chat.py:
+	- show error when chatting after stream is disconnected
+
+	* cjc/ui/edit_line.py:
+	- command history
+
+2003-07-25  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/list_buffer.py, cjc/ui/window.py:
+	- erase 'tails' of replaced entries in list buffer
+
+	* plugins/presence.py:
+	- auto away
+	- priority handling fixed (was set only on login)
+
+	* cjc/themes.py:
+	- presence information as JID formatting method
+
+	* cjc/main.py:
+	- include presence information in bottom status bar and update status bars whenever presence is changed
+
+	* plugins/roster.py, cjc/themes.py:
+	- presence 'show' and 'status' fields made JID formatings in themes
+
+	* cjc/ui/screen.py:
+	- return 1 from keypressed() when a key was pressed
+
+	* cjc/main.py:
+	- generate 'keypressed' and 'idle' events
+
+	* plugins/presence.py:
+	- theme string for unavailable fixed
+
+	* cjc/main.py:
+	- properly process /info arguments
+
+2003-07-24  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/edit_line.py, cjc/ui/screen.py, cjc/ui/split.py, cjc/ui/status_bar.py, cjc/ui/text_buffer.py, cjc/ui/widget.py, cjc/ui/window.py:
+	- update/redraw redesigned (one function for both)
+
+	* cjc/ui/list_buffer.py, cjc/ui/status_bar.py, cjc/ui/text_buffer.py, cjc/ui/window.py:
+	- all text formatting (except cutting too long lines) removed from Window object
+
+	* plugins/test.py:
+	- updated
+
+	* cjc/main.py:
+	- show buffer position in window status bar (for debugging)
+	- refuse to connect, when already connected
+
+	* cjc/ui/screen.py:
+	- made screem.redraw() really redraw whole screen
+
+	* plugins/presence.py, plugins/roster.py, plugins/version.py, cjc/main.py:
+	- new setting handling (no 'location')
+
+	* plugins/test.py:
+	- test plugin with two tests for UI
+
+2003-07-22  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/edit_line.py, cjc/ui/split.py, cjc/ui/status_bar.py, cjc/ui/window.py:
+	- display optimizations
+
+	* plugins/roster.py:
+	- update user_info only when processing roster item (not jid alone)
+
+	* cjc/main.py:
+	- get_user_info fixed so it works for offline users
+
+	* cjc/main.py:
+	- wait a moment (disconnect_timeout setting) before disconnecting - without this many servers will ignore final <presence/>
+
+	* plugins/presence.py:
+	- commands: /online /away /xa /dnd /chatready and aliases: /back /busy
+
+	* plugins/presence.py:
+	- send <presence type='unavailable'/> on disconnect
+
+	* cjc/main.py:
+	- /connect/disconnect/connect and /connect/quit behaviour fixed
+	- /quit and /disconnect may be given a reason and generate "disconnect request" event
+
+	* cjc/ui/screen.py:
+	- input timeout of 100ms
+
+	* cjc/main.py:
+	- /save command fixed
+
+	* cjc/main.py:
+	- catch socket error when connecting
+
+	* cjc/ui/screen.py, cjc/common.py, cjc/ui/cmdtable.py:
+	- catch more standard errors (now the list is defined in common.py)
+
+2003-07-21  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- autoload .cjc-theme
+
+	* cjc/ui/cmdtable.py:
+	- quote empty arguments
+	- proper debuging (so it goes to status buffer)
+
+	* cjc/themes.py:
+	- theme changing and loading
+
+	* plugins/roster.py:
+	- set rostername user_info to real rostername, 'me' or nothing
+
+	* plugins/presence.py:
+	- include rostername in presence change messages
+
+	* cjc/themes.py:
+	- nick is taken from rostername first, and if it fails, then from JID's node
+	- any key from "user info" database may be used as JID format (eg. "rostername")
+
+	* cjc/main.py:
+	- pass self to ThemeManager
+	- allow use of rosternames containing "@"
+
+	* cjc/ui/list_buffer.py:
+	- mark list buffer active when updated
+
+	* plugins/roster.py:
+	- update roster window properly even if roster is not yet available
+
+	* plugins/presence.py:
+	- process own presence like any other (generate 'presence changed' event, update user info)
+
+	* cjc/main.py:
+	- let plugins put their buffers in right windows ('layout changed' event)
+
+	* plugins/roster.py:
+	- include own and unknown jids in roster view
+
+2003-07-20  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/text_buffer.py:
+	- updated
+
+	* plugins/roster.py:
+	- changed to use list buffer - much more efficient
+
+	* cjc/ui/window.py:
+	- changes for list buffer
+
+	* cjc/ui/__init__.py:
+	- ListBuffer added
+
+	* cjc/ui/list_buffer.py:
+	- works now
+
+	* cjc/ui/list_buffer.py, cjc/ui/text_buffer.py, cjc/ui/window.py:
+	- list buffer implementation for efficient roster display (NFY)
+
+	* cjc/ui/edit_line.py:
+	- BackSpace handling fixed
+	- Home and End keybindings added
+
+2003-07-19  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/ui/edit_line.py:
+	- command line scrolling (NFY, but works)
+
+	* cjc/ui/screen.py:
+	- set_content() fixed so buffers are unmapped from removed windows and window list is not cleared
+
+	* cjc/ui/split.py:
+	- missing 'import curses' added
+
+	* cjc/ui/screen.py:
+	- catch and print also curses.error, which is not based on StandardError
+
+2003-07-18  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui/edit_line.py, cjc/ui/screen.py:
+	- custom text line editing (curses.textpad is very limited and accepts only ASCII)
+
+	* cjc/ui/.cvsignore, cjc/ui/__init__.py, cjc/ui/buffer.py, cjc/ui/edit_line.py, cjc/ui/screen.py, cjc/ui/split.py, cjc/ui/status_bar.py, cjc/ui/text_buffer.py, cjc/ui/widget.py, cjc/ui/window.py, cjc/main.py, cjc/themes.py, cjc/ui.py:
+	- ui module split into package of smaller modules
+
+	* cjc/common.py:
+	- some common stuff (like debuging functions)
+
+	* cjc/command_args.py, cjc/ui/cmdtable.py:
+	- command_args module renamed to commands
+	- CommandHandler from ui included here too (it doesn't belong to UI)
+
+2003-07-17  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/command_args.py:
+	- proper unquoting
+
+	* plugins/chat.py:
+	- /me command works again
+
+2003-07-16  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/themes.py:
+	- theme in chat works again and the code is even simpler than before
+
+2003-07-15  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui.py:
+	- use colors only when available
+
+2003-07-14  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui.py:
+	- place cursor always in the command line
+
+	* cjc/main.py:
+	- fix for layout "irc"
+
+2003-07-13  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/themes.py, cjc/ui.py:
+	- active buffer list
+
+	* cjc/main.py:
+	- switchable layouts (command /layout plain|vertical|horizontal|icr|irc)
+	- active buffer list
+
+2003-07-12  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui.py:
+	- use try: ... finally: ... to release locks
+
+2003-07-10  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/ui.py:
+	- use threads for smoother UI on slow machines (I hate threads)
+
+	* plugins/chat.py, cjc/main.py, cjc/themes.py, cjc/ui.py:
+	- attributes for themed strings are defined only in format
+
+	* plugins/roster.py:
+	- theme support
+
+2003-07-09  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/themes.py:
+	- attribute switching fixed
+	- don't ignore newlines in format strings
+	- JID formatting
+
+	* plugins/chat.py:
+	- use theme in chat window
+
+2003-07-08  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/themes.py, cjc/ui.py:
+	- base theme handling seems to work
+
+2003-07-05  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui.py:
+	- strip status bar content so it fits
+
+2003-07-01  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/themes.py:
+	- work on themes started
+
+	* cjc/command_args.py:
+	- new command arguments handling (quoting)
+
+	* plugins/roster.py:
+	- roster plugin added
+
+	* plugins/presence.py:
+	- presence for bare jid computation based on priorities of all resources
+
+	* plugins/version.py, plugins/chat.py, cjc/ui.py:
+	- new command arguments handling (quoting)
+
+	* cjc/main.py:
+	- new command arguments handling (quoting)
+	- most roster handling moved to a plugin
+
+2003-06-30  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- settings descriptions and /unset command
+
+	* plugins/presence.py:
+	- some settings for the plugin (not used yet)
+	- include error message in presence error notification
+
+2003-06-24  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- user name resolution (get_user())
+
+	* plugins/chat.py:
+	- user name resolution moved to the main module
+
+	* plugins/version.py:
+	- JEP-0092 (jabber:iq:version)
+
+	* cjc/main.py:
+	- display version information
+
+	* cjc/version.py:
+	- version strings, mostly autogenerated
+
+2003-06-23  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py:
+	- quickstart notes
+
+	* plugins/chat.py:
+	- there is '@' not '*' in jid :)
+
+	* plugins/chat.py, plugins/presence.py, cjc/main.py, cjc/plugin.py, cjc/ui.py:
+	- command and settings handling improvement
+
+	* plugins/chat.py, cjc/main.py, cjc/ui.py:
+	- scrolling (PageUp/PageDown) is working and nearly completed
+
+2003-06-22  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/ui.py:
+	- working on scrolling and text formatiing
+
+	* plugins/chat.py:
+	- do register /chat command
+
+	* plugins/chat.py:
+	- one of the most important features: 1-to-1 chat
+
+	* cjc/ui.py:
+	- Buffer class (from main.py)
+	- user input and command handling
+	- many fixes and improvements
+
+	* plugins/presence.py:
+	- use self.cjc instead of self for accessing stream and *_user_info
+
+	* cjc/plugin.py:
+	- don't copy stream and *_user_info attributes from the application
+
+	* cjc/main.py:
+	- more code thrown to ui.py and plugins
+
+2003-06-17  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/.cvsignore, plugins/presence.py, cjc/.cvsignore, cjc/__init__.py, cjc/main.py, cjc/plugin.py, cjc/ui.py, cjc.py:
+	- CJC is getting bigger, got plugin support, but is still not very usable
+
+2003-06-15  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc.py:
+	- CJC is going to be usable soon, I hope
+
+2003-06-13  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc.py:
+	- killer example: Console Jabber Client
+
