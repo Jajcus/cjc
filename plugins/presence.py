@@ -409,6 +409,7 @@ class Plugin(PluginBase):
 		if accept:
 			p=pyxmpp.Presence(type="subscribe",to=stanza.get_from())
 			self.cjc.stream.send(p)
+		buf.close()
 		stanza.free()
 									
 	def presence_subscription_change(self,stanza):
