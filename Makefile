@@ -45,6 +45,7 @@ install: all
 		$(INSTALL_DIR) $(DESTDIR)$(pkg_datadir)/$$d ; \
 		$(INSTALL_DATA) $$d/*.py $(DESTDIR)$(pkg_datadir)/$$d ; \
 	done
+	python -c "import compileall; compileall.compile_dir('$(DESTDIR)$(pkg_datadir)')" 
 	$(INSTALL_DIR) $(DESTDIR)$(pkg_docdir)
 	$(INSTALL_DATA) $(DOCS) $(DESTDIR)$(pkg_docdir)
 	$(INSTALL_DIR) $(DESTDIR)$(bindir)
