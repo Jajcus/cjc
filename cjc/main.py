@@ -1212,6 +1212,8 @@ class Application(tls.TLSMixIn,jabber.Client):
         last_time=datetime.datetime.now()
         last_active=last_time
         idle=0
+        second=datetime.timedelta(seconds=1)
+        dt_now=datetime.datetime.now
         while not self.exit_time():
             try:
                 act=ui.keypressed()
@@ -1224,15 +1226,16 @@ class Application(tls.TLSMixIn,jabber.Client):
             except:
                 self.__logger.exception("Exception:")
                 act=0
-            now=datetime.datetime.now()
+            now=dt_now()
             if now.day!=last_time.day:
                 self.send_event("day changed")
+            dif=now-last_active
             if act:
-                self.send_event("keypressed")
-                last_active=now
+                if dif>=second:
+                    self.send_event("keypressed")
                 idle=0
+                last_active=now
             else:
-                dif=now-last_active
                 if dif>datetime.timedelta(seconds=idle):
                     idle=dif.seconds+24L*60*60*dif.days
                     self.send_event("idle",idle)

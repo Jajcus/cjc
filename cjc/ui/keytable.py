@@ -262,7 +262,13 @@ def keycode_to_name(code,meta):
         return name
 
 keytables=[]
+
+# cache:
 active_input_window=None
+default_handler=None
+unhandled_keys={}
+
+is_key_unhandled=unhandled_keys.has_key
 
 def install(keytable):
     pos=len(keytables)
@@ -271,12 +277,22 @@ def install(keytable):
             pos=i
             break
     keytables.insert(pos,keytable)
+    find_default_handler()
+    unhandled_keys={}
 
 def lookup_table(name):
     for t in keytables:
         if t.name==name:
             return t
     raise KeyError,name
+
+def find_default_handler():
+    global default_handler
+    default_handler = None
+    for t in keytables:
+        if t.active and t.default_handler:
+            default_handler=t.default_handler
+            break
 
 def find_active_input_window():
     global active_input_window
@@ -293,6 +309,8 @@ def activate(name,object,default_handler=None,input_window=None):
     table.default_handler=default_handler
     table.input_window=input_window
     find_active_input_window()
+    find_default_handler()
+    unhandled_keys={}
 
 def deactivate(name,object=None):
     table=lookup_table(name)
@@ -302,6 +320,8 @@ def deactivate(name,object=None):
     table.object=None
     table.default_handler=None
     table.input_window=None
+    find_default_handler()
+    unhandled_keys={}
 
 def lookup_function(name,active_only=0):
     for ktb in keytables:
@@ -316,16 +336,14 @@ def lookup_function(name,active_only=0):
 meta=0
 
 def process_key(code):
-    default_handler=None
-    for t in keytables:
-        if not t.active:
-            continue
-        if not default_handler and t.default_handler:
-            default_handler=t.default_handler
-        try:
-            return t.process_key(code,meta)
-        except KeyError:
-            continue
+    global default_handler
+    if not is_key_unhandled(code):
+        for t in [t for t in keytables if t.active]:
+            try:
+                return t.process_key(code,meta)
+            except KeyError:
+                continue
+        unhandled_keys[code]=True
     if default_handler:
         return default_handler(code,meta)
     else:

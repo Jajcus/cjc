@@ -308,37 +308,29 @@ class TextInput(InputWidget):
     def key_complete(self):
         self.completing=self.parent.complete(self.content,self.pos,self.completing)
 
-    def key_char(self,c):
+    def key_char(self,ch):
         self.completing=0
-        c=unicode(c,self.screen.encoding,"replace")
-        if self.pos==len(self.content):
-            self.content+=c
-            self.pos+=1
-            if self.pos>self.offset+self.w-2:
-                self.scroll_right()
-            else:
-                self.screen.lock.acquire()
-                try:
-                    if self.screen.active:
-                        self.win.addstr(c.encode(self.screen.encoding,"replace"))
-                finally:
-                    self.screen.lock.release()
-        else:
-            self.content=self.content[:self.pos]+c+self.content[self.pos:]
-            self.pos+=1
-            if self.pos>self.offset+self.w-2:
-                self.scroll_right()
-            else:
-                self.screen.lock.acquire()
-                try:
-                    if self.screen.active:
-                        self.win.insstr(c.encode(self.screen.encoding,"replace"))
-                        self.right_scroll_mark()
-                        self.win.move(0,self.pos-self.offset)
-                finally:
-                    self.screen.lock.release()
+        c=unicode(ch,self.screen.encoding,"replace")
         self.screen.lock.acquire()
         try:
+            if self.pos==len(self.content):
+                self.content+=c
+                self.pos+=1
+                if self.pos>self.offset+self.w-2:
+                    self.scroll_right()
+                else:
+                    if self.screen.active:
+                        self.win.addstr(ch)
+            else:
+                self.content=self.content[:self.pos]+c+self.content[self.pos:]
+                self.pos+=1
+                if self.pos>self.offset+self.w-2:
+                    self.scroll_right()
+                else:
+                    if self.screen.active:
+                        self.win.insstr(ch)
+                        self.right_scroll_mark()
+                        self.win.move(0,self.pos-self.offset)
             if self.screen.active:
                 self.win.refresh()
         finally:
