@@ -1,7 +1,7 @@
 import curses
 import string
 import re
-import time
+import datetime
 from types import UnicodeType,StringType
 import version
 import os
@@ -313,7 +313,7 @@ class ThemeManager:
             else:
                 return None
         elif key in ("now","timestamp"):
-            val=time.time()
+            val=datetime.datetime.now()
         elif key in ("me","jid"):
             if self.app.stream:
                 val=self.app.jid
@@ -381,9 +381,9 @@ class ThemeManager:
         if typ=="T":
             if form:
                 form=form.encode(self.encoding,"replace")
-                formatted=time.strftime(form,time.localtime(val))
+                formatted=val.strftime(form)
             else:
-                formatted=time.strftime("%H:%M",time.localtime(val))
+                formatted=val.strftime("%H:%M")
             params[key]=unicode(formatted,self.encoding,"replace")
             return format
         elif typ=="J":

@@ -55,7 +55,7 @@ class Room(muc.MucRoomHandler):
             fparams=dict(self.fparams)
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.timestamp
+            fparams["timestamp"]=d.datetime_local()
         if body.startswith(u"/me "):
             fparams["msg"]=body[4:]
             self.buffer.append_themed("muc.action",fparams)
@@ -85,7 +85,7 @@ class Room(muc.MucRoomHandler):
                     % (self.room_state.subject,))
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.timestamp
+            fparams["timestamp"]=d.datetime_local()
         self.buffer.append_themed("muc.info",fparams)
         self.buffer.update()
         return
@@ -95,7 +95,7 @@ class Room(muc.MucRoomHandler):
         fparams["msg"]=(u"%s has entered the room." % (user.nick,))
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.timestamp
+            fparams["timestamp"]=d.datetime_local()
         self.buffer.append_themed("muc.info",fparams)
         self.buffer.update()
         return
@@ -105,7 +105,7 @@ class Room(muc.MucRoomHandler):
         fparams["msg"]=(u"%s has left the room." % (user.nick,))
         d=delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.timestamp
+            fparams["timestamp"]=d.datetime_local()
         self.buffer.append_themed("muc.info",fparams)
         self.buffer.update()
         return
