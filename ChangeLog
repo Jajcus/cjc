@@ -1,3 +1,8 @@
+2004-10-11  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* cjc/main.py, cjc/tls.py:
+	- StartTLS support fixes
+
 2004-10-06  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* cjc/themes.py, plugins/muc.py, cjc/main.py:
