@@ -35,7 +35,7 @@ class TextBuffer(Buffer):
             attr=self.theme_manager.attrs[attr]
         if not self.lines:
             self.lines=[[]]
-        elif self.lines[-1]==[] and self.window:
+        elif self.lines[-1]==[] and self.window and self.pos is None:
             self.window.nl()
         newl=0
         s=s.split(u"\n")
@@ -43,12 +43,12 @@ class TextBuffer(Buffer):
         for i in range(0,ln):
             l=s[i]
             if newl:
-                if i<ln-1 and self.window:
+                if i<ln-1 and self.window and self.pos is None:
                     self.window.nl()
                 self.lines.append([])
             if l:
                 self.lines[-1].append((attr,l))
-                if self.window:
+                if self.window and self.pos is None:
                     y,x=self.window.win.getyx()
                     while l:
                         if x+len(l)>self.window.iw:
