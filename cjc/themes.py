@@ -13,7 +13,7 @@ import ui
 import common
 
 attr_sel_re=re.compile(r"(?<!\%)\%\[([^]]*)\]",re.UNICODE)
-formatted_re=re.compile(r"(?<!\%)\%\{([^]]*)\}",re.UNICODE)
+formatted_re=re.compile(r"(?<!\%)\%\{([^}]*)\}",re.UNICODE)
 
 attributes_by_name={}
 colors_by_val={}
@@ -245,6 +245,7 @@ class ThemeManager:
 				return ret
 			else:
 				format="%s%%%%{%s}%s" % (before,name,after)
+				return self.do_format_string(format,attr,params)
 
 		s=self.substitute(format,params)
 
