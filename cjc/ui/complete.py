@@ -15,16 +15,16 @@ class Completion:
 		return "",[]
 	def make_result(self,head,word,matches):
 		if len(matches)==1:
-			return "",matches
+			return head,matches
 		if not matches:
 			return "",[]
 		longest=min([len(m) for m in matches])
 		l=len(word)
 		if longest==l:
 			return head,matches
-		longest_match=matches[0][:longest]
+		longest_match=matches[0][0][:longest]
 		for m in matches[1:]:
-			while longest>l and m[:longest]!=longest_match:
+			while longest>l and m[0][:longest]!=longest_match:
 				longest_match=longest_match[:-1]
 				longest-=1
 		if longest==l:
@@ -38,10 +38,12 @@ class GenericCompletion(Completion):
 		matches=[]
 		for w in self.words:
 			if w.startswith(word):
-				matches.append(w+" ")
+				matches.append([w,1])
 		return self.make_result("",word,matches)
 
 GenericCompletion().register("text")
+
+unfinished_quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)',re.UNICODE)
 
 def complete_command_args(s):
 	sp=s.split(None,1)
@@ -55,10 +57,10 @@ def complete_command_args(s):
 		cmd=cmdtable.lookup_command(cmd,1)
 	except KeyError:
 		common.debug("Command not found: "+`cmd`)
-		return None,None,None
+		return None,None,None,0
 	if not cmd.hints:
 		common.debug("No completion hints for command: "+`cmd`)
-		return None,None,None
+		return None,None,None,0
 	hi=0
 	if not args or args[-1].isspace():
 		lastarg=""
@@ -72,7 +74,7 @@ def complete_command_args(s):
 			arg=args.shift()
 			if arg is None:
 				common.debug("Last argument reached")
-				return None,None,None
+				return None,None,None,0
 			if option:
 				common.debug("option=%r, option_arg=%r arg=%r" % (option,option_arg,arg))
 				option_arg+=1
@@ -102,13 +104,16 @@ def complete_command_args(s):
 	except cmdtable.CommandError:
 		if not unfinished_quoted_arg_re.match(args.args):
 			common.debug("Argument parse error not on open quotes")
-			return None,None,None
+			return None,None,None,0
 	if hi>=len(cmd.hints):
 		common.debug("More args than hints")
-		return None,None,None
+		return None,None,None,0
 	if args.args:
 		head=s[:-len(args.args)]
-		word=args.args
+		if args.args.startswith('"'):
+			word=cmdtable.unquote(args.args[1:])
+		else:
+			word=args.args
 	else:
 		head=s
 		word=""
@@ -130,7 +135,7 @@ def complete_command_args(s):
 				options.append(cmd.hints[hi].split()[0])
 				hi+=1
 			compl=GenericCompletion(options)
-			return head,word,compl
+			return head,word,compl,0
 		else:
 			while (hi<len(cmd.hints) 
 				and cmd.hints[hi].startswith("-")):
@@ -139,14 +144,17 @@ def complete_command_args(s):
 				hint=cmd.hints[hi]
 			else:
 				common.debug("More args than hints")
-				return None,None,None
+				return None,None,None,0
 	if hint=="opaque":
-		return None,None,None
+		return None,None,None,0
 	elif not completions.has_key(hint):
 		common.debug("Completion not found: "+`hint`)
-		return None,None,None
+		return None,None,None,0
 	compl=completions[hint]
-	return head,word,compl
+	if hint!="text":
+		return head,word,compl,1
+	else:
+		return head,word,compl,0
 
 need_quote_re=re.compile('[ \t\\"]')
 
@@ -158,7 +166,7 @@ def complete(s):
 			compl=completions["command"]
 			quote=0
 		else:
-			head,word,compl=complete_command_args(s)
+			head,word,compl,quote=complete_command_args(s)
 			common.debug("head=%r word=%r compl=%r" % (head,word,compl))
 			if head is None:
 				return s,[]
@@ -168,7 +176,43 @@ def complete(s):
 			word=s.split()[-1]
 		else:
 			word=""
+		quote=0
 		compl=GenericCompletion()
 	
-	chead,ret=compl.complete(word)
+	chead,cret=compl.complete(word)
+
+	common.debug("head=%r chead=%r cret=%r quote=%r" % (head,chead,cret,quote))
+
+	if quote:
+		if chead:
+			if need_quote_re.search(chead):
+				need_quote=1
+			else:
+				need_quote=0
+				for r in cret:
+					if need_quote_re.search(r[0][0]):
+						need_quote=1
+						break
+			if need_quote:
+				chead='"'+cmdtable.quote(chead)
+				for i in range(len(cret)):
+					if cret[i][1]:
+						cret[i][0]=cmdtable.quote(cret[i][0])+'"'
+					else:
+						cret[i][0]=cmdtable.quote(cret[i][0])
+		else:
+			for i in range(len(cret)):
+				if not need_quote_re.search(cret[i][0]):
+					continue
+				if cret[i][1]:
+					cret[i][0]='"'+cmdtable.quote(cret[i][0])+'"'
+				else:
+					cret[i][0]='"'+cmdtable.quote(cret[i][0])
+	
+	ret=[]
+	for r in cret:
+		if r[1]:
+			ret.append(r[0]+" ")
+		else:
+			ret.append(r[0])
 	return head+chead,ret

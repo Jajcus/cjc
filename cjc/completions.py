@@ -22,7 +22,7 @@ class UserCompletion(ui.Completion):
 				if (name.startswith(word) 
 						and name not in matches 
 						and ri.jid().as_unicode() not in matches): 
-					matches.append(name+" ")
+					matches.append(name)
 		for jid in self.app.user_info.keys():
 			if self.app.roster:
 				try:
@@ -32,7 +32,8 @@ class UserCompletion(ui.Completion):
 				except KeyError:
 					pass
 			if jid.startswith(word) and jid not in matches:
-				matches.append(jid+" ")
+				matches.append(jid)
+		matches=[[m,1] for m in matches]
 		return self.make_result("",word,matches)
 
 class SettingCompletion(ui.Completion):
@@ -45,10 +46,10 @@ class SettingCompletion(ui.Completion):
 		matches=[]
 		for p in self.app.plugins.keys():
 			if p.startswith(word):
-				matches.append(p+".")
+				matches.append([p+".",0])
 		for s in self.app.settings.keys():
 			if s.startswith(word) and s not in matches:
-				matches.append(s+" ")
+				matches.append([s,1])
 		common.debug("word=%r matches=%r" % (word,matches))
 		return self.make_result("",word,matches)
 	def complete_plugin(self,word):
@@ -66,8 +67,8 @@ class SettingCompletion(ui.Completion):
 			word=word[d+1:]
 		matches=[]
 		for s in obj.settings.keys():
-			if s.startswith(word) and s+" " not in matches:
-				matches.append(s+" ")
+			if s.startswith(word) and s not in matches:
+				matches.append([s,1])
 		return self.make_result(head,word,matches)
 
 class CommandCompletion(ui.Completion):
@@ -77,11 +78,12 @@ class CommandCompletion(ui.Completion):
 		matches=[]
 		for a in self.app.aliases.keys():
 			if a.startswith(word):
-				matches.append(a+" ")
+				matches.append(a)
 		for t in ui.cmdtable.command_tables:
 			if not t.active:
 				continue
 			for cmd in t.get_command_names():
 				if cmd.startswith(word) and cmd not in matches:
-					matches.append(cmd+" ")
+					matches.append(cmd)
+		matches=[[m,1] for m in matches]
 		return self.make_result("",word,matches)
