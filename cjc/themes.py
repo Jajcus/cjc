@@ -6,7 +6,7 @@ from types import UnicodeType,StringType
 
 import pyxmpp
 
-from command_args import CommandError,CommandArgs
+from commands import CommandError,CommandArgs
 import ui
 
 attr_sel_re=re.compile(r"(?<!\%)\%\[([^]]*)\]",re.UNICODE)
@@ -130,8 +130,8 @@ class ThemeManager:
 				self.formats[name]=format
 	def format_buffers(self,attr,params):
 		ret=[]
-		for num in range(0,len(ui.buffer_list)):
-			buf=ui.buffer_list[num]
+		for num in range(0,len(ui.buffer.buffer_list)):
+			buf=ui.buffer.buffer_list[num]
 			if buf is None:
 				continue
 			p=params.copy()

@@ -14,9 +14,11 @@ import threading
 import pyxmpp
 
 import ui
+import ui.buffer
 import version
-import command_args
+import commands
 import themes
+import common
 
 logfile=open("cjc.log","a")
 
@@ -100,10 +102,10 @@ global_theme_formats=(
 	("buffer_active3","%[error]%(num)i"),
 )
 
-class Application(pyxmpp.Client,ui.CommandHandler):
+class Application(pyxmpp.Client,commands.CommandHandler):
 	def __init__(self):
 		pyxmpp.Client.__init__(self)
-		ui.CommandHandler.__init__(self,global_commands)
+		commands.CommandHandler.__init__(self,global_commands)
 		self.settings={"layout":"plain"}
 		self.available_settings=global_settings
 		self.plugin_dirs=["cjc/plugins"]
@@ -160,7 +162,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		self.info_handlers[var]=handler
 
 	def command(self,cmd,args):
-		if not ui.CommandHandler.command(self,cmd,args):
+		if not commands.CommandHandler.command(self,cmd,args):
 			self.error(u"Unknown command: %s" % (cmd,))
 
 	def layout_plain(self):
@@ -169,13 +171,13 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			"version": version.version,
 			"author": "Jacek Konieczny <jajcus@bnet.pl>",
 			}
-		ui.buffer_activity_handlers=[]
+		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(top_bar.update)
+		ui.buffer.activity_handlers.append(top_bar.update)
 		main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine()
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(bottom_bar.update)
+		ui.buffer.activity_handlers.append(bottom_bar.update)
 		sp=ui.HorizontalSplit(top_bar,main_window,bottom_bar,command_line)
 		self.screen.set_content(sp)
 		main_window.set_buffer(self.status_buf)
@@ -187,14 +189,14 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			"version": version.version,
 			"author": "Jacek Konieczny <jajcus@bnet.pl>",
 			}
-		ui.buffer_activity_handlers=[]
+		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(top_bar.update)
+		ui.buffer.activity_handlers.append(top_bar.update)
 		status_window=ui.Window(self.theme_manager,"Status",1)
 		main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine()
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(bottom_bar.update)
+		ui.buffer.activity_handlers.append(bottom_bar.update)
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
 
 		sp=ui.VerticalSplit(main_window,roster_window)
@@ -211,14 +213,14 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			"version": version.version,
 			"author": "Jacek Konieczny <jajcus@bnet.pl>",
 			}
-		ui.buffer_activity_handlers=[]
+		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(top_bar.update)
+		ui.buffer.activity_handlers.append(top_bar.update)
 		status_window=ui.Window(self.theme_manager,"Status",1)
 		main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine()
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(bottom_bar.update)
+		ui.buffer.activity_handlers.append(bottom_bar.update)
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
 
 		sp=ui.VerticalSplit(status_window,roster_window)
@@ -235,13 +237,13 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			"version": version.version,
 			"author": "Jacek Konieczny <jajcus@bnet.pl>",
 			}
-		ui.buffer_activity_handlers=[]
+		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(top_bar.update)
+		ui.buffer.activity_handlers.append(top_bar.update)
 		main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine()
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(bottom_bar.update)
+		ui.buffer.activity_handlers.append(bottom_bar.update)
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
 
 		sp=ui.VerticalSplit(main_window,roster_window)
@@ -257,13 +259,13 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			"version": version.version,
 			"author": "Jacek Konieczny <jajcus@bnet.pl>",
 			}
-		ui.buffer_activity_handlers=[]
+		ui.buffer.activity_handlers=[]
 		top_bar=ui.StatusBar(self.theme_manager,"title_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(top_bar.update)
+		ui.buffer.activity_handlers.append(top_bar.update)
 		main_window=ui.Window(self.theme_manager,"Main")
 		command_line=ui.EditLine()
 		bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",status_bar_params)
-		ui.buffer_activity_handlers.append(bottom_bar.update)
+		ui.buffer.activity_handlers.append(bottom_bar.update)
 		roster_window=ui.Window(self.theme_manager,"Roster",1)
 		sp=ui.HorizontalSplit(top_bar,roster_window,main_window,bottom_bar,command_line)
 		self.screen.set_content(sp)
@@ -286,9 +288,9 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 		
 		self.screen.update()
 		
-		ui.error=self.error
-		ui.debug=self.debug
-		ui.print_exception=self.print_exception
+		common.error=self.error
+		common.debug=self.debug
+		common.print_exception=self.print_exception
 		
 		self.load_plugins()
 
@@ -545,7 +547,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 					continue
 				if plugin is not None:
 					var="%s.%s" % (plugin,var)
-				args=command_args.CommandArgs(var)
+				args=commands.CommandArgs(var)
 				if type(typ) is tuple:
 					typ=typ[0]
 				if typ is list:
@@ -578,7 +580,7 @@ class Application(pyxmpp.Client,ui.CommandHandler):
 			if not l:
 				continue
 			try:
-				args=command_args.CommandArgs(unicode(l,"utf-8"))
+				args=commands.CommandArgs(unicode(l,"utf-8"))
 				self.cmd_set(args)
 			except (ValueError,UnicodeError):
 				self.warning(
