@@ -179,7 +179,11 @@ class TLSMixIn:
                     self.status_buf.append_themed("tls_error_ignored",
                             {"errnum": errnum, "errdesc": errdesc})
                 return 1
-            return self.cert_verify_ask(ctx,cert,errnum,depth)
+            # FIXME: check CN?
+            if ok:
+                return 1
+            else:
+                return self.cert_verify_ask(ctx,cert,errnum,depth)
         except:
             self.print_exception()
             raise
