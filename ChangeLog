@@ -1,5 +1,14 @@
 2004-04-24  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* cjc/themes.py:
+	- when color or attribute name is not known display an error message instead of the traceback
+
+	* cjc/main.py:
+	- don't change the buffer in the main window on terminal resize
+
+	* cjc/ui/cmdtable.py:
+	- on CommandError display the error mesage instead of backtrace
+
 	* cjc/ui/cmdtable.py:
 	- better handling of quoted arguments
 
