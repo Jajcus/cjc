@@ -271,7 +271,9 @@ class ThemeManager:
         l=formatted_re.split(format,1)
         if len(l)==3:
             before,name,after=l
-            if params.has_key(name):
+            if name.startswith("@"):
+                val=name[1:]
+            elif params.has_key(name):
                 val=params[name]
             else:
                 val=self.find_format_param(name,params)
@@ -365,7 +367,7 @@ class ThemeManager:
         sp=key.split(u"?",1)
         val,expr=sp
         if not params.has_key(val) and u":" in val:
-            self.process_format_param(format,val,params)
+            val=self.process_format_param(format,val,params)
         if not params.has_key(val):
             return self.quote_format_param(format,key)
         value=params[val]
@@ -390,6 +392,8 @@ class ThemeManager:
             if value==test:
                 retval=val
                 break
+        if retval:
+            retval=self.substitute(retval,params)
         params[key]=retval
         return format
 
