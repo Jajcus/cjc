@@ -15,6 +15,7 @@ import signal
 import getopt
 
 import pyxmpp
+from pyxmpp import jabber
 
 import ui
 import ui.buffer
@@ -144,9 +145,9 @@ global_theme_formats=(
 )
 
 
-class Application(pyxmpp.Client,commands.CommandHandler,tls.TLSHandler):
+class Application(jabber.Client,commands.CommandHandler,tls.TLSHandler):
 	def __init__(self,base_dir,config_file="config",theme_file="theme"):
-		pyxmpp.Client.__init__(self)
+		jabber.Client.__init__(self)
 		commands.CommandHandler.__init__(self,global_commands)
 		self.settings={
 			"jid":self.jid,
@@ -505,7 +506,7 @@ class Application(pyxmpp.Client,commands.CommandHandler,tls.TLSHandler):
 		except (socket.error),e:
 			self.error("Connection failed: "+e.args[1])
 		else:
-			self.disco_identity=pyxmpp.DiscoIdentity(self.disco_info,
+			self.disco_identity=jabber.DiscoIdentity(self.disco_info,
 								"Jabber client",
 								"client","console")
 	
