@@ -1,6 +1,7 @@
 import ui
 import ui.cmdtable
 import common
+import pyxmpp
 
 class UserCompletion(ui.Completion):
     def __init__(self,app):
@@ -15,25 +16,25 @@ class UserCompletion(ui.Completion):
             mword=word.lower()
         if self.app.roster:
             for ri in self.app.roster.items():
-                name=ri.name()
+                name=ri.name
                 if not case_sensitive and name:
                     name=name.lower()
                 if mword==name:
                     items=self.app.roster.items_by_name(name,case_sensitive)
                     if len(items)>1:
                         for i in items:
-                            matches.append(i.jid().as_unicode())
+                            matches.append(i.jid.as_unicode())
                         continue
                 if name is None:
-                    name=ri.jid().as_unicode()
+                    name=ri.jid.as_unicode()
                 if (name.startswith(mword)
                         and name not in matches
-                        and ri.jid().as_unicode() not in matches):
+                        and ri.jid.as_unicode() not in matches):
                     matches.append(name)
         for jid in self.app.user_info.keys():
             if self.app.roster:
                 try:
-                    name=self.app.roster.item_by_jid(jid)
+                    name=self.app.roster.item_by_jid(pyxmpp.JID(jid)).name
                     if name in matches:
                         continue
                 except KeyError:
