@@ -32,7 +32,7 @@ doc/manual.html: doc/manual.xml
 
 version:
 	if test -f "CVS/Entries" ; then \
-		echo "version='$(VERSION)+cvs'" > cjc/version.py ; \
+		echo "version='$(VERSION)+cvs'" > cjc/version.py || : ; \
 	fi
 
 cjc.inst: cjc.in
