@@ -1,5 +1,8 @@
 
+from types import StringType,IntType,UnicodeType
 import re
+
+from common import debug,error,print_exception
 
 quoted_arg_re=re.compile(r'^"(?P<arg>([^"]|(\\"))*)"(?P<rest>.*)$',re.UNICODE)
 need_quote_re=re.compile(r'[ \"\\\n\t]',re.UNICODE)
@@ -17,6 +20,54 @@ def unquote(s):
 	s=s.replace(u'\\n',u'\n')
 	s=quote_re.sub(ur"\1",s)
 	return s
+
+class CommandHandler:
+	def __init__(self,d=None,object=None):
+		self.command_info={}
+		self.command_aliases={}
+		if d:
+			self.register_commands(d,object)
+
+	def register_commands(self,d,object=None):
+		if object is None:
+			object=self
+		for name,info in d.items():
+			if type(info) is StringType: # alias
+				self.command_aliases[name]=info
+				continue
+			handler,usage,descr=info
+			if type(handler) is StringType:
+				handler=getattr(object,handler)
+			if not callable(handler):
+				raise TypeError,"Bad command handler"
+			self.command_info[name]=(handler,usage,descr)
+
+	def commands(self):
+		return self.command_info.keys()+self.command_aliases.keys()
+
+	def get_command_info(self,cmd):
+		if self.command_aliases.has_key(cmd):
+			cmd=self.command_aliases[cmd]
+		return self.command_info[cmd]
+
+	def command(self,cmd,args):
+		if self.command_aliases.has_key(cmd):
+			cmd=self.command_aliases[cmd]
+
+		if self.command_info.has_key(cmd):
+			try:
+				self.command_info[cmd][0](args)
+			except KeyboardInterrupt:
+				raise
+			except CommandError,e:
+				error(u"Command '%s' failed: %s" % (cmd,e))
+			except StandardError,e:
+				error("Comand execution failed: "+str(e))
+				print_exception()
+			return 1
+		else:
+			return 0
+
 
 class CommandError(ValueError):
 	pass
