@@ -1,3 +1,8 @@
+2004-09-18  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/muc.py:
+	- [-nick nick] added to /join description
+
 2004-09-16  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/chat.py, plugins/jogger_pl.py, plugins/message.py, plugins/presence.py, plugins/vcard.py, plugins/version.py:
