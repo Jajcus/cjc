@@ -1,3 +1,11 @@
+2004-06-03  Jacek Konieczny  <jajcus@bnet.pl>
+
+	* plugins/chat.py:
+	- display proper timestamp for delayed chat messages
+
+	* cjc/themes.py, plugins/muc.py:
+	- time handling switched from POSIX timestamps to datetime.datetime objects
+
 2004-06-02  Jacek Konieczny  <jajcus@bnet.pl>
 
 	* plugins/muc.py:
