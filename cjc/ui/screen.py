@@ -5,6 +5,7 @@ import curses
 
 from cjc import common
 from cjc import commands
+import buffer
 
 screen_commands={
 	"next": ("focus_next",
@@ -52,8 +53,13 @@ class Screen(commands.CommandHandler):
 
 	def set_content(self,widget):
 		self.content=widget
-		widget.set_parent(self)
 		self.windows=[]
+		widget.set_parent(self)
+		for b in buffer.buffer_list:
+			if b is None:
+				continue
+			if b.window and b.window not in self.windows:
+				b.set_window(None)
 		
 	def place(self,child):
 		w,h=self.size()
