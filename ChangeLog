@@ -1,5 +1,11 @@
 2004-06-03  Jacek Konieczny  <jajcus@bnet.pl>
 
+	* plugins/muc.py:
+	- default theme fix
+
+	* cjc/main.py:
+	- fix for exception handling
+
 	* plugins/chat.py:
 	- display proper timestamp for delayed chat messages
 
