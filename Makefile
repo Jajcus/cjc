@@ -69,12 +69,12 @@ dist: all
 	distname=cjc-$$version ; \
 	for d in $(PY_DIRS) ; do \
 		$(INSTALL_DIR) $$distname/$$d || exit 1 ; \
-		cp $$d/*.py $$distname/$$d || exit 1 ; \
+		cp -a $$d/*.py $$distname/$$d || exit 1 ; \
 	done || exit 1 ; \
 	for f in $(DOCS) $(EXTRA_DIST) ; do \
 		d=`dirname $$f` ; \
 		$(INSTALL_DIR) $$distname/$$d || exit 1; \
-		cp $$f $$distname/$$d || exit 1; \
+		cp -a $$f $$distname/$$d || exit 1; \
 	done ; \
 	tar czf $${distname}.tar.gz $$distname && \
 	rm -r $$distname
