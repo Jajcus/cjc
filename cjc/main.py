@@ -101,7 +101,7 @@ global_theme_formats=(
 
 
 class Application(jabber.Client,tls.TLSHandler):
-	def __init__(self,base_dir,config_file="config",theme_file="theme"):
+	def __init__(self,base_dir,config_file="default",theme_file="theme"):
 		jabber.Client.__init__(self)
 		self.settings={
 			"jid":self.jid,
@@ -712,7 +712,7 @@ class Application(jabber.Client,tls.TLSHandler):
 		if filename is None:
 			filename=self.config_file
 		if not os.path.split(filename)[0]:
-			filename=os.path.join(self.home_dir,filename)
+			filename=os.path.join(self.home_dir,filename+".conf")
 		self.info(u"Saving settings to "+filename)
 		tmpfilename=filename+".tmp"
 		try:
@@ -775,7 +775,19 @@ class Application(jabber.Client,tls.TLSHandler):
 		if filename is None:
 			filename=self.config_file
 		if not os.path.split(filename)[0]:
-			filename=os.path.join(self.home_dir,filename)
+			if filename=="default":
+				legacy_filename=os.path.join(self.home_dir,"config")
+			else:
+				legacy_filename=os.path.join(self.home_dir,filename)
+			filename=os.path.join(self.home_dir,filename+".conf")
+
+		if not os.path.exists(filename) and os.path.exists(legacy_filename):
+			self.warning("Renaming %r to %r" % (legacy_filename,filename) )
+			try:
+				os.rename(legacy_filename,filename)
+			except OSError,e:
+				self.warning("Operation failed: "+str(e))
+				return 0
 		try:
 			f=file(filename,"r")
 		except IOError,e:
