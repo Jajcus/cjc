@@ -115,16 +115,12 @@ class Plugin(PluginBase):
 			name=item.name()
 			ask=item.ask()
 			subs=item.subscription()
-		if group==VG_ME:
-			rostername="me"
-		else:
-			rostername=name
+			if jid.resource:
+				self.cjc.set_user_info(jid,"rostername",name)
+			else:
+				self.cjc.set_bare_user_info(jid,"rostername",name)
 		if not name:
 			name=jid.as_unicode()
-		if jid.resource:
-			self.cjc.set_user_info(jid,"rostername",rostername)
-		else:
-			self.cjc.set_bare_user_info(jid,"rostername",rostername)
 		p={"name":name,"jid":jid}
 		pr=self.cjc.get_user_info(jid,"presence")
 		if not pr or pr.get_type() and pr.get_type()!="available":
