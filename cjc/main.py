@@ -124,10 +124,11 @@ global_theme_formats=(
 
 
 class Application(tls.TLSMixIn,jabber.Client):
-    def __init__(self,base_dir,config_file="default",theme_file="theme",home_dir=None,profile=False):
+    def __init__(self, base_dir, config_file="default", theme_file="theme", 
+            home_dir=None,profile=False):
         self.profile=profile
         tls.TLSMixIn.__init__(self)
-        jabber.Client.__init__(self)
+        jabber.Client.__init__(self, disco_name="CJC", disco_type="console")
         self.__logger=logging.getLogger("cjc.Application")
         self.settings={
             "jid":self.jid,
@@ -621,10 +622,6 @@ class Application(tls.TLSMixIn,jabber.Client):
             self.__logger.error("Connection failed: "+str(e))
         except (socket.error),e:
             self.__logger.error("Connection failed: "+e.args[1])
-        else:
-            self.disco_identity.set_name("CJC Jabber client")
-            self.disco_identity.set_category("client")
-            self.disco_identity.set_type("console")
 
     def cmd_disconnect(self,args):
         if not self.stream:

@@ -39,13 +39,13 @@ class Plugin(PluginBase):
                 "os": "%s %s %s"  % (sysname,release,machine),
             }
         ui.activate_cmdtable("version",self)
+        self.cjc.register_feature("jabber:iq:version")
 
     def unload(self):
         try:
             if self.cjc.stream:
                 self.cjc.stream.unset_iq_get_handler("query","jabber:iq:version")
-            if self.cjc.disco_info:
-                self.cjc.disco_info.remove_feature("jabber:iq:version")
+            self.cjc.unregister_feature("jabber:iq:version")
             ui.uninstall_cmdtable("version")
         except:
             self.cjc.print_exception()
@@ -53,7 +53,6 @@ class Plugin(PluginBase):
 
     def session_started(self,stream):
         self.cjc.stream.set_iq_get_handler("query","jabber:iq:version",self.version_get)
-        self.cjc.disco_info.add_feature("jabber:iq:version")
 
     def version_string(self):
         d=self.defaults.copy()
