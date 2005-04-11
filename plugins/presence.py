@@ -432,9 +432,10 @@ class Plugin(PluginBase):
         buf=ui.TextBuffer(self.cjc.theme_manager,{"user":fr},"presence.subscribe_buffer")
         buf.preference=self.settings["buffer_preference"]
         buf.append_themed("presence.subscribe",{"user":fr,"reason":reason})
+        stanza_copy = stanza.copy()
         def callback(response):
-            return self.subscribe_decision(response, stanza.copy(), buf)
-        buf.ask_question("Accept?", "boolean", None, self.subscribe_decision, None, None, 1)
+            return self.subscribe_decision(response, stanza_copy, buf)
+        buf.ask_question("Accept?", "boolean", None, callback, None, None, 1)
         if self.settings.get("auto_popup"):
             self.cjc.screen.display_buffer(buf)
 
@@ -452,9 +453,11 @@ class Plugin(PluginBase):
                 buf.close()
                 stanza.free()
             else:
+                stanza_copy = stanza.copy()
+                def callback(response):
+                    return self.subscribe_back_decision(response, stanza_copy, buf)
                 buf.ask_question(u"Subscribe to %s?" % (fr.as_unicode(),),
-                        "boolean",None,self.subscribe_back_decision,None,
-                                    (stanza,buf),None,1)
+                        "boolean", None, callback, None, None, 1)
         else:
             p=stanza.make_deny_response()
             self.cjc.stream.send(p)
@@ -462,8 +465,7 @@ class Plugin(PluginBase):
             buf.close()
             stanza.free()
 
-    def subscribe_back_decision(self,arg,accept):
-        stanza,buf=arg
+    def subscribe_back_decision(self, accept, stanza, buf):
         if accept:
             p=pyxmpp.Presence(stanza_type="subscribe",to_jid=stanza.get_from())
             self.cjc.stream.send(p)
