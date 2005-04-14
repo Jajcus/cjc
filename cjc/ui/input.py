@@ -64,7 +64,7 @@ class Input(Widget):
                 def abort_callback():
                     return
                 self.current_buffer.ask_question(head,"list-single",tails[0],
-                    self.complete_answer,self.complete_abort,tails,1);
+                    callback,abort_callback,tails,1);
                 return 0
             else:
                 self.screen.beep()
