@@ -136,7 +136,6 @@ class FormBuffer(TextBuffer):
                     required = field.required, values = values)
         if field.type == "boolean":
             ask_question("boolean", field.value, self.boolean_field_modified)
-            return post_edit_callback()
         elif field.type == "jid-multi":
             return post_edit_callback()
         elif field.type == "jid-single":
