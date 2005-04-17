@@ -15,6 +15,9 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import logging
+import locale
+import tempfile
+import os
 from types import StringType,IntType,UnicodeType
 
 from cjc.ui.text_buffer import TextBuffer
@@ -47,6 +50,8 @@ theme_formats = (
 )
 
 class FormBuffer(TextBuffer):
+    editor_encoding = None
+    editor = None
     initialized_theme_managers = {}
     def __init__(self, theme_manager, info, descr_format = "default_buffer_descr",
                 command_table = None, command_table_object = None, length = 200):
@@ -134,10 +139,21 @@ class FormBuffer(TextBuffer):
                 return self.edit_field(field, post_edit_callback)
             self.ask_question(prompt, input_type, value, callback, abort_callback,
                     required = field.required, values = values)
+        def ask_edit_question(value, handler):
+            def callback(response):
+                return handler(response, field, post_edit_callback)
+            def abort_callback():
+                return self.edit_field(field, post_edit_callback)
+            def edit_callback(response):
+                if response=="e":
+                    return self.external_edit(value, callback, abort_callback)
+                else:
+                    return post_edit_callback()
+            self.ask_question("[E]dit or [A]ccept? ", "choice", "a", edit_callback, abort_callback, required = True, values = "ae")
         if field.type == "boolean":
             ask_question("boolean", field.value, self.boolean_field_modified)
         elif field.type == "jid-multi":
-            return post_edit_callback()
+            ask_edit_question([unicode(jid) for jid in field.value], self.jid_multi_field_modified)
         elif field.type == "jid-single":
             if field.value is None:
                 value = u""
@@ -157,7 +173,7 @@ class FormBuffer(TextBuffer):
                     default = label
             ask_question(field.type, default, self.list_multi_field_modified, labels)
         elif field.type == "text-multi":
-            return post_edit_callback()
+            ask_edit_question(field.value, self.text_multi_field_modified)
         else:
             if field.value is None:
                 value = u""
@@ -165,6 +181,76 @@ class FormBuffer(TextBuffer):
                 value = field.value
             ask_question("text-single", value, self.text_single_field_modified)
         self.update()
+                    
+                    
+    def external_edit(self, value, callback, error_callback):
+        editor_encoding=self.editor_encoding
+        if not editor_encoding:
+            editor_encoding=locale.getlocale()[1]
+        if not editor_encoding:
+            editor_encoding="utf-8"
+        try:
+            text = u"\n".join(value).encode(editor_encoding, "strict")
+        except UnicodeError:
+            self.append_themed("error", u"Cannot encode message or address to the editor encoding.")
+            return error_callback()
+        try:
+            (tmpfd, self.tmpfile_name) = tempfile.mkstemp(prefix = "cjc-", suffix = ".txt")
+        except (IOError, OSError),e:
+            self.append_themed("error", u"Cannot create a temporary file: %s" % (e,))
+            return error_callback()
+        try:
+            tmpfile = os.fdopen(tmpfd,"w+b")
+            tmpfile.write(text)
+            tmpfile.close()
+        except (IOError,OSError),e:
+            self.append_themed("error", u"Cannot write the temporary file %r (fd: %i): %s"
+                    % (self.tmpfile_name, tmpfd,e))
+            return error_callback()
+        editor = self.editor
+        if not editor:
+            editor = os.environ.get("EDITOR", "vi")
+        command="%s %s" % (editor, self.tmpfile_name)
+        ok=True
+        try:
+            self.window.screen.shell_mode()
+            try:
+                ret=os.system(command)
+            finally:
+                self.window.screen.prog_mode()
+        except (OSError,),e:
+            self.append_themed(u"Couldn't start the editor: %s" % (e,))
+            ok=False
+        if ret:
+            es=os.WEXITSTATUS(ret)
+            if not os.WIFEXITED(ret):
+                self.error(u"Editor exited abnormally")
+            elif es:
+                self.warning(u"Editor exited with status %i" % (es,))
+            ok=False
+        if not ok:
+            return error_callback()
+        try:
+            tmpfile = open(self.tmpfile_name, "r")
+            try:
+                text = tmpfile.read()
+            finally:
+                try:
+                    tmpfile.close()
+                except IOError:
+                    pass
+        except IOError:
+            self.append_themed("error", u"Error reading the edited message!")
+            return error_callback()
+
+        try:
+            value = [unicode(l, editor_encoding, "strict") for l in text.split("\n")]
+        except UnicodeError:
+            self.append_themed("error", u"Cannot encode message or address to the editor encoding.")
+            return error_callback()
+        if len(value) and value[-1] == u"":
+                value = value[:-1]
+        return callback(value)
 
     def boolean_field_modified(self, response, field, post_edit_callback):
         if response is None and field.required:
@@ -178,6 +264,24 @@ class FormBuffer(TextBuffer):
             self.edit_field(field, post_edit_callback)
             return
         field.value = response
+        post_edit_callback()
+
+    def text_multi_field_modified(self, response, field, post_edit_callback):
+        if not response and field.required:
+            self.edit_field(field, post_edit_callback)
+            return
+        field.value = response
+        post_edit_callback()
+
+    def jid_multi_field_modified(self, response, field, post_edit_callback):
+        if not response and field.required:
+            self.edit_field(field, post_edit_callback)
+            return
+        try:
+            field.value = [JID(v) for v in response if v]
+        except (ValueError,TypeError):
+            self.edit_field(field, post_edit_callback)
+            return
         post_edit_callback()
 
     def list_single_field_modified(self, response, field, post_edit_callback):
