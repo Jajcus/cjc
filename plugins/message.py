@@ -114,6 +114,8 @@ Subject: %(subject)s
         template=self.fill_template(recipient,subject,body)
         editor_encoding=self.plugin.settings.get("editor_encoding")
         if not editor_encoding:
+            editor_encoding=self.plugin.cjc.settings.get("editor_encoding")
+        if not editor_encoding:
             editor_encoding=locale.getlocale()[1]
         if not editor_encoding:
             editor_encoding="utf-8"
@@ -141,7 +143,11 @@ Subject: %(subject)s
 
     def edit_message(self):
         self.buffer.clear()
-        editor=self.plugin.settings.get("editor",os.environ.get("EDITOR","vi"))
+        editor = self.plugin.settings.get("editor")
+        if not editor:
+            editor = self.plugin.settings.get("editor")
+        if not editor: 
+            editor = os.environ.get("EDITOR", "vi")
         command="%s %s" % (editor,self.tmpfile_name)
         ok=True
         try:
@@ -380,7 +386,7 @@ class Plugin(PluginBase):
             "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of message buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             "auto_popup": ("When enabled each new message buffer is automatically made active.",bool),
-            "editor": ("Editor for message composition. Default: $EDITOR or 'vi'",str),
+            "editor": ("Editor for message composition. Default: global 'editor' option, $EDITOR or 'vi'",str),
             "editor_encoding": ("Character encoding for edited messages. Default: locale specific",str),
             }
         self.settings={
