@@ -72,6 +72,8 @@ global_settings={
     "case_sensitive": ("Should roster name matches be case sensitive?",bool),
     "backup_config": ("Save backup of previous config file when saving.",bool),
     "debug": ("Display some debuging information in status window.",bool,"set_debug"),
+    "editor": ("Editor for message composition. Default: $EDITOR or 'vi'", (str,None)),
+    "editor_encoding": ("Character encoding for edited messages. Default: locale specific", (str,None)),
 }
 
 global_theme_attrs=(
