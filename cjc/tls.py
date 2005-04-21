@@ -150,7 +150,7 @@ class TLSMixIn:
         def callback(response):
             return self.cert_remember_decision(response, arg)
         buf.ask_question("Always accept?",
-            "boolean",None,self.cert_remember_decision,None,None,1)
+            "boolean",None,callback,None,None,1)
         buf.update()
 
     def cert_remember_decision(self, ans, arg):
@@ -241,7 +241,7 @@ class TLSMixIn:
             ok=response
             cond.notify()
             cond.release()
-        buf.ask_question("Accept?", "boolean", None, self.cert_verify_decision, None, None, 1)
+        buf.ask_question("Accept?", "boolean", None, callback, None, None, 1)
         self.screen.display_buffer(buf)
         cond.acquire()
         while ok is None:
