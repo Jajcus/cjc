@@ -1306,7 +1306,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                     ritems=None
                 if ritems:
                     if len(ritems)==1:
-                        return ritems[0].jid
+                        return [ritems[0].jid]
             try:
                 return [pyxmpp.JID(name)]
             except pyxmpp.JIDError:
