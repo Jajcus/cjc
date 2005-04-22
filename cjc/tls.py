@@ -234,21 +234,22 @@ class TLSMixIn:
             "chain_data": self.stream.tls.get_peer_cert_chain(),
             }
         buf.append_themed("certificate_error",p)
-        ok=None
+        arg=Struct()
+        arg.ok=None
         cond=threading.Condition()
         def callback(response):
             cond.acquire()
-            ok=response
+            arg.ok=response
             cond.notify()
             cond.release()
         buf.ask_question("Accept?", "boolean", None, callback, None, None, 1)
         self.screen.display_buffer(buf)
         cond.acquire()
-        while ok is None:
+        while arg.ok is None:
             cond.wait()
         cond.release()
         buf.close()
-        return ok
+        return arg.ok
 
     def format_cert_chain(self,attr,params):
         logger=logging.getLogger("cjc.TLSHandler")
