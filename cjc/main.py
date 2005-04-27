@@ -121,8 +121,10 @@ global_theme_formats=(
         "%{certificate}\n"
         "Verification of that certificat failed.\n"
         "Should it be accepted in future sessions anyway?\n"),
-    ("tls_error_ignored",u"%[info]Certificate verification error #%(errnum)i:"
+    ("tls_error_ignored",u"%[warning]Certificate verification error #%(errnum)i:"
             " '%(errdesc)s' ignored - peer certificate is known as trustworthy.\n"),
+    ("tls_error_not_ignored",u"%[error]Fatal certificate verification error #%(errnum)i:"
+            " '%(errdesc)s' not ignored.\n"),
 )
 
 
@@ -1276,6 +1278,8 @@ class Application(tls.TLSMixIn,jabber.Client):
                     self.state_changed.release()
             except pyxmpp.StreamError,e:
                 self.__logger.error(str(e))
+                self.disconnecting = 1
+                self.disconnect()
             except (KeyboardInterrupt,SystemExit),e:
                 self.exit_request(unicode(str(e)))
                 self.__logger.exception("Exception:")
