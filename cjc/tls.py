@@ -64,7 +64,7 @@ tls_errors = { # taken from `man openssl_verify`
 
 # these will be ignored if the certificate is known as trustworthy
 tls_nonfatal_errors = {
-    2: True, 18: True, 19: True, 20: True, 22: True, 24: True, 25: True, 26: True, 27: True, 28: True, 32: True,
+    2: True, 18: True, 19: True, 20: True, 21: True, 22: True, 24: True, 25: True, 26: True, 27: True, 28: True, 32: True,
     1001: True
 }
 
