@@ -23,7 +23,7 @@ import logging
 from cjc import common
 
 
-tls_errors={ # taken from `man openssl_verify`
+tls_errors = { # taken from `man openssl_verify`
     0: "ok",
     2: "unable to get issuer certificate",
     3: "unable to get certificate CRL",
@@ -62,32 +62,47 @@ tls_errors={ # taken from `man openssl_verify`
     1001: "certificate CN doesn't match server name",
 }
 
+# these will be ignored if the certificate is known as trustworthy
+tls_nonfatal_errors = {
+    2: True, 18: True, 19: True, 20: True, 22: True, 24: True, 25: True, 26: True, 27: True, 28: True, 32: True,
+    1001: True
+}
+
 class Struct:
     def __init__(self):
         pass
 
 class CertVerifyState:
     def __init__(self):
-        self.certs={}
-        self.errors={}
-        self.tls_known_cert=None
-        self.known_root_cacert=None
+        self.certs = {}
+        self.errors = {}
+        self.has_fatal_errors = False
+        self.tls_known_cert = None
+        self.known_root_cacert = None
+        
     def add_error(self,depth,errnum):
+        if errnum not in tls_nonfatal_errors:
+            self.has_fatal_errors = True
         if self.errors.has_key(depth):
             self.errors[depth].append(errnum)
         else:
-            self.errors[depth]=[errnum]
+            self.errors[depth] = [errnum]
+            
     def has_errors(self):
         if self.errors:
             return 1
         else:
             return 0
+            
     def get_errors(self,depth):
-        return self.errors.get(depth,[])
+        return self.errors.get(depth, [])
+        
     def set_cert(self,depth,cert):
-        self.certs[depth]=cert
+        self.certs[depth] = cert
+        
     def get_max_dept(self):
         return max(self.certs.keys())
+
     def get_cert(self,depth):
         return self.certs[depth]
 
@@ -127,6 +142,8 @@ class TLSMixIn:
             return
         cert=self.cert_verify_state.get_cert(0)
         if self.tls_is_cert_known(cert):
+            return
+        if self.cer_verify_state.has_fatal_errors:
             return
         self.cert_remember_ask(cert)
 
@@ -176,11 +193,16 @@ class TLSMixIn:
                 self.cert_verify_state.add_error(depth,errnum)
             pcert=self.stream.tls.get_peer_cert()
             if depth==0 and self.tls_is_cert_known(cert):
-                if not ok:
+                if tls_nonfatal_errors.get(errnum):
+                    if not ok:
+                        errdesc=tls_errors.get(errnum,"unknown")
+                        self.status_buf.append_themed("tls_error_ignored",
+                                {"errnum": errnum, "errdesc": errdesc})
+                    return 1
+                elif not ok:
                     errdesc=tls_errors.get(errnum,"unknown")
-                    self.status_buf.append_themed("tls_error_ignored",
+                    self.status_buf.append_themed("tls_error_not_ignored",
                             {"errnum": errnum, "errdesc": errdesc})
-                return 1
             if ok:
                 return 1
             else:
