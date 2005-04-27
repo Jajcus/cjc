@@ -74,6 +74,7 @@ global_settings={
     "debug": ("Display some debuging information in status window.",bool,"set_debug"),
     "editor": ("Editor for message composition. Default: $EDITOR or 'vi'", (str,None)),
     "editor_encoding": ("Character encoding for edited messages. Default: locale specific", (str,None)),
+    "scrollback": ("Length of the scrollback buffers (default: 500).", int, "set_scrollback"),
 }
 
 global_theme_attrs=(
@@ -149,7 +150,9 @@ class Application(tls.TLSMixIn,jabber.Client):
             "backup_config":False,
             "case_sensitive":True,
             "status_buffer_preference":1,
-            "debug":False}
+            "debug":False,
+            "scrollback":500}
+        self.set_scrollback(0, self.settings['scrollback'])
         self.aliases={}
         self.available_settings=global_settings
         self.base_dir=base_dir
@@ -823,6 +826,9 @@ class Application(tls.TLSMixIn,jabber.Client):
             self.__logger.error("%s cannot be unset %r" % (fvar,typ))
             return
         del obj.settings[var]
+
+    def set_scrollback(self,oldval,newval):
+        ui.TextBuffer.default_length = newval
 
     def set_debug(self,oldval,newval):
         if newval:

@@ -22,11 +22,15 @@ from cjc import common
 from cjc.ui import keytable
 
 class TextBuffer(Buffer):
-    def __init__(self,theme_manager,info,descr_format="default_buffer_descr",
-                command_table=None,command_table_object=None,length=200):
+    default_length = 200
+    def __init__(self, theme_manager, info, descr_format = "default_buffer_descr",
+                command_table = None, command_table_object = None, length = None):
         Buffer.__init__(self,info,descr_format,command_table,command_table_object)
         self.theme_manager=theme_manager
-        self.length=length
+        if length:
+            self.length = length
+        else:
+            self.length = self.default_length
         self.lines=[]
         self.pos=None
         self.update_pos()
