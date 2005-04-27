@@ -68,7 +68,7 @@ global_settings={
     "disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
     "disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
     "autoconnect": ("Automatically connect on startup.",bool),
-    "keepalive": ("Keep-alive interval in seconds (0 to disable).",bool),
+    "keepalive": ("Keep-alive interval in seconds (0 to disable, changes are active after the next /connect).", int),
     "case_sensitive": ("Should roster name matches be case sensitive?",bool),
     "backup_config": ("Save backup of previous config file when saving.",bool),
     "debug": ("Display some debuging information in status window.",bool,"set_debug"),
@@ -145,7 +145,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             "autoconnect":False,
             "tls_enable":True,
             "tls_require":False,
-            "keepalive":15*60,
+            "keepalive": 15*60,
             "backup_config":False,
             "case_sensitive":True,
             "status_buffer_preference":1,
@@ -1263,7 +1263,9 @@ class Application(tls.TLSMixIn,jabber.Client):
             if not stream:
                 continue
             try:
-                self.stream.loop_iter(1)
+                act = self.stream.loop_iter(1)
+                if not act:
+                    self.stream.idle()
             except (pyxmpp.FatalStreamError,pyxmpp.StreamEncryptionRequired),e:
                 self.state_changed.acquire()
                 try:
