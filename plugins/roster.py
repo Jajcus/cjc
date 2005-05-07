@@ -322,39 +322,33 @@ class Plugin(PluginBase):
 
     def cmd_rename(self,args):
         user=args.shift()
-        user=self.cjc.get_user(user)
-        if user is None:
+        users=self.cjc.get_users(user)
+        if not users:
             return
-        if user.bare()==self.cjc.stream.me.bare():
-            self.error("Self presence subscription is automatic."
-                    " Cannot rename own JID in the roster.")
-            return
-        name=args.all()
-        try:
-            item=self.cjc.roster.get_item_by_jid(user)
-        except KeyError:
-            self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
-            return
-        item.name=name
-        iq=item.make_roster_push()
-        self.cjc.stream.send(iq)
+        for user in users:
+            if user.bare()==self.cjc.stream.me.bare():
+                self.error("Self presence subscription is automatic."
+                        " Cannot rename own JID in the roster.")
+                continue
+            name=args.all()
+            try:
+                item=self.cjc.roster.get_item_by_jid(user)
+            except KeyError:
+                self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
+                continue
+            item.name=name
+            iq=item.make_roster_push()
+            self.cjc.stream.send(iq)
 
     def cmd_group(self,args):
         user=args.shift()
         if user is None:
             self.error(u"/group without arguments!")
             return
-        user=self.cjc.get_user(user)
-        if user is None:
+        users=self.cjc.get_users(user)
+        if not users:
             return
-        if user.bare()==self.cjc.stream.me.bare():
-            self.error("Self presence subscription is automatic."
-                    " Cannot group own JID in the roster.")
-            return
-        item=self.cjc.roster.get_item_by_jid(user)
-        if not item:
-            self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
-            return
+
         groups=[]
         groups_add=[]
         groups_remove=[]
@@ -368,26 +362,36 @@ class Plugin(PluginBase):
                 groups_remove.append(group[1:])
             else:
                 groups.append(group)
-
-        if not groups and not groups_add and not groups_remove:
-            self.info(u"User %s belongs to the following groups: %s"
-                % (user.as_unicode(), string.join(item.groups(),",")))
+        if groups and (groups_add or groups_remove):
+            self.error("You cannot use groups with +/- sign and"
+                    " without it in one /group command")
             return
 
-        if groups:
-            if groups_add or groups_remove:
-                self.error("You cannot use groups with +/- sign and"
-                        " without it in one /group command")
-                return
-            item.groups=groups
-        else:
-            for group in groups_add:
-                if group not in item.groups:
-                    item.groups.append(group)
-            for group in groups_remove:
-                item.groups.remove(group)
-        iq=item.make_roster_push()
-        self.cjc.stream.send(iq)
+        for user in users:
+            if user.bare()==self.cjc.stream.me.bare():
+                self.error("Self presence subscription is automatic."
+                        " Cannot group own JID in the roster.")
+                continue
+            item=self.cjc.roster.get_item_by_jid(user)
+            if not item:
+                self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
+                continue
+
+            if not groups and not groups_add and not groups_remove:
+                self.info(u"User %s belongs to the following groups: %s"
+                    % (user.as_unicode(), string.join(item.groups(),",")))
+                continue
+
+            if groups:
+                item.groups=groups
+            else:
+                for group in groups_add:
+                    if group not in item.groups:
+                        item.groups.append(group)
+                for group in groups_remove:
+                    item.groups.remove(group)
+            iq=item.make_roster_push()
+            self.cjc.stream.send(iq)
 
     def cmd_list(self,args):
         if not self.cjc.roster:

@@ -212,7 +212,7 @@ Subject: %(subject)s
                         self.error(u"More than one recipient!")
                         ok=False
                         break
-                    recipient=self.plugin.cjc.get_user(value)
+                    recipient=self.plugin.cjc.get_best_user(value)
                     if not recipient:
                         self.error(u"Bad recipient: %r!" % (recipient,))
                         ok=False
@@ -425,7 +425,7 @@ class Plugin(PluginBase):
             self.compose_message(subject=subject)
             return
 
-        recipient=self.cjc.get_user(recipient)
+        recipient=self.cjc.get_best_user(recipient)
         if not recipient:
             return
 

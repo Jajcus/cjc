@@ -34,6 +34,8 @@ theme_formats=(
     ("presence.unsubscribed","%[info][%(T:timestamp)s] %(J:user)s denied your presence subscription\n"),
 )
 
+show_weight = {"xa": 0, "away": 1, "dnd": 2, None: 3, "chat": 4}
+
 class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
@@ -85,11 +87,15 @@ class Plugin(PluginBase):
             }
         app.add_info_handler("resources",self.info_resources)
         app.add_info_handler("presence",self.info_presence)
+        app.add_info_handler("weight",self.info_weight)
         app.add_event_handler("disconnect request",self.ev_disconnect_request)
         app.add_event_handler("idle",self.ev_idle)
         ui.activate_cmdtable("presence",self)
         self.away_saved_presence=None
 
+    def info_weight(self,k,v):
+        return "Weight", `v`
+    
     def info_resources(self,k,v):
         if not v:
             return None
@@ -404,6 +410,7 @@ class Plugin(PluginBase):
             p=self.cjc.get_bare_user_info(jid,"presence")
             if p and p.get_type()!="error" and p.get_jid().resource:
                 self.cjc.set_bare_user_info(jid,"presence",None)
+            self.cjc.set_bare_user_info(jid, "weight", None)
             return
         presence=None
         max_prio=-129
@@ -421,7 +428,11 @@ class Plugin(PluginBase):
             if prio>max_prio:
                 max_prio=prio
                 presence=p
-        self.cjc.set_bare_user_info(jid,"presence",presence)
+        weight = show_weight.get(p.get_show(), show_weight[None])*1000 + max_prio
+        if max_prio < 0:
+            weight -= 10000
+        self.cjc.set_bare_user_info(jid, "presence", presence)
+        self.cjc.set_bare_user_info(jid, "weight", weight)
 
     def presence_subscribe(self,stanza):
         fr=stanza.get_from()

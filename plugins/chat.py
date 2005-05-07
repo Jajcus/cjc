@@ -200,7 +200,7 @@ class Plugin(PluginBase):
             self.error("Connect first!")
             return
 
-        peer=self.cjc.get_user(peer)
+        peer=self.cjc.get_best_user(peer)
         if peer is None:
             return
 

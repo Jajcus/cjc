@@ -69,26 +69,27 @@ class Plugin(PluginBase):
             self.error("Connect first!")
             return
 
-        jid=self.cjc.get_user(target)
-        if jid is None:
+        user_jids=self.cjc.get_users(target)
+        if not user_jids:
             return
 
-        if jid.node and not jid.resource:
-            resources=self.cjc.get_user_info(jid,"resources")
-            if resources:
-                jids=[]
-                for r in resources:
-                    jids.append(pyxmpp.JID(jid.node,jid.domain,r,check=0))
+        for jid in user_jids:
+            if jid.node and not jid.resource:
+                resources=self.cjc.get_user_info(jid,"resources")
+                if resources:
+                    jids=[]
+                    for r in resources:
+                        jids.append(pyxmpp.JID(jid.node,jid.domain,r,check=0))
+                else:
+                    jids=[jid]
             else:
                 jids=[jid]
-        else:
-            jids=[jid]
 
-        for jid in jids:
-            iq=pyxmpp.Iq(to_jid=jid,stanza_type="get")
-            q=iq.new_query("jabber:iq:version")
-            self.cjc.stream.set_response_handlers(iq,self.version_response,self.version_error)
-            self.cjc.stream.send(iq)
+            for jid in jids:
+                iq=pyxmpp.Iq(to_jid=jid,stanza_type="get")
+                q=iq.new_query("jabber:iq:version")
+                self.cjc.stream.set_response_handlers(iq,self.version_response,self.version_error)
+                self.cjc.stream.send(iq)
 
     def version_get(self,stanza):
         iq=stanza.make_result_response()

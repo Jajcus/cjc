@@ -43,16 +43,17 @@ class Plugin(PluginBase):
 
         target=args.shift()
         if target:
-            jid=self.cjc.get_user(target)
-            if jid is None:
+            jids = self.cjc.get_users(target)
+            if not jids:
                 return
         else:
-            jid=self.cjc.jid.bare()
+            jids = [self.cjc.jid.bare()]
 
-        iq=pyxmpp.Iq(to_jid=jid,stanza_type="get")
-        q=iq.new_query(VCARD_NS)
-        self.cjc.stream.set_response_handlers(iq,self.vcard_response,self.vcard_error)
-        self.cjc.stream.send(iq)
+        for jid in jids:
+            iq=pyxmpp.Iq(to_jid=jid,stanza_type="get")
+            q=iq.new_query(VCARD_NS)
+            self.cjc.stream.set_response_handlers(iq,self.vcard_response,self.vcard_error)
+            self.cjc.stream.send(iq)
 
     def vcard_response(self,stanza):
         try:
