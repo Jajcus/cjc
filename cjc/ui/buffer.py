@@ -216,6 +216,8 @@ def move(oldnum,newnum):
 def reorder():
     global buffer_list
     buffer_list = [ buffer for buffer in buffer_list if buffer is not None ]
+    for i in range(0, len(buffer_list)):
+        buffer_list[i].update_info({"buffer_num": i+1})
     for f in activity_handlers:
         f()
         
