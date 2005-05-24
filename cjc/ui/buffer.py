@@ -202,14 +202,21 @@ def get_by_number(n):
 
 def move(oldnum,newnum):
     global buffer_list
-    mn=max(oldnum,newnum)
-    if mn>=len(buffer_list):
-        buffer_list+=(mn-len(buffer_list))*[None]
-    buffer_list[newnum-1],buffer_list[oldnum-1]=buffer_list[oldnum-1],buffer_list[newnum-1]
+    mn = max(oldnum,newnum)
+    if mn >= len(buffer_list):
+        buffer_list += (mn - len(buffer_list)) * [None]
+    buffer_list[newnum-1], buffer_list[oldnum-1] = buffer_list[oldnum-1], buffer_list[newnum-1]
     if buffer_list[newnum-1]:
         buffer_list[newnum-1].update_info({"buffer_num":newnum})
     if buffer_list[oldnum-1]:
         buffer_list[oldnum-1].update_info({"buffer_num":oldnum})
     for f in activity_handlers:
         f()
+
+def reorder():
+    global buffer_list
+    buffer_list = [ buffer for buffer in buffer_list if buffer is not None ]
+    for f in activity_handlers:
+        f()
+        
 # vi: sts=4 et sw=4

@@ -272,6 +272,10 @@ class Screen:
                 return
             oldnum=self.active_window.buffer.get_number()
         buffer.move(oldnum,newnum)
+    
+    def cmd_reorder(self,args):
+        args.finish()
+        buffer.reorder()
 
     def cmd_beep(self,args):
         self.beep()
@@ -360,6 +364,9 @@ cmdtable.CommandTable("screen",90,(
     cmdtable.Command("move",Screen.cmd_move,
         "/move [oldnumber] number",
         "Change buffer order"),
+    cmdtable.Command("reorder",Screen.cmd_reorder,
+        "/reorder [oldnumber] number",
+        "Reorder buffers by filling any 'holes' in buffer numbering"),
     cmdtable.Command("beep",Screen.cmd_beep,
         "/beep",
         "Makes the terminal 'beep'"),
