@@ -343,7 +343,7 @@ class Plugin(PluginBase):
             finally:
                 f.close()
         except (IOError,OSError),e:
-            self.cjc.error("Couldn't write chat log: "+str(e))
+            self.error("Couldn't write chat log: "+str(e))
 
 ui.CommandTable("chat",51,(
     ui.Command("chat",Plugin.cmd_chat,

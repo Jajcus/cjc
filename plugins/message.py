@@ -183,7 +183,7 @@ Subject: %(subject)s
                 except IOError:
                     pass
         except IOError:
-            self.plugin.cjc.error(u"Error reading the edited message!")
+            self.plugin.error(u"Error reading the edited message!")
             return
 
         self.buffer.append(msg)
@@ -584,7 +584,7 @@ class Plugin(PluginBase):
             finally:
                 f.close()
         except (IOError,OSError),e:
-            self.cjc.error(u"Couldn't write message log: "+unicode(e))
+            self.error(u"Couldn't write message log: "+unicode(e))
 
 ui.CommandTable("message",50,(
     ui.Command("message",Plugin.cmd_message,

@@ -143,7 +143,7 @@ Level: %(level)s
                 except IOError:
                     pass
         except IOError:
-            self.plugin.cjc.error("Error reading the edited message!")
+            self.plugin.error("Error reading the edited message!")
             return
 
         self.buffer.append(msg)

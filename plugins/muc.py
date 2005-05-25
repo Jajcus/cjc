@@ -483,7 +483,7 @@ class Plugin(PluginBase):
             finally:
                 f.close()
         except (IOError,OSError),e:
-            self.cjc.error("Couldn't write chat log: "+str(e))
+            self.error("Couldn't write chat log: "+str(e))
 
 ui.CommandTable("muc",50,(
     ui.Command("join",Plugin.cmd_join,
