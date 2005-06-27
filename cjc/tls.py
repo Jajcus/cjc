@@ -143,7 +143,7 @@ class TLSMixIn:
         cert=self.cert_verify_state.get_cert(0)
         if self.tls_is_cert_known(cert):
             return
-        if self.cer_verify_state.has_fatal_errors:
+        if self.cert_verify_state.has_fatal_errors:
             return
         self.cert_remember_ask(cert)
 
