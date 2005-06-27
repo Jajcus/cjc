@@ -42,6 +42,7 @@ from cjc import ui
 from cjc.ui import buffer as ui_buffer
 from cjc.ui import keytable as ui_keytable
 from cjc.ui import cmdtable as ui_cmdtable
+from cjc.ui.form_buffer import FormBuffer
 from cjc import version
 from cjc import themes
 from cjc import common
@@ -664,6 +665,19 @@ class Application(tls.TLSMixIn,jabber.Client):
             self.__logger.error("Connection failed: "+str(e))
         except (socket.error),e:
             self.__logger.error("Connection failed: "+e.args[1])
+
+    def fill_in_registration_form(self, stanza, form):
+        form_buffer = FormBuffer(self.theme_manager, {"service_name": stanza.get_from()}, "registration_form")
+        def callback(buf, form):
+            buf.close()
+            self.submit_registration_form(form)
+        if "FORM_TYPE" in form and "jabber:iq:register" in form["FORM_TYPE"].values:
+            if "username" in form and not form["username"].value:
+                form["username"].value = self.jid.node
+            if "password" in form and not form["password"].value:
+                form["password"].value = self.password
+        form_buffer.set_form(form, callback)
+        self.screen.display_buffer(form_buffer)
 
     def cmd_disconnect(self,args):
         if not self.stream:
