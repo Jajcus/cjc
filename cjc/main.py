@@ -53,27 +53,27 @@ class Exit(Exception):
 
 
 global_settings={
-    "jid": ("Jabber ID to use.",pyxmpp.JID),
-    "password": ("Jabber ID to use.",unicode),
-    "port": ("Port number to connect to",int),
-    "server": ("Server address to connect to",str),
-    "tls_enable": ("Enable TLS (encrypted) connections",bool),
-    "tls_require": ("Require TLS (encrypted) connections",bool),
-    "tls_cert_file": ("Path to user certificate file",(str,None)),
-    "tls_key_file": ("Path to user private key file (default: same to tls_cert_file)",(str,None)),
-    "tls_ca_cert_file": ("Path to CA certificates file",(str,None)),
-    "auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5,digest')",list),
-    "layout": ("Screen layout - one of: plain,icr,irc,vertical,horizontal",str,"set_layout"),
-    "status_buffer_preference": ("Preference of status buffer when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
-    "disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit",float),
-    "disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.",float),
-    "autoconnect": ("Automatically connect on startup.",bool),
+    "jid": ("Jabber ID to use.", pyxmpp.JID),
+    "password": ("Jabber ID to use.", unicode),
+    "port": ("Port number to connect to", int),
+    "server": ("Server address to connect to", (str, None)),
+    "tls_enable": ("Enable TLS (encrypted) connections", bool),
+    "tls_require": ("Require TLS (encrypted) connections", bool),
+    "tls_cert_file": ("Path to user certificate file", (str, None)),
+    "tls_key_file": ("Path to user private key file (default: same to tls_cert_file)", (str, None)),
+    "tls_ca_cert_file": ("Path to CA certificates file", (str, None)),
+    "auth_methods": ("Authentication methods to use (e.g. 'sasl:DIGEST-MD5, digest')", list),
+    "layout": ("Screen layout - one of: plain, icr, irc, vertical, horizontal", str, "set_layout"),
+    "status_buffer_preference": ("Preference of status buffer when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.", int),
+    "disconnect_timeout": ("Time (in seconds) to wait until the connection is closed before exit", float),
+    "disconnect_delay": ("Delay (in seconds) before stream is disconnected after final packets are written - needed for some servers to accept disconnect reason.", float),
+    "autoconnect": ("Automatically connect on startup.", bool),
     "keepalive": ("Keep-alive interval in seconds (0 to disable, changes are active after the next /connect).", int),
-    "case_sensitive": ("Should roster name matches be case sensitive?",bool),
-    "backup_config": ("Save backup of previous config file when saving.",bool),
-    "debug": ("Display some debuging information in status window.",bool,"set_debug"),
-    "editor": ("Editor for message composition. Default: $EDITOR or 'vi'", (str,None)),
-    "editor_encoding": ("Character encoding for edited messages. Default: locale specific", (str,None)),
+    "case_sensitive": ("Should roster name matches be case sensitive?", bool),
+    "backup_config": ("Save backup of previous config file when saving.", bool),
+    "debug": ("Display some debuging information in status window.", bool, "set_debug"),
+    "editor": ("Editor for message composition. Default: $EDITOR or 'vi'", (str, None)),
+    "editor_encoding": ("Character encoding for edited messages. Default: locale specific", (str, None)),
     "scrollback": ("Length of the scrollback buffers (default: 500).", int, "set_scrollback"),
 }
 
@@ -595,37 +595,71 @@ class Application(tls.TLSMixIn,jabber.Client):
         args.finish()
         self.exit_request(reason)
 
-    def cmd_connect(self,args=None):
+    def cmd_connect(self, args = None):
         if self.stream:
             self.__logger.error(u"Already connected")
             return
-        jid=self.settings.get("jid")
+        jid = self.settings.get("jid")
         if not jid:
             self.__logger.error(u"Can't connect - jid not given")
             return
         if None in (jid.node,jid.resource):
             self.__logger.error(u"Can't connect - jid is not full")
             return
-        password=self.settings.get("password")
+        password = self.settings.get("password")
         if not password:
             self.__logger.error(u"Can't connect - password not given")
             return
-        auth_methods=self.settings.get("auth_methods")
+        auth_methods = self.settings.get("auth_methods")
         if not auth_methods:
             self.__logger.error(u"Can't connect - auth_methods not given")
             return
-        self.jid=jid
-        self.password=password
-        self.port=self.settings.get("port")
+        self.jid = jid
+        self.password = password
+        self.port = self.settings.get("port")
         if not self.port:
-            self.port=5222
-        self.server=self.settings.get("server")
-        self.keepalive=self.settings.get("keepalive",0)
-        self.auth_methods=auth_methods
+            self.port = 5222
+        self.server = self.settings.get("server")
+        self.keepalive = self.settings.get("keepalive",0)
+        self.auth_methods = auth_methods
         self.tls_init()
         self.__logger.info(u"Connecting:")
         try:
             self.connect()
+        except pyxmpp.StreamError,e:
+            self.__logger.error("Connection failed: "+str(e))
+        except (socket.error),e:
+            self.__logger.error("Connection failed: "+e.args[1])
+
+    def cmd_register(self, args = None):
+        if self.stream:
+            self.__logger.error(u"Registration at services not implemented yet")
+            return
+        jid = args.shift()
+        args.finish()
+        if jid:
+            jid = pyxmpp.JID(jid)
+        else:
+            jid = self.settings.get("jid")
+            if not jid:
+                self.__logger.error(u"Can't connect - jid not given")
+                return
+        if jid.resource is None:
+            jid = pyxmpp.JID(jid.node, jid.domain, "CJC")
+        password = self.settings.get("password")
+        auth_methods = self.settings.get("auth_methods")
+        self.jid = jid
+        self.password = password
+        self.port = self.settings.get("port")
+        if not self.port:
+            self.port = 5222
+        self.server = self.settings.get("server")
+        self.keepalive = self.settings.get("keepalive",0)
+        self.auth_methods = auth_methods
+        self.tls_init()
+        self.__logger.info(u"Connecting to register:")
+        try:
+            self.connect(True)
         except pyxmpp.StreamError,e:
             self.__logger.error("Connection failed: "+str(e))
         except (socket.error),e:
@@ -1490,6 +1524,9 @@ ui.CommandTable("global",10,(
     ui.Command("connect",Application.cmd_connect,
         "/connect",
         "Connect to a Jabber server"),
+    ui.Command("register",Application.cmd_register,
+        "/register [jid]",
+        "Register to a Jabber server or service."),
     ui.Command("disconnect",Application.cmd_disconnect,
         "/disconnect [reason]",
         "Disconnect from a Jabber server",
