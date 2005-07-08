@@ -646,7 +646,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                 self.__logger.error(u"Can't connect - jid not given")
                 return
         if jid.resource is None:
-            jid = pyxmpp.JID(jid.node, jid.domain, "CJC")
+            jid = pyxmpp.JID(jid.node, jid.domain, "CJC/Registration")
         password = self.settings.get("password")
         auth_methods = self.settings.get("auth_methods")
         self.jid = jid
@@ -666,11 +666,13 @@ class Application(tls.TLSMixIn,jabber.Client):
         except (socket.error),e:
             self.__logger.error("Connection failed: "+e.args[1])
 
-    def fill_in_registration_form(self, stanza, form):
+    def process_registration_form(self, stanza, form):
         form_buffer = FormBuffer(self.theme_manager, {"service_name": stanza.get_from()}, "registration_form")
         def callback(buf, form):
             buf.close()
             self.submit_registration_form(form)
+            if form.type=="cancel":
+                self.disconnect()
         if "FORM_TYPE" in form and "jabber:iq:register" in form["FORM_TYPE"].values:
             if "username" in form and not form["username"].value:
                 form["username"].value = self.jid.node
