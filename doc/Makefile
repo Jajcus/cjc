@@ -4,7 +4,7 @@
 XSLTPROC=/usr/bin/xsltproc
 XSL_DIR=/usr/share/sgml/docbook/xsl-stylesheets/
 HTML_STYLESHEET=$(XSL_DIR)/xhtml/docbook.xsl
-FO_STYLESHEET=$(XSL_DIR)/xhtml/docbook.xsl
+FO_STYLESHEET=$(XSL_DIR)/fo/docbook.xsl
 
 all: 
 	[ "x$(XSLTPROC)" != "x" ] \
