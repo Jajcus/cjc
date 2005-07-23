@@ -51,7 +51,7 @@ class Plugin(PluginBase):
 
         for jid in jids:
             iq=pyxmpp.Iq(to_jid=jid,stanza_type="get")
-            q=iq.new_query(VCARD_NS)
+            q=iq.new_query(VCARD_NS, "vCard")
             self.cjc.stream.set_response_handlers(iq,self.vcard_response,self.vcard_error)
             self.cjc.stream.send(iq)
 
