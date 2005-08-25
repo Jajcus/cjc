@@ -190,10 +190,10 @@ class KeyTable:
         try:
             fun=self.lookup_function(binding.fun)
         except KeyError:
-            try:
-                fun=lookup_function(binding.fun)
-            except KeyError:
-                fun=binding.fun
+#            try:
+#                fun=lookup_function(binding.fun)
+#            except KeyError:
+            fun=binding.fun
         for k in binding.keys:
             self.keytable[k]=(fun,binding.arg)
 
