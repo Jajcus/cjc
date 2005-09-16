@@ -306,7 +306,7 @@ class MessageBuffer:
     def error(self,stanza):
         err=stanza.get_error()
         emsg=err.get_message()
-        msg=u"Error"
+        msg=u"Error from %s" % (stanza.get_from().as_unicode(),)
         if emsg:
             msg+=u": %s" % emsg
         etxt=err.get_text()
