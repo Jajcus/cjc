@@ -49,6 +49,7 @@ Level: %(level)s
         self.subject=None
         self.level=None
         self.body=None
+        self.editor_encoding=None
 
     def __del__(self):
         if self.buffer:
@@ -83,6 +84,7 @@ Level: %(level)s
             editor_encoding=locale.getlocale()[1]
         if not editor_encoding:
             editor_encoding="utf-8"
+        self.editor_encoding=editor_encoding
         try:
             template=template.encode(editor_encoding,"strict")
         except UnicodeError:
@@ -145,6 +147,8 @@ Level: %(level)s
         except IOError:
             self.plugin.error("Error reading the edited message!")
             return
+
+        msg = msg.decode(self.editor_encoding)
 
         self.buffer.append(msg)
         subject=None

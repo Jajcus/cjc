@@ -83,6 +83,7 @@ Subject: %(subject)s
         self.recipient=None
         self.subject=None
         self.body=None
+        self.editor_encoding=None
 
     def __del__(self):
         if self.buffer:
@@ -119,8 +120,9 @@ Subject: %(subject)s
             editor_encoding=locale.getlocale()[1]
         if not editor_encoding:
             editor_encoding="utf-8"
+        self.editor_encoding=editor_encoding
         try:
-            template=template.encode(editor_encoding,"strict")
+            template = template.encode(editor_encoding,"strict")
         except UnicodeError:
             self.plugin.error(u"Cannot encode message or address to the editor encoding.")
             return False
@@ -185,6 +187,8 @@ Subject: %(subject)s
         except IOError:
             self.plugin.error(u"Error reading the edited message!")
             return
+
+        msg = msg.decode(self.editor_encoding)
 
         self.buffer.append(msg)
         recipient=None
