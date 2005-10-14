@@ -137,7 +137,7 @@ class TLSMixIn:
     def tls_connected(self,tls):
         cipher=tls.get_cipher()
         self.__logger.info("Encrypted connection to %s established using cipher %s.",
-                            self.stream.peer,cipher.name())
+                            unicode(self.stream.peer), cipher.name())
         if not self.cert_verify_state.has_errors():
             return
         cert=self.cert_verify_state.get_cert(0)

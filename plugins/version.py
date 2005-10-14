@@ -39,7 +39,7 @@ class Plugin(PluginBase):
                 "os": "%s %s %s"  % (sysname,release,machine),
             }
         ui.activate_cmdtable("version",self)
-        self.cjc.register_feature("jabber:iq:version")
+        self.cjc.register_feature(u"jabber:iq:version")
 
     def unload(self):
         try:

@@ -110,7 +110,7 @@ class Plugin(PluginBase):
             self.cjc.roster_window.set_buffer(self.buffer)
 
     def update_item(self,item):
-        self.debug("Roster.update_item(%r): %r" % (item,str(item)))
+        self.debug("Roster.update_item(%r): %r" % (item, item))
         if isinstance(item,pyxmpp.JID):
             if self.cjc.roster:
                 try:
@@ -214,7 +214,7 @@ class Plugin(PluginBase):
         return p
 
     def write_item(self,group,item):
-        self.debug("Roster.write_item(%r): %r" % (item,str(item)))
+        self.debug("Roster.write_item(%r): %r" % (item, item))
         if not self.buffer.has_key((group,None)):
             if group:
                 p={"group":group}
