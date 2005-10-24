@@ -575,8 +575,8 @@ class Application(tls.TLSMixIn,jabber.Client):
                     " Are you sure your server supports it?")
             self.disconnect()
         else:
-            self.__logger.info("Unencrypted connection to %s established."
-                % (self.stream.peer,))
+            self.__logger.info(u"Unencrypted connection to %s established."
+                % (unicode(self.stream.peer),))
 
     def disconnected(self):
         self.disconnecting=0
