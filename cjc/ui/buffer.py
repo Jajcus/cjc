@@ -165,6 +165,8 @@ class Buffer:
             abortable=0
         if type=="text-single":
             self.input_widget=text_input.TextInput(abortable,required,default,0)
+        elif type=="text-private":
+            self.input_widget=text_input.TextInput(abortable,required,default,0,private=True)
         elif type=="boolean":
             self.input_widget=bool_input.BooleanInput(abortable,required,default)
         elif type=="choice":

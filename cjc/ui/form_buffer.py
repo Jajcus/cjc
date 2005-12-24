@@ -174,6 +174,12 @@ class FormBuffer(TextBuffer):
             ask_question(field.type, default, self.list_multi_field_modified, labels)
         elif field.type == "text-multi":
             ask_edit_question(field.value, self.text_multi_field_modified)
+        elif field.type == "text-private":
+            if field.value is None:
+                value = u""
+            else:
+                value = field.value
+            ask_question("text-private", value, self.text_single_field_modified)
         else:
             if field.value is None:
                 value = u""

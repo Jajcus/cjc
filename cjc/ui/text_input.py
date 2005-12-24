@@ -25,7 +25,7 @@ from cjc.ui.input_widget import InputWidget
 from cjc.ui import keytable
 
 class TextInput(InputWidget):
-    def __init__(self,abortable,required,default=u"",history_len=0):
+    def __init__(self,abortable,required,default=u"",history_len=0, private=False):
         InputWidget.__init__(self,abortable,required)
         self.capture_rest=0
         self.content=default
@@ -36,6 +36,7 @@ class TextInput(InputWidget):
         self.history_pos=0
         self.saved_content=None
         self.completing=0
+        self.private = private
 
     def set_parent(self,parent):
         InputWidget.set_parent(self,parent)
@@ -114,7 +115,10 @@ class TextInput(InputWidget):
         if len(self.content)-self.offset<self.w-1:
             self.win.move(0,self.pos-self.offset)
             return
-        s=self.content[self.offset+self.w-2]
+        if self.private:
+            s = "*" 
+        else:
+            s = self.content[self.offset+self.w-2]
         self.win.addstr(0,self.w-2,s.encode(self.screen.encoding,"replace"))
         if len(self.content)-self.offset==self.w-1:
             self.win.clrtoeol()
@@ -320,7 +324,10 @@ class TextInput(InputWidget):
                     self.scroll_right()
                 else:
                     if self.screen.active:
-                        self.win.addstr(ch)
+                        if self.private:
+                            self.win.addstr('*')
+                        else:
+                            self.win.addstr(ch)
             else:
                 self.content=self.content[:self.pos]+c+self.content[self.pos:]
                 self.pos+=1
@@ -328,7 +335,10 @@ class TextInput(InputWidget):
                     self.scroll_right()
                 else:
                     if self.screen.active:
-                        self.win.insstr(ch)
+                        if self.private:
+                            self.win.insstr('*')
+                        else:
+                            self.win.insstr(ch)
                         self.right_scroll_mark()
                         self.win.move(0,self.pos-self.offset)
             if self.screen.active:
@@ -392,10 +402,16 @@ class TextInput(InputWidget):
             if refresh:
                 if self.offset>0:
                     self.left_scroll_mark()
-                    s=self.content[self.offset+1:self.offset+self.w-1]
+                    if self.private:
+                        s = u'*' * (self.w-1)
+                    else:
+                        s = self.content[self.offset+1:self.offset+self.w-1]
                     self.win.addstr(s.encode(self.screen.encoding,"replace"))
                 else:
-                    s=self.content[:self.w-1]
+                    if self.private:
+                        s = u'*' * min(self.w - 1, len(self.content))
+                    else:
+                        s = self.content[:self.w-1]
                     self.win.addstr(0,0,s.encode(self.screen.encoding,"replace"))
                 self.win.clrtoeol()
                 self.right_scroll_mark()

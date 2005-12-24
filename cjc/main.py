@@ -55,7 +55,7 @@ class Exit(Exception):
 
 global_settings={
     "jid": ("Jabber ID to use.", pyxmpp.JID),
-    "password": ("Jabber ID to use.", unicode),
+    "password": ("Jabber ID to use.", (unicode, None)),
     "port": ("Port number to connect to", int),
     "server": ("Server address to connect to", (str, None)),
     "tls_enable": ("Enable TLS (encrypted) connections", bool),
@@ -608,9 +608,13 @@ class Application(tls.TLSMixIn,jabber.Client):
             self.__logger.error(u"Can't connect - jid is not full")
             return
         password = self.settings.get("password")
-        if not password:
-            self.__logger.error(u"Can't connect - password not given")
-            return
+        if password:
+            return self.proceed_connect(jid, password)
+        def answer_handler(password):
+            return self.proceed_connect(jid, password)
+        self.status_buf.ask_question(u"Password> ", "text-private", u"", answer_handler)
+
+    def proceed_connect(self, jid, password):
         auth_methods = self.settings.get("auth_methods")
         if not auth_methods:
             self.__logger.error(u"Can't connect - auth_methods not given")
