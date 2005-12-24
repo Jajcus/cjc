@@ -24,8 +24,6 @@ from cjc import ui
 import pyxmpp
 from pyxmpp.jabber import VCARD_NS,VCard
 
-vcard_fields=("FN","N","NICKNAME","EMAIL","JABBERID")
-
 class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
@@ -69,21 +67,86 @@ class Plugin(PluginBase):
             return
         self.cjc.set_user_info(stanza.get_from(),"vcard",vcard)
         msg=u"vCard for %s:\n" % (stanza.get_from(),)
-        for field in vcard_fields:
-            if field=="FN":
-                msg+=u" Full name:   %s\n" % (vcard.fn.value)
-            if field=="N":
-                if vcard.n.given:
-                    msg+=u" Given name:  %s\n" % (vcard.n.given)
-                if vcard.n.middle:
-                    msg+=u" Middle name: %s\n" % (vcard.n.middle)
-                if vcard.n.family:
-                    msg+=u" Family name: %s\n" % (vcard.n.family)
-            if field=="EMAIL":
-                for email in vcard.email:
-                    if "internet" in email.type:
-                        msg+=u" E-Mail:      %s\n" % (email.address)
+        
+        msg+=u" Full name:   %s\n" % (vcard.fn.value)
+        if vcard.n.given:
+            msg += u" Given name:  %s\n" % (vcard.n.given)
+        if vcard.n.middle:
+            msg += u" Middle name: %s\n" % (vcard.n.middle)
+        if vcard.n.family:
+            msg += u" Family name: %s\n" % (vcard.n.family)
+        for title in vcard.title:
+            msg += u" Title:       %s\n" % (title.value)
+        for role in vcard.role:
+            msg += u" Role:        %s\n" % (role.value)
+        for email in vcard.email:
+            if "internet" in email.type:
+                msg += u" E-Mail:      %s\n" % (email.address,)
+        for nick in vcard.nickname:
+            msg += u" Nick:        %s\n" % (nick.value,)
+        for photo in vcard.photo:
+            if photo.uri:
+                msg += u" Photo:       %s\n" % (photo.uri,)
+            else:
+                msg += u" Photo:       cannot display\n"
+        for logo in vcard.logo:
+            if logo.uri:
+                msg += u" Logo:        %s\n" % (logo.uri,)
+            else:
+                msg += u" Logo:        cannot display\n"
+        for bday in vcard.bday:
+            msg += u" Birthday:    %s\n" % (bday,)
+        for adr in vcard.adr:
+            msg += u" Address (%s):\n" % (u", ".join(adr.type),)
+            if adr.pobox:
+                msg += u"  PO Box:     %s\n" % (adr.pobox,)
+            if adr.extadr:
+                msg += u"              %s\n" % (adr.extadr,)
+            if adr.street:
+                msg += u"  Street:     %s\n" % (adr.street,)
+            if adr.locality:
+                msg += u"  Locality:   %s\n" % (adr.locality,)
+            if adr.region:
+                msg += u"  Region:     %s\n" % (adr.region,)
+            if adr.pcode:
+                msg += u"  Postal code: %s\n" % (adr.pcode,)
+            if adr.ctry:
+                msg += u"  Country:     %s\n" % (adr.ctry,)
+        for label in vcard.label:
+            msg += u" Address label (%s):\n" % (u", ".join(label.type),)
+            for l in label.lines:
+                msg += u"  %s\n" % (l,)
+        for tel in vcard.tel:
+            msg += u" Phone (%s):  %s\n" % (u", ".join(tel.type), tel.number)
+        for jabberid in vcard.jabberid:
+            msg += u" JID:         %s\n" % (jabberid.value,)
+        for mailer in vcard.mailer:
+            msg += u" Mailer:      %s\n" % (mailer.value,)
+        for tz in vcard.tz:
+            msg += u" Time zone:   %s\n" % (tz.value,)
+        for geo in vcard.geo:
+            msg += u" Geolocation: %s, %s\n" % (geo.lat, geo.lon)
+        for org in vcard.org:
+            msg += u" Organization: %s\n" % (org.name, )
+            if org.unit:
+                msg += u" Org. unit:   %s\n" % (org.unit, )
+        for categories in vcard.categories:
+            msg += u" Categories:  %s\n" % (u", ".join(categories.keywords),)
+        for note in vcard.note:
+            msg += u" Note:        %s\n" % (note.value,)
+        for sound in vcard.sound:
+            if sound.uri:
+                msg += u" Sound:       %s\n" % (sound.uri,)
+            else:
+                msg += u" Sound:       cannot play\n"
+        for uid in vcard.uid:
+            msg += u" User id:     %s\n" % (uid.value,)
+        for url in vcard.url:
+            msg += u" URL:         %s\n" % (url.value,)
+        for desc in vcard.desc:
+            msg += u" Description: %s\n" % (desc.value,)
         self.info(msg)
+
 
     def vcard_error(self,stanza):
         err=stanza.get_error()
