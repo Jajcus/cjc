@@ -114,6 +114,7 @@ class Input(Widget):
                     prompt=self.prompt
                 else:
                     prompt=self.prompt[:self.w/4-3]+"(...)"+self.prompt[-self.w/4+4:]
+                prompt = prompt.encode(self.screen.encoding, "replace")
                 self.__logger.debug("prompt="+`prompt`)
                 l=len(prompt)
                 self.prompt_win=curses.newwin(self.h,l+1,self.y,self.x)
