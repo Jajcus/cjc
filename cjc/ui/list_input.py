@@ -27,6 +27,7 @@ from cjc.ui.input_widget import InputWidget
 
 class ListInput(InputWidget):
     def __init__(self,abortable,required,default,values,multi=0):
+        self.__logger = logging.getLogger("cjc.ui.ListInput")
         InputWidget.__init__(self,abortable,required)
         self.capture_rest=0
         self.multi=multi
@@ -114,20 +115,21 @@ class ListInput(InputWidget):
                 return
             if refresh:
                 if self.choice<0:
-                    s=u""
+                    s = u""
                 else:
-                    s=self.values[self.keys[self.choice]]
+                    s = self.values[self.keys[self.choice]]
                 if self.multi:
                     if self.selected[self.choice]:
-                        s="+"+s
+                        s = u"+" + s
                     else:
-                        s=" "+s
+                        s = u" " + s
                 if len(s)>self.w-2:
-                    s=s[:self.w/2-3]+"(...)"+s[-self.w/2+4:]
-                s=s.encode(self.screen.encoding,"replace")
+                    s = s[:self.w/2-3] + u"(...)" + s[-self.w/2+4:]
+                self.__logger.debug("ListInput.update: s=%r", s)
+                s = s.encode(self.screen.encoding,"replace")
                 self.win.addch(0,0,curses.ACS_UARROW,
                         self.theme_manager.attrs["scroll_mark"])
-                self.win.addstr(s,self.theme_manager.attrs["default"])
+                self.win.addstr(s, self.theme_manager.attrs["default"])
                 self.win.clrtoeol()
                 self.win.insch(0,self.w-1,curses.ACS_DARROW,
                         self.theme_manager.attrs["scroll_mark"])

@@ -161,17 +161,18 @@ class FormBuffer(TextBuffer):
                 value = field.value.as_unicode()
             ask_question("text-single", field.value, self.jid_single_field_modified)
         elif field.type in ("list-multi", "list-single"):
-            labels = []
+            values = {}
             default = None
             for option in field.options:
                 if option.label:
                     label = option.label
                 else:
-                    label = u",".join(option.values)
-                labels.append(label)
+                    label = join(option.value[0])
+                values[option.values[0]] = label
                 if option.values == field.values:
-                    default = label
-            ask_question(field.type, default, self.list_multi_field_modified, labels)
+                    default = option.values[0]
+            self.__logger.debug("calling: ask_question(%r, %r, %r, %r)" % (field.type, default, self.list_field_modified, values))
+            ask_question(field.type, default, self.list_field_modified, values)
         elif field.type == "text-multi":
             ask_edit_question(field.value, self.text_multi_field_modified)
         elif field.type == "text-private":
@@ -280,6 +281,7 @@ class FormBuffer(TextBuffer):
         post_edit_callback()
 
     def jid_multi_field_modified(self, response, field, post_edit_callback):
+        self.__logger.debug("list_multi_field_modified(%r, %r, %r)" % (response, field, post_edit_callback))
         if not response and field.required:
             self.edit_field(field, post_edit_callback)
             return
@@ -290,20 +292,15 @@ class FormBuffer(TextBuffer):
             return
         post_edit_callback()
 
-    def list_single_field_modified(self, response, field, post_edit_callback):
+    def list_field_modified(self, response, field, post_edit_callback):
+        self.__logger.debug("list_field_modified(%r, %r, %r)" % (response, field, post_edit_callback))
         if not response and field.required:
             self.edit_field(field, post_edit_callback)
             return
+        self.__logger.debug("old field.value=%r" % (field.value, ))
         field.value = response
+        self.__logger.debug("field.value=%r field.values=%r" % (field.value, field.values))
         post_edit_callback()
-
-    def list_multi_field_modified(self, response, field, post_edit_callback):
-        if not response and field.required:
-            self.edit_field(field, post_edit_callback)
-            return
-        field.value = response
-        post_edit_callback()
-
 
     def jid_single_field_modified(self, response, field, post_edit_callback):
         if not response and field.required:
