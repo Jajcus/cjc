@@ -1,7 +1,7 @@
 #!/usr/bin/python -u
 
 # Console Jabber Client
-# Copyright (C) 2004  Jacek Konieczny
+# Copyright (C) 2004-2005  Jacek Konieczny
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -494,8 +494,8 @@ class Application(tls.TLSMixIn,jabber.Client):
             self.__logger.info("/connect")
             self.__logger.info("/chat jajcus@jabber.bnet.pl CJC Rulez!")
             self.__logger.info("")
-            self.__logger.info("If you don't have your JID yet then register on some Jabber server first.")
-            self.__logger.info("CJC doesn't support registration yet.")
+            self.__logger.info("If you don't have your JID yet then register on some Jabber server first using:")
+            self.__logger.info("/register username@server")
             self.__logger.info("")
             self.__logger.info("press Alt-Tab (or Escape Tab) to change active window")
             self.__logger.info("PgUp/PgDown to scroll window content")
@@ -636,10 +636,13 @@ class Application(tls.TLSMixIn,jabber.Client):
         except (socket.error),e:
             self.__logger.error("Connection failed: "+e.args[1])
 
-    def cmd_register(self, args = None):
+    def cmd_register(self, args):
         if self.stream:
-            self.__logger.error(u"Registration at services not implemented yet")
-            return
+            return self.register_at_service(args)
+        else:
+            return self.register_at_server(args)
+
+    def register_at_server(self, args):
         jid = args.shift()
         args.finish()
         if jid:
@@ -670,6 +673,53 @@ class Application(tls.TLSMixIn,jabber.Client):
         except (socket.error),e:
             self.__logger.error("Connection failed: "+e.args[1])
 
+    def register_at_service(self, args):
+        service = args.shift()
+        args.finish()
+        service = self.get_user(service)
+        if not service:
+            try:
+                service = pyxmpp.JID(service)
+            except pyxmpp.JIDError:
+                self.__logger.error(u"Bad service name/JID: %s" % (service,))
+                return
+        iq = pyxmpp.Iq(stanza_type = "get", to_jid = service)
+        iq.set_content(jabber.Register())
+        self.stream.set_response_handlers(iq, self.registration_form_received, self.registration_error)
+        self.stream.send(iq)
+
+    def registration_form_received(self, stanza):
+        register = jabber.Register(stanza.get_query())
+        service_jid = stanza.get_from()
+        form_buffer = FormBuffer(self.theme_manager, {"service_name": service_jid}, "registration_form")
+        form = register.get_form()
+        def callback(buf, form):
+            buf.close()
+            if form and form.type!="cancel":
+                iq = pyxmpp.Iq(stanza_type = "set", to_jid = service_jid)
+                iq.set_content(register.submit_form(form))
+                self.stream.set_response_handlers(iq, self.registration_success, self.registration_error)
+                self.stream.send(iq)
+        if "FORM_TYPE" in form and "jabber:iq:register" in form["FORM_TYPE"].values:
+            if "username" in form and not form["username"].value:
+                form["username"].value = self.jid.node
+            if "password" in form and not form["password"].value:
+                form["password"].value = self.password
+        form_buffer.set_form(form, callback)
+        self.screen.display_buffer(form_buffer)
+
+    def registration_error(self, stanza):
+        err = stanza.get_error()
+        ae = err.xpath_eval("e:*",{"e":"jabber:iq:auth:error"})
+        if ae:
+            ae = ae[0].name
+        else:
+            ae = err.get_condition().name
+        self.__logger.error(u"Registration error: %s (%s)" % (err.get_message(), ae))
+    
+    def registration_success(self, stanza):
+        self.__logger.info(u"Registration at %s successful." % (stanza.get_from(),))
+           
     def process_registration_form(self, stanza, form):
         form_buffer = FormBuffer(self.theme_manager, {"service_name": stanza.get_from()}, "registration_form")
         def callback(buf, form):
