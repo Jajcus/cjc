@@ -16,7 +16,7 @@ UNINSTALL_DIR=rm -r
 pkg_datadir=$(datadir)/cjc
 pkg_docdir=$(docdir)/cjc
 
-VERSION=0.5
+VERSION=1.0.0
 SNAPSHOT=
 
 PY_DIRS=cjc cjc/ui plugins
@@ -58,7 +58,7 @@ install: all
 		$(INSTALL_DIR) $(DESTDIR)$(pkg_datadir)/$$d ; \
 		$(INSTALL_DATA) $$d/*.py $(DESTDIR)$(pkg_datadir)/$$d ; \
 	done
-	python -c "import compileall; compileall.compile_dir('$(DESTDIR)$(pkg_datadir)')" 
+	python -c "import compileall; compileall.compile_dir('$(DESTDIR)$(pkg_datadir)', ddir='$(pkg_datadir)')" 
 	$(INSTALL_DIR) $(DESTDIR)$(pkg_docdir)
 	$(INSTALL_DATA) $(DOCS) $(DESTDIR)$(pkg_docdir)
 	$(INSTALL_DIR) $(DESTDIR)$(bindir)
