@@ -1025,7 +1025,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                 if typ is list:
                     val=string.join(val,",")
                 elif typ is pyxmpp.JID:
-                    val=val.as_string()
+                    val = unicode(val).encode("utf-8")
                 elif typ is unicode:
                     val=val.encode("utf-8")
                 args.add_quoted(str(val))
