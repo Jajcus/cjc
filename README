@@ -1,5 +1,5 @@
 			     Console Jabber Client
-		   (c) 2003-2004 Jacek Konieczny <jajcus@bnet.pl>
+		   (c) 2003-2005 Jacek Konieczny <jajcus@bnet.pl>
 
 CJC is a Jabber/XMPP client for text terminals. It uses pyxmpp library for XMPP
 comunication and curses for screen output. It is not finished yet, but still
@@ -11,10 +11,12 @@ Requirements:
 
 1. Python interpreter
 
-	PyXMPP and CJC were tested with Python 2.3.3, but probably it will also
+	PyXMPP and CJC were tested with Python 2.4.2, but probably it will also
 	work with some older Python versions (but not older than 2.3).
 
-2. PyXMPP - http://jabberstudio.org/projects/pyxmpp
+2. PyXMPP - http://pyxmpp.jabberstudio.org/
+
+	CJC 1.0 requires PyXMPP 1.0 or newer.
 
 	If you are using CJC from SVN then probably the best choice is to use
 	latest PyXMPP from SVN too. For official releases the latest PyXMPP
@@ -26,13 +28,6 @@ Requirements:
 	from the source tree (using cjc.py script). PyXMPP compiled sources should be
 	placed in same directory where cjc source tree is (both CJC and PyXMPP
 	tarballs unpacked or both SVN modules checked out in the same directory).
-
-3. libxml2 python bindings - http://xmlsoft.org/
-
-	This is rather pyxmpp requirement and the libxml2 module should match
-	libxml2 library version used to compile PyXMPP. CJC was tested with
-	libxml2-2.6.7. Versions older than 2.6.0 will probably not work well.
-
 
 Installation:
 -------------
@@ -51,11 +46,11 @@ See the attached manual (doc/manual.html). Some day it may be complete :-)
 Bug reports and feature requests:
 ---------------------------------
 
-The best place to send those is the CJC page on JabberStudio:
+The best place to send those is the CJC project page on JabberStudio:
 
 	http://jabberstudio.org/projects/cjc
 
-But you can write to me directly via e-mail: jajcus@bnet.pl 
+But you can write to me directly via e-mail: jajcus@jajcus.net 
 or jabber: jajcus@jabber.bnet.pl
 
 There is also a mailing list for CJC: cjc@lists.bnet.pl. To subscribe -- send
