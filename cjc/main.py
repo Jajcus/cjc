@@ -779,7 +779,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                         sdef=nsdef
                     descr,typ,handler=sdef
                     val=obj.settings.get(var)
-                    if var=="password":
+                    if var=="password" and val is not None:
                         val=len(val) * '*'
                     if plugin is not None:
                         var="%s.%s" % (plugin,var)
