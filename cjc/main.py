@@ -1536,13 +1536,13 @@ class Application(tls.TLSMixIn,jabber.Client):
         elif state=="connected":
             self.__logger.info(u"Connected to %s:%i." % (arg[0],arg[1]))
         elif state=="authenticating":
-            self.__logger.info(u"Authenticating as %s..." % (arg,))
+            self.__logger.info(u"Authenticating as %s..." % (unicode(arg),))
         elif state=="binding":
-            self.__logger.info(u"Binding to resource %s..." % (arg,))
+            self.__logger.info(u"Binding to resource %s..." % (unicode(arg),))
         elif state=="authorized":
-            self.__logger.info(u"Authorized as %s." % (arg,))
+            self.__logger.info(u"Authorized as %s." % (unicode(arg),))
         elif state=="tls connecting":
-            self.__logger.info(u"Doing TLS handshake with %s." % (arg,))
+            self.__logger.info(u"Doing TLS handshake with %s." % (unicode(arg),))
 
     def show_error(self,s):
         self.status_buf.append_themed("error",s)
