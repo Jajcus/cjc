@@ -66,7 +66,7 @@ class Plugin(PluginBase):
             self.error(u"Invalid vCard received from "+stanza.get_from().as_unicode())
             return
         self.cjc.set_user_info(stanza.get_from(),"vcard",vcard)
-        msg=u"vCard for %s:\n" % (stanza.get_from(),)
+        msg = u"vCard for %s:\n" % (unicode(stanza.get_from()),)
         
         msg+=u" Full name:   %s\n" % (vcard.fn.value)
         if vcard.n.given:
