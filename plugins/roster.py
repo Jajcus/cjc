@@ -288,7 +288,7 @@ class Plugin(PluginBase):
         try:
             item=self.cjc.roster.get_item_by_jid(user)
             if item:
-                self.error("User '%s' already in roster." % (user,))
+                self.error(u"User '%s' already in roster." % (unicode(user),))
                 return
         except KeyError:
             pass
