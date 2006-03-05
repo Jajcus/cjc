@@ -119,7 +119,7 @@ class Plugin(PluginBase):
         for tel in vcard.tel:
             msg += u" Phone (%s):  %s\n" % (u", ".join(tel.type), tel.number)
         for jabberid in vcard.jabberid:
-            msg += u" JID:         %s\n" % (jabberid.value,)
+            msg += u" JID:         %s\n" % (unicode(jabberid.value),)
         for mailer in vcard.mailer:
             msg += u" Mailer:      %s\n" % (mailer.value,)
         for tz in vcard.tz:
