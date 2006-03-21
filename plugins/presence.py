@@ -381,12 +381,12 @@ class Plugin(PluginBase):
 
     def presence_available(self,stanza):
         fr=stanza.get_from()
-        p=self.cjc.get_user_info(fr,"presence")
-        self.cjc.set_user_info(fr,"presence",stanza.copy())
+        p=self.cjc.get_user_info(fr, "presence")
+        self.cjc.set_user_info(fr, "presence", stanza.copy())
         self.compute_current_resource(fr.bare())
-        self.cjc.send_event("presence changed",fr)
+        self.cjc.send_event("presence changed", fr)
         if (not p or p!=stanza) and self.settings.get("show_changes"):
-            self.cjc.status_buf.append_themed("presence.available",{"user":fr})
+            self.cjc.status_buf.append_themed("presence.available", {"user":fr})
             self.cjc.status_buf.update()
         else:
             self.debug(fr.as_unicode()+u" is unavailable")
@@ -395,7 +395,7 @@ class Plugin(PluginBase):
     def presence_unavailable(self,stanza):
         fr=stanza.get_from()
         if self.cjc.get_user_info(fr) and self.settings.get("show_changes"):
-            self.cjc.status_buf.append_themed("presence.unavailable",{"user":fr})
+            self.cjc.status_buf.append_themed("presence.unavailable", {"user":fr})
             self.cjc.status_buf.update()
         else:
             self.debug(fr.as_unicode()+u" is unavailable")
@@ -404,31 +404,31 @@ class Plugin(PluginBase):
         self.cjc.send_event("presence changed",fr)
         return 1
 
-    def compute_current_resource(self,jid):
-        resources=self.cjc.get_bare_user_info(jid,"resources")
+    def compute_current_resource(self, jid):
+        resources = self.cjc.get_bare_user_info(jid, "resources")
         if not resources:
-            p=self.cjc.get_bare_user_info(jid,"presence")
-            if p and p.get_type()!="error" and p.get_jid().resource:
-                self.cjc.set_bare_user_info(jid,"presence",None)
+            p = self.cjc.get_bare_user_info(jid, "presence")
+            if p and p.get_type() != "error" and p.get_jid().resource:
+                self.cjc.set_bare_user_info(jid, "presence", None)
             self.cjc.set_bare_user_info(jid, "weight", None)
             return
-        presence=None
-        max_prio=-129
-        for r,d in resources.items():
-            fjid=pyxmpp.JID(jid.node,jid.domain,r,check=0)
+        presence = None
+        max_prio = -129
+        for r, d in resources.items():
+            fjid = pyxmpp.JID(jid.node, jid.domain, r, check = 0)
             if not d.has_key("presence"):
                 continue
-            p=d["presence"]
+            p = d["presence"]
             if not p:
                 continue
-            typ=p.get_type()
-            if typ and p.get_type()!="available":
+            typ = p.get_type()
+            if typ and typ != "available":
                 continue
-            prio=p.get_priority()
-            if prio>max_prio:
-                max_prio=prio
-                presence=p
-        weight = show_weight.get(p.get_show(), show_weight[None])*1000 + max_prio
+            prio = p.get_priority()
+            if prio > max_prio:
+                max_prio = prio
+                presence = p
+        weight = show_weight.get(p.get_show(), show_weight[None]) * 1000 + max_prio
         if max_prio < 0:
             weight -= 10000
         self.cjc.set_bare_user_info(jid, "presence", presence)
