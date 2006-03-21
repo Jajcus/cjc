@@ -1493,22 +1493,24 @@ class Application(tls.TLSMixIn,jabber.Client):
             return uinf
         return uinf.get(var)
 
-    def set_user_info(self,jid,var,val):
-        bare=jid.bare()
+    def set_user_info(self, jid, var, val):
+        if not jid.resource:
+            return self.set_bare_user_info(jid, var, val)
+        bare = jid.bare()
         if self.user_info.has_key(bare):
-            uinf=self.user_info[bare]
+            uinf = self.user_info[bare]
             if not uinf.has_key("resources"):
-                uinf["resources"]={}
+                uinf["resources"] = {}
         else:
-            uinf={"resources":{},"jid":bare}
-            self.user_info[bare]=uinf
+            uinf = {"resources": {}, "jid": bare}
+            self.user_info[bare] = uinf
 
         if uinf["resources"].has_key(jid.resource):
-            fuinf=uinf["resources"][jid.resource]
+            fuinf = uinf["resources"][jid.resource]
         else:
-            fuinf={"jid":jid}
-            uinf["resources"][jid.resource]=fuinf
-        fuinf[var]=val
+            fuinf = {"jid":jid}
+            uinf["resources"][jid.resource] = fuinf
+        fuinf[var] = val
 
     def set_bare_user_info(self,jid,var,val):
         bare=jid.bare()
