@@ -428,7 +428,10 @@ class Plugin(PluginBase):
             if prio > max_prio:
                 max_prio = prio
                 presence = p
-        weight = show_weight.get(p.get_show(), show_weight[None]) * 1000 + max_prio
+        if presence:
+            weight = show_weight.get(presence.get_show(), show_weight[None]) * 1000 + max_prio
+        else:
+            weight = 0
         if max_prio < 0:
             weight -= 10000
         self.cjc.set_bare_user_info(jid, "presence", presence)
