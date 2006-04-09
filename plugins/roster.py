@@ -393,16 +393,16 @@ class Plugin(PluginBase):
             iq=item.make_roster_push()
             self.cjc.stream.send(iq)
 
-    def cmd_list(self,args):
-        if not self.cjc.roster:
-            self.error("No roster available.")
-            return
-        groups=[]
-        jids=[]
-        filter=[]
-        names=[]
-        while 1:
-            arg=args.shift()
+    def filter_roster(self, args, eat_all_args = False, split_groups = False, extra_options = []):
+        groups = []
+        jids = []
+        filter = []
+        names = []
+        subs = []
+        while eat_all_args or (args.get() and args.get().startswith("-")):
+            if args.get() in extra_options:
+                break
+            arg = args.shift()
             if arg is None:
                 break
             if not arg.startswith("-"):
@@ -432,6 +432,12 @@ class Plugin(PluginBase):
                     filter+=arg.split(",")
                 else:
                     filter.append(arg)
+            elif arg == "-subscription" or arg == "-sub":
+                arg = args.shift()
+                if "," in arg:
+                    subs += arg.split(",")
+                else:
+                    subs.append(arg)
             elif arg=="-name":
                 arg=args.shift()
                 try:
@@ -440,73 +446,139 @@ class Plugin(PluginBase):
                     self.error(u"Invalid regular expression: %r" % (arg,))
                     return
             else:
-                self.error("Bad /list option: %r" % (arg,))
+                self.error("Bad roster filter option: %r" % (arg,))
                 return
-        args.finish()
 
-        if not filter:
-            filter=["all"]
+        if "all" in filter:
+            filter = []
 
-        rgroups=self.cjc.roster.get_groups()
-        rgroups.sort()
-        formatted_list=[]
-        for group in rgroups:
-            if groups:
-                if not group:
-                    continue
+        def check_item(item):
+            if names:
+                if item.name is None:
+                    return False
                 ok=False
-                for g in groups:
-                    if g.search(group):
+                for g in names:
+                    if g.search(item.name):
                         ok=True
                         break
                 if not ok:
-                    continue
-            formatted_group=[]
-            items=[(item.name,item.jid.as_unicode(),item) for item
-                    in self.cjc.roster.get_items_by_group(group)]
+                    return False
+            if jids:
+                if item.jid is None:
+                    return False
+                ok=False
+                for g in jids:
+                    if g.search(unicode(item.jid)):
+                        ok=True
+                        break
+                if not ok:
+                    return False
+            if groups:
+                if not item.groups:
+                    return False
+                ok = False
+                for g in groups:
+                    for ig in item.groups:
+                        if g.search(ig):
+                            ok=True
+                            break
+                if not ok:
+                    return False
+            if filter:
+                ok = False
+                for f in filter:
+                    pr = self.cjc.get_user_info(item.jid, "presence")
+                    if pr:
+                        pr_type = pr.get_type()
+                    if not pr or pr_type == "unavailable":
+                        if f == "unavailable":
+                            ok = True
+                            break
+                        continue
+                    if pr_type == "error":
+                        if f == "error":
+                            ok = True
+                            break
+                        continue
+                    if pr_type and pr_type != "available":
+                        continue
+                    if f == "online":
+                        ok = True
+                        break
+                    if f == pr.get_show():
+                        ok = True
+                        break
+                if not ok:
+                    return False
+            if subs:
+                if not item.subscription in subs:
+                    return False
+            return True
+
+        if split_groups:
+            rgroups = self.cjc.roster.get_groups()
+            rgroups.sort()
+            result = []
+            for group in rgroups:
+                if groups:
+                    if not group:
+                        continue
+                    ok=False
+                    for g in groups:
+                        if g.search(group):
+                            ok=True
+                            break
+                    if not ok:
+                        continue
+                items = [(item.name,item.jid.as_unicode(),item) for item
+                        in self.cjc.roster.get_items_by_group(group)
+                        if check_item(item)]
+                items.sort()
+                result.append([group,[ item[2] for item in items ]])
+            return result
+        else:
+            items = self.cjc.roster.get_items()
+            return [ item for item in items if check_item(item) ]
+
+    def cmd_list(self,args):
+        if not self.cjc.roster:
+            self.error("No roster available.")
+            return
+    
+        groups = self.filter_roster(args, eat_all_args = True, split_groups = True)
+        
+        args.finish()
+
+        formatted_list = []
+        for group, items in groups:
+            items = [(item.name,item.jid.as_unicode(), item) for item in items]
             items.sort()
-            for name,jid,item in items:
-                if names:
-                    if name is None:
-                        continue
-                    ok=False
-                    for g in names:
-                        if g.search(name):
-                            ok=True
-                            break
-                    if not ok:
-                        continue
-                if jids:
-                    if jid is None:
-                        continue
-                    ok=False
-                    for g in jids:
-                        if g.search(jid):
-                            ok=True
-                            break
-                    if not ok:
-                        continue
-                params=self.get_item_format_params(group,item,filter)
+            formatted_group = []
+            for name, jid, item in items:
+                params = self.get_item_format_params(group, item, "all")
                 if not params:
                     continue
                 if params["available"]:
-                    formatted_group+=self.cjc.theme_manager.format_string(
+                    formatted_group += self.cjc.theme_manager.format_string(
                             "roster.list_available",params)
                 else:
-                    formatted_group+=self.cjc.theme_manager.format_string(
+                    formatted_group += self.cjc.theme_manager.format_string(
                             "roster.list_unavailable",params)
             if not formatted_group:
                 continue
             if group is None:
                 group=u"unfiled"
-            params={"roster_group_items":formatted_group,"group":group}
-            formatted_list+=self.cjc.theme_manager.format_string("roster.list_group",params)
+            params = {"roster_group_items": formatted_group, "group": group}
+            formatted_list += self.cjc.theme_manager.format_string("roster.list_group", params)
+            
         if formatted_list:
-            params={"roster_groups":formatted_list}
-            self.cjc.status_buf.append_themed("roster.list",params)
+            params = {"roster_groups": formatted_list}
+            self.cjc.status_buf.append_themed("roster.list", params)
         else:
             self.error("No roster items matches your filter")
         self.cjc.status_buf.update()
+
+roster_filter_cmd_args = ("-group opaque", "-jid opaque", "-state opaque", "-name opaque", "-subscription opaque")
 
 ui.CommandTable("roster",50,(
     ui.Command("add",Plugin.cmd_add,
@@ -532,6 +604,6 @@ ui.CommandTable("roster",50,(
             " [[-name] regexp]..."
             ),
         "List roster items",
-        ("-group opaque","-jid opaque","-state opaque","-name opaque","opaque")),
+        roster_filter_cmd_args + ("opaque", )),
     )).install()
 # vi: sts=4 et sw=4
