@@ -155,7 +155,7 @@ class ListBuffer(Buffer):
             ret.append(self.items[i])
         return ret
 
-    def display(self,i,insert=0):
+    def display(self, i, insert=0):
         self.lock.acquire()
         try:
             if not self.window:
@@ -164,28 +164,31 @@ class ListBuffer(Buffer):
             try:
                 if not self.window.screen.active:
                     return
-                if i<self.pos:
+                if i < self.pos:
                     return
-                if i>=self.pos+self.window.ih:
+                if i >= self.pos+self.window.ih:
                     return
+                self.window.win.scrollok(0)
                 self.__logger.debug("Updating item #%i" % (i,))
-                if i>=len(self.items):
-                    self.window.win.move(0,i-self.pos)
+                if i >= len(self.items):
+                    self.window.win.move(0, i - self.pos)
                     self.window.clrtoeol()
                     return
-                view=self.items[i]
-                attr,s=view[0]
+                view = self.items[i]
+                attr, s = view[0]
                 self.__logger.debug("Item: %r" % (view,))
+                old_y, old_x = self.window.win.getyx()
                 if insert:
-                    self.window.insert_line(i-self.pos)
-                self.window.write_at(0,i-self.pos,s,attr)
-                for attr,s in view[1:]:
-                    self.window.write(s,attr)
-                y,x=self.window.win.getyx()
-                if x<self.window.iw-1:
+                    self.window.insert_line(i - self.pos)
+                self.window.write_at(0, i - self.pos, s, attr)
+                for attr, s in view[1:]:
+                    self.window.write(s, attr)
+                y, x = self.window.win.getyx()
+                if y == old_y:
                     self.window.clrtoeol()
             finally:
                 self.window.screen.lock.release()
+                self.window.win.scrollok(1)
         finally:
             self.lock.release()
 
