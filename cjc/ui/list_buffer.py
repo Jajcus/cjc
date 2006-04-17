@@ -177,14 +177,13 @@ class ListBuffer(Buffer):
                 view = self.items[i]
                 attr, s = view[0]
                 self.__logger.debug("Item: %r" % (view,))
-                old_y, old_x = self.window.win.getyx()
                 if insert:
                     self.window.insert_line(i - self.pos)
                 self.window.write_at(0, i - self.pos, s, attr)
                 for attr, s in view[1:]:
                     self.window.write(s, attr)
                 y, x = self.window.win.getyx()
-                if y == old_y:
+                if y == i - self.pos:
                     self.window.clrtoeol()
             finally:
                 self.window.screen.lock.release()
