@@ -25,8 +25,7 @@ from pyxmpp.jabber import disco
 from pyxmpp.error import ErrorNode
 import sys
 
-indices=xrange(sys.maxint)
-indices1=xrange(1,sys.maxint)
+from itertools import count,izip
 
 theme_attrs={}
 
@@ -81,7 +80,7 @@ class DiscoBuffer:
             cache_state="cached"
         formatted_items=[]
         self.items=items.items
-        for i,item in zip(indices1,items.items):
+        for i,item in izip(count(1),items.items):
             params={'jid': item.jid, 
                     'node': item.node, 
                     'name': item.name,
