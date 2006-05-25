@@ -1458,19 +1458,27 @@ class Application(tls.TLSMixIn,jabber.Client):
             return None
         return jids[0]
 
-    def get_best_user(self,name):
-        jids=self.get_users(name)
+    def get_best_user(self, name):
+        self.__logger.debug("get_best_user(%r)", name)
+        jids = self.get_users(name)
+        self.__logger.debug("jids = %r", name)
         if not jids:
             return None
-        if len(jids)==1:
+        if len(jids) == 1:
             return jids[0]
         my_jid = self.settings.get("jid").domain
         if my_jid:
             my_domain = pyxmpp.JID(my_jid).domain
         else:
             my_domain = None
-        decorated = [ (self.get_bare_user_info(jid, "presence_weight"), jid.domain == my_domain, jid) for jid in jids ]
+        def get_weight(jid):
+            weight = self.get_user_info(jid, "weight")
+            if weight:
+                return weight
+            return -sys.maxint
+        decorated = [ (get_weight(jid), jid.domain == my_domain, jid) for jid in jids ]
         decorated.sort()
+        self.__logger.debug("decorated = %r", decorated)
         return decorated[-1][2]
 
     def get_bare_user_info(self,jid,var=None):
