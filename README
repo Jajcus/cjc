@@ -1,5 +1,5 @@
 			     Console Jabber Client
-		   (c) 2003-2005 Jacek Konieczny <jajcus@bnet.pl>
+		   (c) 2003-2006 Jacek Konieczny <jajcus@jajcus.net>
 
 CJC is a Jabber/XMPP client for text terminals. It uses pyxmpp library for XMPP
 comunication and curses for screen output. It is not finished yet, but still
@@ -14,7 +14,7 @@ Requirements:
 	PyXMPP and CJC were tested with Python 2.4.2, but probably it will also
 	work with some older Python versions (but not older than 2.3).
 
-2. PyXMPP - http://pyxmpp.jabberstudio.org/
+2. PyXMPP - http://pyxmpp.jajcus.net/
 
 	CJC 1.0 requires PyXMPP 1.0 or newer.
 
@@ -46,15 +46,16 @@ See the attached manual (doc/manual.html). Some day it may be complete :-)
 Bug reports and feature requests:
 ---------------------------------
 
-The best place to send those is the CJC project page on JabberStudio:
+The best place to send those is the CJC trac:
 
-	http://jabberstudio.org/projects/cjc
+	http://cjc.jajcus.net/trac/
 
 But you can write to me directly via e-mail: jajcus@jajcus.net 
-or jabber: jajcus@jabber.bnet.pl
+or jabber: jajcus@jajcus.net
 
-There is also a mailing list for CJC: cjc@lists.bnet.pl. To subscribe -- send
-an empty message to cjc-subscribe@lists.bnet.pl.
+There is also a mailing list for CJC: cjc@lists.jajcus.net. To subscribe -- send
+an empty message to cjc-subscribe@lists.jajcus.net or visit the listinfo
+page at http://lists.jajcus.net/mailman/listinfo/cjc
 
-But if you don't describe your problem or wish on JabberStudio I may forget
+But if you don't describe your problem or wish on the project trac I may forget
 about it.

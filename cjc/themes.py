@@ -382,7 +382,7 @@ class ThemeManager:
         elif key==u"program_name":
             val=u"CJC"
         elif key==u"program_author":
-            val=u"Jacek Konieczny <jajcus@bnet.pl>"
+            val=u"Jacek Konieczny <jajcus@jajcus.net>"
         elif key==u"program_version":
             val=version.version
         else:

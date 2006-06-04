@@ -413,7 +413,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         status_bar_params={
             "name": "CJC",
             "version": version.version,
-            "author": "Jacek Konieczny <jajcus@bnet.pl>",
+            "author": "Jacek Konieczny <jajcus@jajcus.net>",
             }
         ui_buffer.activity_handlers=[]
         self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
@@ -492,7 +492,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             self.__logger.info("/set password your_password")
             self.__logger.info("/save")
             self.__logger.info("/connect")
-            self.__logger.info("/chat jajcus@jabber.bnet.pl CJC Rulez!")
+            self.__logger.info("/chat jajcus@jajcus.net CJC Rulez!")
             self.__logger.info("")
             self.__logger.info("If you don't have your JID yet then register on some Jabber server first using:")
             self.__logger.info("/register username@server")
@@ -1670,7 +1670,7 @@ ui.CommandTable("global",10,(
 
 def usage():
     print
-    print "Console Jabber Client (c) 2003-2005 Jacek Konieczny <jajcus@bnet.pl>"
+    print "Console Jabber Client (c) 2003-2005 Jacek Konieczny <jajcus@jajcus.net>"
     print
     print "Usage:"
     print "  %s [OPTIONS]" % (sys.argv[0],)
