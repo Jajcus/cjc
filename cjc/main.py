@@ -470,7 +470,7 @@ class Application(tls.TLSMixIn,jabber.Client):
 
         if not os.path.exists(self.home_dir):
             try:
-                os.makedirs(self.home_dir)
+                os.makedirs(self.home_dir, 0700)
             except (OSError,IOError),e:
                 self.__logger.info(e)
 
@@ -1006,6 +1006,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         except IOError,e:
             self.__logger.error(u"Couldn't open config file: "+str(e))
             return 0
+        os.chmod(tmpfilename, 0600);
 
         for plugin in [None]+self.plugins.keys():
             if plugin is None:
