@@ -172,7 +172,7 @@ class DiscoBuffer:
             node=u""
         self.buffer.append_themed("error",
                 u"Error while discovering information about '%s'%s: %s" 
-                % (jid,node,message))
+                % (jid.as_unicode(), node, message))
         self.ask_question()
         self.buffer.update()
 
