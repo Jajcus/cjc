@@ -1415,14 +1415,14 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.__logger.debug("Main loop exiting")
 
     def get_users(self,name):
-        if name.find("@")>=0:
+        if "@" in name:
             if self.roster:
                 try:
-                    ritems=self.roster.get_items_by_name(name,self.settings["case_sensitive"])
+                    ritems = self.roster.get_items_by_name(name, self.settings["case_sensitive"])
                 except KeyError:
-                    ritems=None
+                    ritems = None
                 if ritems:
-                    if len(ritems)==1:
+                    if len(ritems) == 1:
                         return [ritems[0].jid]
             try:
                 return [pyxmpp.JID(name)]
@@ -1434,27 +1434,24 @@ class Application(tls.TLSMixIn,jabber.Client):
             self.__logger.error(u"%s not found in roster" % (name,))
             return None
 
-        try:
-            ritems=self.roster.get_items_by_name(name,self.settings["case_sensitive"])
-        except KeyError:
+        ritems = self.roster.get_items_by_name(name, self.settings["case_sensitive"])
+        
+        if not ritems:
             try:
-                jid=pyxmpp.JID(name)
-                return [self.get_roster.get_item_by_jid(jid).jid()]
-            except (ValueError,pyxmpp.JIDError,KeyError):
+                jid = pyxmpp.JID(name)
+                return [self.roster[jid].jid]
+            except (ValueError, pyxmpp.JIDError, KeyError):
                 pass
             self.__logger.error(u"%s not found in roster" % (name,))
             return None
 
-        if ritems:
-            return [item.jid for item in ritems]
-        self.__logger.error(u"%s not found in roster" % (name,))
-        return None
+        return [item.jid for item in ritems]
 
     def get_user(self,name):
-        jids=self.get_users(name)
+        jids = self.get_users(name)
         if not jids:
             return None
-        if len(jids)>1:
+        if len(jids) > 1:
             self.__logger.error("ambiguous user name")
             return None
         return jids[0]
