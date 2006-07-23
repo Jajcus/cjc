@@ -800,7 +800,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         #self.__logger.debug("val: "+`val`)
         args.finish()
 
-        if fvar.find(".")>0:
+        if "." in fvar:
             plugin,var=fvar.split(".",1)
             try:
                 obj=self.plugins[plugin]
@@ -905,7 +905,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         if not fvar:
             return self.cmd_set(args)
 
-        if fvar.find(".")>0:
+        if "." in fvar:
             plugin,var=fvar.split(".",1)
             try:
                 obj=self.plugins[plugin]
