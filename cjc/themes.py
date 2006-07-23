@@ -454,12 +454,14 @@ class ThemeManager:
                 except pyxmpp.JIDError:
                     params[key]=u""
                     return format
-            if form==u"nick":
-                rostername=self.app.get_user_info(val,"rostername")
-                if rostername:
-                    params[key]=rostername
+            if form == u"nick":
+                nick =  self.app.get_user_info(val, "nick")
+                if not nick:
+                    nick = self.app.get_user_info(val,"rostername")
+                if nick:
+                    params[key] = nick
                 else:
-                    params[key]=val.node
+                    params[key] = val.node
             elif form==u"node":
                 params[key]=val.node
             elif form==u"domain":

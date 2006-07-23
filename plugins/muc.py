@@ -151,16 +151,17 @@ class Room(muc.MucRoomHandler):
         self.buffer.update()
         return
 
-    def user_joined(self,user,stanza):
-        fparams=self.user_format_params(user)
-        d=delay.get_delay(stanza)
+    def user_joined(self, user, stanza):
+        self.plugin.cjc.set_user_info(user.room_jid, "nick", user.nick)
+        fparams = self.user_format_params(user)
+        d = delay.get_delay(stanza)
         if d:
-            fparams["timestamp"]=d.get_datetime_local()
-        self.plugin.cjc.send_event("groupchat user joined",user.nick)
+            fparams["timestamp"] = d.get_datetime_local()
+        self.plugin.cjc.send_event("groupchat user joined", user.nick)
         if user.same_as(self.room_state.me):
-            self.buffer.append_themed("muc.me_joined",fparams)
+            self.buffer.append_themed("muc.me_joined", fparams)
         else:
-            self.buffer.append_themed("muc.joined",fparams)
+            self.buffer.append_themed("muc.joined", fparams)
         self.buffer.update()
         return
 
