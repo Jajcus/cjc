@@ -92,7 +92,7 @@ global_theme_formats=(
     ("window_status",u"%[bar] %(active)s%(locked)s %(buffer_num)s: %{buffer_descr}"),
     ("default_buffer_descr",u"%(buffer_name)s"),
     ("title_bar",u"%[bar]%(program_name)s ver. %(program_version)s by %(program_author)s"),
-    ("status_bar",u"%[bar][%(J:me:show)s] (%(J:me:status)s) Active buffers: [%{buffers}]"),
+    ("status_bar",u"%[bar]<%{buffers}> [%(J:me:show)s] (%(J:me:status)s)"),
     ("error",u"%[error][%(T:now)s] %(msg)s\n"),
     ("warning",u"%[warning][%(T:now)s] %(msg)s\n"),
     ("info",u"%[info][%(T:now)s] %(msg)s\n"),
