@@ -99,41 +99,41 @@ class Plugin(PluginBase):
     def info_resources(self,k,v):
         if not v:
             return None
-        resources=[]
+        resources = []
         for r in v.keys():
-            p=v[r].get("presence")
-            if p is None or (p.get_type() and p.get_type()!="available"):
+            p = v[r].get("presence")
+            if p is None or (p.get_type() and p.get_type() != "available"):
                 continue
-
             if not r:
-                resources.append(u"<empty>")
-            else:
-                resources.append(r)
+                r = u"<empty>"
+            r += " (prio=%i)" % (p.get_priority(), )
+            resources.append(r)
         if resources:
-            return "Available resources",string.join(resources,",")
+            return "Available resources", string.join(resources, ", ")
 
     def info_presence(self,k,v):
         if not v:
             return None
 
-        name="Presence"
-        if not v.get_type() or v.get_type()=="available":
-            value="Available"
+        name = "Presence"
+        if not v.get_type() or v.get_type() == "available":
+            value = "Available"
+            value += " (prio=%i)" % (v.get_priority(), )
             if v.get_show():
-                value+=" [%s]" % (v.get_show(),)
+                value += " [%s]" % (v.get_show(), )
             if v.get_status():
-                value+=" %s" % (v.get_status(),)
-        elif v.get_type()=="unavailable":
-            value="Not Available"
+                value += " %s" % (v.get_status(), )
+        elif v.get_type() == "unavailable":
+            value = "Not Available"
             if v.get_status():
-                value+=" %s" % (v.get_status(),)
-        elif v.get_type()=="error":
-            value="Error"
-            e=v.get_error()
+                value += " %s" % (v.get_status(), )
+        elif v.get_type() == "error":
+            value = "Error"
+            e = v.get_error()
             if e:
-                c=e.get_condition()
+                c = e.get_condition()
                 if c:
-                    value+=": %s" % (c.serialize(),)
+                    value += ": %s" % (c.serialize(), )
         else:
             return None
         return name,value
