@@ -17,6 +17,7 @@
 import string
 import curses
 import os
+import logging
 
 import pyxmpp
 from pyxmpp.jabber import muc,delay
@@ -74,6 +75,7 @@ class Room(muc.MucRoomHandler):
         self.buffer.user_input=self.user_input
         self.buffer.get_completion_words=self.get_completion_words
         self.buffer.append_themed("muc.joining",self.fparams)
+        self.buffer._muc_room = self
         self.buffer.update()
 
     def user_format_params(self,user):
@@ -307,6 +309,7 @@ class Room(muc.MucRoomHandler):
         nicks = ','.join(self.room_state.users.keys())
         self.buffer.append(nicks)
         self.buffer.update()
+        
     def cmd_nick(self,args):
         new_nick=args.all()
         if not args:
@@ -317,6 +320,23 @@ class Room(muc.MucRoomHandler):
             return 1
         self.room_state.change_nick(new_nick)
         return 1
+
+    def cmd_query(self, args):
+        nick = args.shift()
+        if not nick:
+            raise CommandError,"No nickname given"
+        if nick not in self.room_state.users:
+            self.buffer.append_themed("error", "No '%s' in this room", nick)
+            self.buffer.update()
+            return 1
+        user = self.room_state.users[nick]
+        rest = args.all()
+        args = u'"%s"' % (user.room_jid.as_unicode().replace('"', '\\"'), )
+        if rest:
+            args = ui.CommandArgs(args + u" " + rest)
+        else:
+            args = ui.CommandArgs(args)
+        ui.run_command("chat", args)
 
     def cmd_leave(self,args):
         a=args.get()
@@ -340,6 +360,31 @@ class Room(muc.MucRoomHandler):
     def get_completion_words(self):
         return [nick+u":" for nick in self.room_state.users.keys()]
 
+class MucNickCompletion(ui.Completion):
+    def __init__(self, app):
+        ui.Completion.__init__(self)
+        self.app = app
+        self.__logger=logging.getLogger("plugins.muc.MucNickCompletion")
+
+    def complete(self, word):
+        self.__logger.debug("MucNickCompletion.complete(self,%r)" % (word,))
+        active_window = self.app.screen.active_window
+        if not active_window:
+            return "", []
+        active_buffer = active_window.buffer
+        if not active_window.buffer:
+            return "", []
+        try:
+            muc_room = active_buffer._muc_room
+        except AttributeError:
+            return "", []
+
+        matches=[]
+        for w in muc_room.room_state.users.keys():
+            if w.startswith(word):
+                matches.append( [w, 1] )
+        return self.make_result("", word,matches)
+
 ui.CommandTable("muc buffer",51,(
     ui.Command("me",Room.cmd_me,
         "/me text",
@@ -357,6 +402,10 @@ ui.CommandTable("muc buffer",51,(
         "/who ",
         "Lists users in this room",
         ("text",)),
+    ui.Command("query", Room.cmd_query,
+        "/query nick",
+        "Starts a private chat",
+        ("muc_nick",)),
     ui.CommandAlias("topic","subject"),
     ui.Command("leave",Room.cmd_leave,
         "/leave [jid]",
@@ -392,6 +441,7 @@ class Plugin(PluginBase):
         app.add_event_handler("day changed",self.ev_day_changed)
         ui.activate_cmdtable("muc",self)
         self.room_manager=None
+        MucNickCompletion(app).register("muc_nick")
 
     def cmd_join(self,args):
         if not self.cjc.stream:
