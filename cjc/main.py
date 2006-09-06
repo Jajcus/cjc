@@ -35,6 +35,7 @@ import codecs
 
 import pyxmpp.all
 import pyxmpp.jabber.all
+import pyxmpp.exceptions
 from pyxmpp import jabber
 
 from cjc import cjclogging
@@ -1380,7 +1381,9 @@ class Application(tls.TLSMixIn,jabber.Client):
             except (pyxmpp.FatalStreamError,pyxmpp.StreamEncryptionRequired),e:
                 self.state_changed.acquire()
                 try:
-                    self.__logger.error(str(e))
+                    self.__logger.error(unicode(e))
+                    if isinstance(e, pyxmpp.exceptions.TLSError):
+                        self.__logger.error(u"You may try disabling encryption: /set tls_enable false")
                     try:
                         self.stream.close()
                     except:

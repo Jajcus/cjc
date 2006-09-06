@@ -22,51 +22,72 @@ import logging
 
 from cjc import common
 
+SUBJECT_NAME_INVALID = 1000
 
-tls_errors = { # taken from `man openssl_verify`
-    0: "ok",
-    2: "unable to get issuer certificate",
-    3: "unable to get certificate CRL",
-    4: "unable to decrypt certificate's signature",
-    5: "unable to decrypt CRL's signature",
-    6: "unable to decode issuer public key",
-    7: "certificate signature failure",
-    8: "CRL signature failure",
-    9: "certificate is not yet valid",
-    10: "certificate has expired",
-    11: "CRL is not yet valid",
-    12: "CRL has expired",
-    13: "format error in certificate's notBefore field",
-    14: "format error in certificate's notAfter field",
-    15: "format error in CRL's lastUpdate field",
-    16: "format error in CRL's nextUpdate field",
-    17: "out of memory",
-    18: "self signed certificate",
-    19: "self signed certificate in certificate chain",
-    20: "unable to get local issuer certificate",
-    21: "unable to verify the first certificate",
-    22: "certificate chain too long",
-    23: "certificate revoked",
-    24: "invalid CA certificate",
-    25: "path length constraint exceeded",
-    26: "unsupported certificate purpose",
-    27: "certificate not trusted",
-    28: "certificate rejected",
-    29: "subject issuer mismatch",
-    30: "authority and subject key identifier mismatch",
-    31: "authority and issuer serial number mismatch",
-    32: "key usage does not include certificate signing",
-    50: "application verification failure",
+try:
+    from M2Crypto import m2
 
-    # PyXMPP errors below
-    1001: "certificate CN doesn't match server name",
-}
+    tls_errors = {
+        m2.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT: "unable to get issuer certificate",
+        m2.X509_V_ERR_UNABLE_TO_GET_CRL: "unable to get certificate CRL",
+        m2.X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE: "unable to decrypt certificate's signature",
+        m2.X509_V_ERR_UNABLE_TO_DECRYPT_CRL_SIGNATURE: "unable to decrypt CRL's signature",
+        m2.X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY: "unable to decode issuer public key",
+        m2.X509_V_ERR_CERT_SIGNATURE_FAILURE: "certificate signature failure",
+        m2.X509_V_ERR_CRL_SIGNATURE_FAILURE: "CRL signature failure",
+        m2.X509_V_ERR_CERT_NOT_YET_VALID: "certificate is not yet valid",
+        m2.X509_V_ERR_CERT_HAS_EXPIRED: "certificate has expired",
+        m2.X509_V_ERR_CRL_NOT_YET_VALID: "CRL is not yet valid",
+        m2.X509_V_ERR_CRL_HAS_EXPIRED: "CRL has expired",
+        m2.X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD: "format error in certificate's notBefore field",
+        m2.X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD: "format error in certificate's notAfter field",
+        m2.X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD: "format error in CRL's lastUpdate field",
+        m2.X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD: "format error in CRL's nextUpdate field",
+        m2.X509_V_ERR_OUT_OF_MEM: "out of memory",
+        m2.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT: "self signed certificate",
+        m2.X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN: "self signed certificate in certificate chain",
+        m2.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY: "unable to get local issuer certificate",
+        m2.X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE: "unable to verify the first certificate",
+        m2.X509_V_ERR_CERT_CHAIN_TOO_LONG: "certificate chain too long",
+        m2.X509_V_ERR_CERT_REVOKED: "certificate revoked",
+        m2.X509_V_ERR_INVALID_CA: "invalid CA certificate",
+        m2.X509_V_ERR_PATH_LENGTH_EXCEEDED: "path length constraint exceeded",
+        m2.X509_V_ERR_INVALID_PURPOSE: "unsupported certificate purpose",
+        m2.X509_V_ERR_CERT_UNTRUSTED: "certificate not trusted",
+        m2.X509_V_ERR_CERT_REJECTED: "certificate rejected",
 
-# these will be ignored if the certificate is known as trustworthy
-tls_nonfatal_errors = {
-    2: True, 18: True, 19: True, 20: True, 21: True, 22: True, 24: True, 25: True, 26: True, 27: True, 28: True, 32: True,
-    1001: True
-}
+        # # taken from `man openssl_verify`
+        29: "subject issuer mismatch",
+        30: "authority and subject key identifier mismatch",
+        31: "authority and issuer serial number mismatch",
+        32: "key usage does not include certificate signing",
+
+        m2.X509_V_ERR_APPLICATION_VERIFICATION: "application verification failure",
+
+        # internal CJC error code
+        SUBJECT_NAME_INVALID: "Certificate subject name doesn't match peer's JID"
+    }
+
+    # these will be ignored if the certificate is known as trustworthy
+    tls_nonfatal_errors = {
+        m2.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT: True, 
+        m2.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT: True, 
+        m2.X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN: True, 
+        m2.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY: True, 
+        m2.X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE: True, 
+        m2.X509_V_ERR_CERT_CHAIN_TOO_LONG: True, 
+        m2.X509_V_ERR_INVALID_CA: True, 
+        m2.X509_V_ERR_PATH_LENGTH_EXCEEDED: True, 
+        m2.X509_V_ERR_INVALID_PURPOSE: True, 
+        m2.X509_V_ERR_CERT_UNTRUSTED: True, 
+        m2.X509_V_ERR_CERT_REJECTED: True, 
+
+        32: True,
+
+        SUBJECT_NAME_INVALID: True,
+    }
+except ImportError:
+    pass
 
 class Struct:
     def __init__(self):
@@ -184,31 +205,50 @@ class TLSMixIn:
         f.close()
         logger.info("Peer certificate saved to: "+p)
 
-    def cert_verification_callback(self,stream,ctx,cert,errnum,depth,ok):
-        logger=logging.getLogger("cjc.TLSHandler")
-        logger.debug("cert_verification_callback(depth=%i,ok=%i)" % (depth,ok))
+    def cert_verification_callback(self, ok, store_context):
+        logger = logging.getLogger("cjc.TLSHandler")
         try:
-            self.cert_verify_state.set_cert(depth,cert)
+            depth = store_context.get_error_depth()
+            cert = store_context.get_current_cert()
+            errnum = store_context.get_error()
+            cn = cert.get_subject().CN
+
+            logger.debug("cert_verification_callback(depth=%i, ok=%i)" % (depth, ok))
+            self.cert_verify_state.set_cert(depth, cert)
             if not ok:
-                self.cert_verify_state.add_error(depth,errnum)
-            pcert=self.stream.tls.get_peer_cert()
-            if depth==0 and self.tls_is_cert_known(cert):
-                if tls_nonfatal_errors.get(errnum):
-                    if not ok:
-                        errdesc=tls_errors.get(errnum,"unknown")
-                        self.status_buf.append_themed("tls_error_ignored",
-                                {"errnum": errnum, "errdesc": errdesc})
+                self.cert_verify_state.add_error(depth, errnum)
+                
+            if depth == 0 and not self.stream.tls_is_certificate_valid(store_context):
+                subject_name_valid = False
+                self.cert_verify_state.add_error(depth, SUBJECT_NAME_INVALID)
+            else:
+                subject_name_valid = True
+
+            pcert = self.stream.tls.get_peer_cert()
+            if depth == 0 and self.tls_is_cert_known(cert):
+                if not ok and tls_nonfatal_errors.get(errnum):
+                    errdesc = tls_errors.get(errnum, "unknown")
+                    self.status_buf.append_themed("tls_error_ignored",
+                            {"errnum": errnum, "errdesc": errdesc})
                     return 1
-                elif not ok:
-                    errdesc=tls_errors.get(errnum,"unknown")
+                if not subject_name_valid:
+                    self.status_buf.append_themed("tls_error_ignored",
+                            {"errnum": SUBJECT_NAME_INVALID, "errdesc": tls_errors[SUBJECT_NAME_INVALID]})
+                    return ok
+                if not ok:
+                    errdesc = tls_errors.get(errnum, "unknown")
                     self.status_buf.append_themed("tls_error_not_ignored",
                             {"errnum": errnum, "errdesc": errdesc})
-            if ok:
-                return 1
+            
+            logger.debug("ok=%r subject_name_valid=%r" % (ok, subject_name_valid))
+            if not ok:
+                return self.cert_verify_ask(cert, errnum, depth)
+            elif not subject_name_valid:
+                return self.cert_verify_ask(cert, SUBJECT_NAME_INVALID, depth)
             else:
-                return self.cert_verify_ask(ctx,cert,errnum,depth)
+                return True
         except:
-            self.print_exception()
+            self.__logger.exception("Exception during certificate verification:")
             raise
 
     def tls_is_cert_known(self,cert):
@@ -239,8 +279,8 @@ class TLSMixIn:
             logger.debug("new:"+`cert.as_der()`)
             return 0
 
-    def cert_verify_ask(self,ctx,cert,errnum,depth):
-        buf=ui.TextBuffer(self.theme_manager,{})
+    def cert_verify_ask(self, cert, errnum, depth):
+        buf=ui.TextBuffer(self.theme_manager, {})
         errdesc=tls_errors.get(errnum,"unknown")
         p={
             "depth": depth,
