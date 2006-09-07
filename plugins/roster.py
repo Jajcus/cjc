@@ -25,6 +25,7 @@ from cjc.plugin import PluginBase
 from cjc.ui import ListBuffer,ListBufferError
 from cjc import common
 from cjc import ui
+from cjc import cjc_globals
 
 theme_attrs=(
     ("roster.available_online", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_BOLD),
@@ -66,9 +67,9 @@ class Plugin(PluginBase):
         app.add_event_handler("roster updated",self.ev_roster_updated)
         app.add_event_handler("presence changed",self.ev_presence_changed)
         app.add_event_handler("layout changed",self.ev_layout_changed)
-        app.theme_manager.set_default_attrs(theme_attrs)
-        app.theme_manager.set_default_formats(theme_formats)
-        self.buffer=ListBuffer(app.theme_manager,"Roster")
+        cjc_globals.theme_manager.set_default_attrs(theme_attrs)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
+        self.buffer=ListBuffer("Roster")
         self.buffer.preference=self.settings["buffer_preference"]
         self.extra_items=[]
         ui.activate_cmdtable("roster",self)
@@ -559,17 +560,17 @@ class Plugin(PluginBase):
                 if not params:
                     continue
                 if params["available"]:
-                    formatted_group += self.cjc.theme_manager.format_string(
+                    formatted_group += cjc_globals.theme_manager.format_string(
                             "roster.list_available",params)
                 else:
-                    formatted_group += self.cjc.theme_manager.format_string(
+                    formatted_group += cjc_globals.theme_manager.format_string(
                             "roster.list_unavailable",params)
             if not formatted_group:
                 continue
             if group is None:
                 group=u"unfiled"
             params = {"roster_group_items": formatted_group, "group": group}
-            formatted_list += self.cjc.theme_manager.format_string("roster.list_group", params)
+            formatted_list += cjc_globals.theme_manager.format_string("roster.list_group", params)
             
         if formatted_list:
             params = {"roster_groups": formatted_list}

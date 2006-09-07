@@ -23,6 +23,7 @@ import logging
 from cjc import common
 from cjc.ui.input_widget import InputWidget
 from cjc.ui import keytable
+from cjc import cjc_globals
 
 class BooleanInput(InputWidget):
     def __init__(self,abortable,required,default=None):
@@ -48,55 +49,55 @@ class BooleanInput(InputWidget):
         if self.abortable:
             self.parent.abort_handler()
         else:
-            self.screen.beep()
+            cjc_globals.screen.beep()
 
     def key_enter(self):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
             if self.default is None and self.required:
-                self.screen.beep()
+                cjc_globals.screen.beep()
                 return
             if self.default:
                 self.answer_yes()
             else:
                 self.answer_no()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def answer_yes(self):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.content=u"y"
             self.win.addstr(self.content)
             self.update()
             self.parent.input_handler(1)
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def answer_no(self):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.content=u"n"
             self.win.addstr(self.content)
             self.update()
             self.parent.input_handler(0)
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def update(self,now=1,refresh=0):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             if refresh:
                 self.win.erase()
-                s=self.prompt.encode(self.screen.encoding,"replace")
+                s=self.prompt.encode(cjc_globals.screen.encoding,"replace")
                 self.win.addstr(0,0,s)
-                s=self.content.encode(self.screen.encoding,"replace")
+                s=self.content.encode(cjc_globals.screen.encoding,"replace")
                 self.win.addstr(s)
             else:
                 self.win.move(0,len(self.prompt)+len(self.content))
@@ -105,7 +106,7 @@ class BooleanInput(InputWidget):
             else:
                 self.win.noutrefresh()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
 from keytable import KeyFunction
 ktb=keytable.KeyTable("bool-input",50,(

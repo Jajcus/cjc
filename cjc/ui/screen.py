@@ -46,7 +46,7 @@ class Screen:
             self.encoding="us-ascii"
         keytable.activate("screen",self,input_window=self.scr)
         cmdtable.activate("screen",self)
-        complete.ActiveBufferDefinedCompletion(self).register("text")
+        complete.ActiveBufferDefinedCompletion().register("text")
 
     def set_background(self,char,attr):
         self.lock.acquire()

@@ -20,6 +20,7 @@ import curses
 
 from cjc.plugin import PluginBase
 from cjc import ui
+from cjc import cjc_globals
 from pyxmpp import JID
 from pyxmpp.jabber import disco
 from pyxmpp.error import ErrorNode
@@ -49,10 +50,9 @@ class DiscoBuffer:
         self.node = node
         self.items = None
         self.history = []
-        self.buffer=ui.TextBuffer(plugin.cjc.theme_manager, self.fparams,
-                "disco.descr", "disco buffer", self)
+        self.buffer=ui.TextBuffer(self.fparams, "disco.descr", "disco buffer", self)
         self.buffer.preference=plugin.settings["buffer_preference"]
-        plugin.cjc.screen.display_buffer(self.buffer)
+        cjc_globals.screen.display_buffer(self.buffer)
 
     def start_disco(self,state="fresh"):
         self.items = None
@@ -73,7 +73,7 @@ class DiscoBuffer:
         if address != (self.jid, self.node) or not self.buffer:
             pass
         self.buffer.unask_question()
-        format_string=self.plugin.cjc.theme_manager.format_string
+        format_string = cjc_globals.theme_manager.format_string
         if state=='new':
             cache_state=None
         else:
@@ -124,7 +124,7 @@ class DiscoBuffer:
         if address != (self.jid, self.node) or not self.buffer:
             pass
         self.buffer.unask_question()
-        format_string=self.plugin.cjc.theme_manager.format_string
+        format_string = cjc_globals.theme_manager.format_string
         if state=='new':
             cache_state=None
         else:
@@ -225,8 +225,8 @@ class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
         ui.activate_cmdtable("disco",self)
-        app.theme_manager.set_default_attrs(theme_attrs)
-        app.theme_manager.set_default_formats(theme_formats)
+        cjc_globals.theme_manager.set_default_attrs(theme_attrs)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "buffer_preference": ("Preference of disco buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             }

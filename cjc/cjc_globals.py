@@ -14,24 +14,27 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-class Widget:
-    def __init__(self):
-        self.parent=None
+"""
+References to CJC global objects (singletons).
 
-    def set_parent(self,parent):
-        self.parent=parent
-        self.x,self.y,self.w,self.h=self.parent.place(self)
+Usage::
 
-    def get_height(self):
-        return None
+    from cjc import cjc_globals
 
-    def get_width(self):
-        return None
+Never use::
 
-    def update(self,now=1,redraw=0):
-        pass
+    from cjc.cjc_globals import anything
 
-    def redraw(self,now=1):
-        self.update(now,1)
+as module contents may be uninitialized.
+
+:Variables:
+    - `application`: the `cjc.main.Application` object
+    - `screen`: the `ui.screen.Screen` object
+    - `theme_manager`: the `cjc.theme_manage.ThemeManager` object
+"""
+
+application = None
+screen = None
+theme_manager = None
 
 # vi: sts=4 et sw=4

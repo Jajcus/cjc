@@ -24,6 +24,7 @@ from types import StringType,UnicodeType,IntType,XRangeType
 from cjc.ui import keytable
 from cjc import common
 from cjc.ui.input_widget import InputWidget
+from cjc import cjc_globals
 
 class ChoiceInput(InputWidget):
     def __init__(self,abortable,required,default,choice):
@@ -67,28 +68,28 @@ class ChoiceInput(InputWidget):
             keytable.deactivate("choice-input",self)
 
     def keypressed(self,c,escape):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
             return self._keypressed(c,escape)
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def _keypressed(self,c,escape):
         if c>255 or c<0:
-            self.screen.beep()
+            cjc_globals.screen.beep()
             return
         c=chr(c)
         if c in self.printable:
             self.key_char(c)
         else:
-            self.screen.beep()
+            cjc_globals.screen.beep()
 
     def key_abort(self):
         if self.abortable:
             self.parent.abort_handler()
             return
         else:
-            self.screen.beep()
+            cjc_globals.screen.beep()
             return
 
     def key_enter(self):
@@ -104,15 +105,15 @@ class ChoiceInput(InputWidget):
         if not ans:
             if not self.required:
                 return self.answer(None)
-            return self.screen.beep()
+            return cjc_globals.screen.beep()
         try:
             ival=int(ans)
         except ValueError:
-            return self.screen.beep()
+            return cjc_globals.screen.beep()
         for r in self.range_choice:
             if ival in r:
                 return self.answer(ival)
-        self.screen.beep()
+        cjc_globals.screen.beep()
 
     def answer(self,ans):
         if ans is not None:
@@ -125,25 +126,25 @@ class ChoiceInput(InputWidget):
 
     def key_bs(self):
         if self.pos<=0:
-            self.screen.beep()
+            cjc_globals.screen.beep()
             return
         self.content=self.content[:self.pos-1]+self.content[self.pos:]
         self.pos-=1
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if self.screen.active:
+            if cjc_globals.screen.active:
                 self.win.move(0,self.pos+len(self.prompt))
                 self.win.delch()
                 self.win.refresh()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def key_char(self,c):
-        c=unicode(c,self.screen.encoding,"replace")
+        c=unicode(c,cjc_globals.screen.encoding,"replace")
         if not self.string_choice and c in self.single_choice:
             return self.answer(c)
         if self.pos>=self.w-len(self.prompt)-2:
-            return self.screen.beep()
+            return cjc_globals.screen.beep()
         newcontent=self.content+c
         if c in string.digits and self.range_choice:
             pass
@@ -156,29 +157,29 @@ class ChoiceInput(InputWidget):
                     ok=1
                     break
             if not ok:
-                return self.screen.beep()
+                return cjc_globals.screen.beep()
 
         self.content=newcontent
         self.pos+=1
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if self.screen.active:
-                self.win.addstr(c.encode(self.screen.encoding,"replace"))
+            if cjc_globals.screen.active:
+                self.win.addstr(c.encode(cjc_globals.screen.encoding,"replace"))
                 self.win.refresh()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def update(self,now=1,refresh=0):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             if refresh:
                 self.win.move(0,0)
                 self.win.clrtoeol()
-                s=self.prompt.encode(self.screen.encoding,"replace")
+                s=self.prompt.encode(cjc_globals.screen.encoding,"replace")
                 self.win.addstr(s)
-                s=self.content.encode(self.screen.encoding,"replace")
+                s=self.content.encode(cjc_globals.screen.encoding,"replace")
                 self.win.addstr(s)
             self.win.move(0,self.pos+len(self.prompt))
             if now:
@@ -186,7 +187,7 @@ class ChoiceInput(InputWidget):
             else:
                 self.win.noutrefresh()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
 from keytable import KeyFunction
 ktb=keytable.KeyTable("choice-input",50,(

@@ -24,11 +24,12 @@ from cjc.ui import cmdtable
 from cjc.ui.widget import Widget
 from cjc.ui.status_bar import StatusBar
 from cjc import common
+from cjc import cjc_globals
 
 control_re=re.compile("[\x00-\x1f\x7f]",re.UNICODE)
 
 class Window(Widget):
-    def __init__(self,theme_manager,title,lock=0):
+    def __init__(self,title,lock=0):
         self.__logger=logging.getLogger("cjc.ui.Window")
         Widget.__init__(self)
         self.buffer=None
@@ -37,7 +38,7 @@ class Window(Widget):
         self.locked=lock
         self.active=0
         d=self.get_status_dict()
-        self.status_bar=StatusBar(theme_manager,"window_status",d)
+        self.status_bar=StatusBar("window_status",d)
 
     def get_status_dict(self):
         if self.locked:
@@ -86,14 +87,14 @@ class Window(Widget):
         args.finish()
         if not self.win:
             return
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.win.erase()
             self.update()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def user_input(self,s):
         if self.buffer:
@@ -109,20 +110,20 @@ class Window(Widget):
         Widget.set_parent(self,parent)
         self.iw=self.w
         self.ih=self.h-1
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
             self.win=curses.newwin(self.ih,self.iw,self.y,self.x)
             self.win.idlok(1)
             self.win.scrollok(1)
             self.win.leaveok(1)
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
         self.status_bar.set_parent(self)
         if self.buffer:
             self.draw_buffer()
 
-        if self not in self.screen.windows:
-            self.screen.add_window(self)
+        if self not in cjc_globals.screen.windows:
+            cjc_globals.screen.add_window(self)
 
     def set_active(self,yes):
         if yes:
@@ -137,10 +138,10 @@ class Window(Widget):
             cmdtable.deactivate("window",self)
         d=self.status_bar.get_dict()
         d["active"]=a
-        if self.screen:
+        if cjc_globals.screen:
             self.status_bar.update(0)
-            if yes and self.screen.input_handler:
-                self.screen.input_handler.current_buffer_changed(self.buffer)
+            if yes and cjc_globals.screen.input_handler:
+                cjc_globals.screen.input_handler.current_buffer_changed(self.buffer)
 
     def set_buffer(self,buf):
         if self.buffer:
@@ -154,10 +155,10 @@ class Window(Widget):
             buf.set_window(self)
         if self.win:
             self.draw_buffer()
-        if self.screen:
+        if cjc_globals.screen:
             self.status_bar.update(1)
-        if self.active and self.screen.input_handler:
-            self.screen.input_handler.current_buffer_changed(self.buffer)
+        if self.active and cjc_globals.screen.input_handler:
+            cjc_globals.screen.input_handler.current_buffer_changed(self.buffer)
 
     def update_status(self,d,now=1):
         self.status_bar.get_dict().update(d)
@@ -165,9 +166,9 @@ class Window(Widget):
 
     def draw_buffer(self):
         lines=self.buffer.format(self.iw,self.ih)
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.win.erase()
             self.win.move(0,0)
@@ -185,7 +186,7 @@ class Window(Widget):
                     x+=len(s)
                     if x>self.iw:
                         s=s[:-(x-self.iw)]
-                    s=s.encode(self.screen.encoding,"replace")
+                    s=s.encode(cjc_globals.screen.encoding,"replace")
                     if attr is not None:
                         self.win.addstr(s,attr)
                     else:
@@ -197,77 +198,77 @@ class Window(Widget):
                 else:
                     eol=0
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def nl(self):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.win.addstr("\n")
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def delete_line(self,y):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.win.move(y,0)
             self.win.deleteln()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def insert_line(self,y):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.win.move(y,0)
             self.win.insertln()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def clear(self):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.win.erase()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def clrtoeol(self):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.win.clrtoeol()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def write(self,s,attr):
         if not s:
             return
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             return self._write(s,attr)
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def write_at(self,x,y,s,attr):
         if not s:
             return
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             self.win.move(y,x)
             return self._write(s,attr)
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def _write(self,s,attr):
         y,x=self.win.getyx()
@@ -275,7 +276,7 @@ class Window(Widget):
 
         if len(s)+x>self.iw:
             s=s[:self.iw-x]
-        s=s.encode(self.screen.encoding,"replace")
+        s=s.encode(cjc_globals.screen.encoding,"replace")
         if attr is not None:
             self.win.addstr(s,attr)
         else:
@@ -283,9 +284,9 @@ class Window(Widget):
 
     def update(self,now=1,redraw=0):
         self.status_bar.update(now)
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             if redraw:
                 self.win.erase()
@@ -294,11 +295,11 @@ class Window(Widget):
             self.status_bar.update(now,redraw)
             if now:
                 self.win.refresh()
-                self.screen.cursync()
+                cjc_globals.screen.cursync()
             else:
                 self.win.noutrefresh()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
 keytable.KeyTable("window",60,(
         keytable.KeyFunction("switch-to-active-buffer",

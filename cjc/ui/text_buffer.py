@@ -20,13 +20,13 @@ from types import StringType,IntType,UnicodeType
 from cjc.ui.buffer import Buffer
 from cjc import common
 from cjc.ui import keytable
+from cjc import cjc_globals
 
 class TextBuffer(Buffer):
     default_length = 200
-    def __init__(self, theme_manager, info, descr_format = "default_buffer_descr",
+    def __init__(self, info, descr_format = "default_buffer_descr",
                 command_table = None, command_table_object = None, length = None):
         Buffer.__init__(self,info,descr_format,command_table,command_table_object)
-        self.theme_manager=theme_manager
         if length:
             self.length = length
         else:
@@ -51,7 +51,7 @@ class TextBuffer(Buffer):
 
     def _append(self,s,attr,activity_level=1):
         if attr is not None and type(attr) is not IntType:
-            attr=self.theme_manager.attrs[attr]
+            attr=cjc_globals.theme_manager.attrs[attr]
         if not self.lines:
             self.lines=[[]]
         elif self.lines[-1]==[] and self.window and self.pos is None:
@@ -99,11 +99,11 @@ class TextBuffer(Buffer):
 
     def _append_line(self,s,attr,activity_level=1):
         if type(attr) is not IntType:
-            attr=self.theme_manager.attrs[attr]
+            attr=cjc_globals.theme_manager.attrs[attr]
         self._append(s+u"\n",attr,activity_level)
 
     def append_themed(self,format,params,activity_level=1):
-        for attr,s in self.theme_manager.format_string(format,params):
+        for attr,s in cjc_globals.theme_manager.format_string(format,params):
             self.append(s,attr,activity_level)
 
     def write(self,s):

@@ -25,6 +25,7 @@ from cjc import ui
 from cjc.ui.form_buffer import FormBuffer
 from cjc.plugin import PluginBase
 from cjc import common
+from cjc import cjc_globals
 
 theme_attrs=(
     ("muc.me", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -69,7 +70,7 @@ class Room(muc.MucRoomHandler):
             "room":self.room,
             "me":self.me,
         }
-        self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,self.fparams,
+        self.buffer=ui.TextBuffer(self.fparams,
                 "muc.descr","muc buffer",self)
         self.buffer.preference=plugin.settings["buffer_preference"]
         self.buffer.user_input=self.user_input
@@ -252,9 +253,9 @@ class Room(muc.MucRoomHandler):
             self.room_state.request_configuration_form()
 
     def configuration_form_received(self, form):
-        form_buffer = FormBuffer(self.plugin.cjc.theme_manager, self.fparams, "muc.conf_descr")
+        form_buffer = FormBuffer(self.fparams, "muc.conf_descr")
         form_buffer.set_form(form, self.configuration_callback)
-        self.plugin.cjc.screen.display_buffer(form_buffer)
+        cjc_globals.screen.display_buffer(form_buffer)
 
     def configuration_callback(self, form_buffer, form):
         form_buffer.close()
@@ -368,7 +369,7 @@ class MucNickCompletion(ui.Completion):
 
     def complete(self, word):
         self.__logger.debug("MucNickCompletion.complete(self,%r)" % (word,))
-        active_window = self.app.screen.active_window
+        active_window = cjc_globals.screen.active_window
         if not active_window:
             return "", []
         active_buffer = active_window.buffer
@@ -422,8 +423,8 @@ ui.CommandTable("muc buffer",51,(
 class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
-        app.theme_manager.set_default_attrs(theme_attrs)
-        app.theme_manager.set_default_formats(theme_formats)
+        cjc_globals.theme_manager.set_default_attrs(theme_attrs)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "log_filename": ("Where messages should be logged to",(unicode,None)),
             "log_format_in": ("Format of incoming message log entries",(unicode,None)),
@@ -475,7 +476,7 @@ class Plugin(PluginBase):
         else:
             room_handler=Room(self,room_jid,self.cjc.stream.me)
             self.room_manager.join(room_jid,nick,room_handler)
-        self.cjc.screen.display_buffer(room_handler.buffer)
+        cjc_globals.screen.display_buffer(room_handler.buffer)
 
     def cmd_leave(self,args):
         room_jid=args.shift()
@@ -522,8 +523,8 @@ class Plugin(PluginBase):
             d["peer"]=sender
         else:
             d["peer"]=recipient
-        filename=self.cjc.theme_manager.substitute(filename,d)
-        s=self.cjc.theme_manager.substitute(format,d)
+        filename=cjc_globals.theme_manager.substitute(filename,d)
+        s=cjc_globals.theme_manager.substitute(format,d)
         try:
             dirname=os.path.split(filename)[0]
             if dirname and not os.path.exists(dirname):

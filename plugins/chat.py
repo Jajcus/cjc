@@ -23,6 +23,7 @@ from pyxmpp.jabber import delay
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
+from cjc import cjc_globals
 
 theme_attrs=(
     ("chat.me", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -55,7 +56,7 @@ class Conversation:
             "peer":self.peer,
             "jid":self.me,
         }
-        self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,self.fparams,"chat.descr",
+        self.buffer=ui.TextBuffer(self.fparams,"chat.descr",
                 "chat buffer",self)
         self.buffer.preference=plugin.settings["buffer_preference"]
         self.buffer.user_input=self.user_input
@@ -170,8 +171,8 @@ class Plugin(PluginBase):
         PluginBase.__init__(self,app,name)
         self.conversations={}
         self.last_thread=0
-        app.theme_manager.set_default_attrs(theme_attrs)
-        app.theme_manager.set_default_formats(theme_formats)
+        cjc_globals.theme_manager.set_default_attrs(theme_attrs)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "log_filename": ("Where messages should be logged to",(str,None)),
             "log_format_in": ("Format of incoming message log entries",(str,None)),
@@ -215,7 +216,7 @@ class Plugin(PluginBase):
         if text:
             conversation.user_input(text)
 
-        self.cjc.screen.display_buffer(conversation.buffer)
+        cjc_globals.screen.display_buffer(conversation.buffer)
 
     def ev_presence_changed(self,event,arg):
         key=arg.bare().as_unicode()
@@ -304,7 +305,7 @@ class Plugin(PluginBase):
             else:
                 self.conversations[key]=[conv]
             if self.settings.get("auto_popup"):
-                self.cjc.screen.display_buffer(conv.buffer)
+                cjc_globals.screen.display_buffer(conv.buffer)
             else:
                 conv.buffer.update()
         else:
@@ -331,8 +332,8 @@ class Plugin(PluginBase):
             d["peer"]=sender
         else:
             d["peer"]=recipient
-        filename=self.cjc.theme_manager.substitute(filename,d)
-        s=self.cjc.theme_manager.substitute(format,d)
+        filename=cjc_globals.theme_manager.substitute(filename,d)
+        s=cjc_globals.theme_manager.substitute(format,d)
         try:
             dirname=os.path.split(filename)[0]
             if dirname and not os.path.exists(dirname):

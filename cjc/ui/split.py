@@ -18,6 +18,7 @@ import curses
 import logging
 
 from cjc.ui.widget import Widget
+from cjc import cjc_globals
 
 class Split(Widget):
     def __init__(self,*children):
@@ -82,9 +83,9 @@ class VerticalSplit(Split):
         raise "%r is not a child of mine" % (child,)
 
     def update(self,now=1,redraw=0):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             for div in self.divs:
                 div.noutrefresh()
@@ -92,9 +93,9 @@ class VerticalSplit(Split):
                 c.update(0,redraw)
             if now:
                 curses.doupdate()
-                self.screen.cursync()
+                cjc_globals.screen.cursync()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
 class HorizontalSplit(Split):
     def __init__(self,*children):
@@ -148,5 +149,6 @@ class HorizontalSplit(Split):
     def update(self,now=1,redraw=0):
         for c in self.children:
             c.update(now,redraw)
-        self.screen.cursync()
+        cjc_globals.screen.cursync()
+
 # vi: sts=4 et sw=4

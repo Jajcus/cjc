@@ -26,6 +26,7 @@ from pyxmpp.utils import from_utf8,to_utf8
 
 from cjc.plugin import PluginBase
 from cjc import ui
+from cjc import cjc_globals
 
 theme_attrs=(
     ("xmlconsole.out", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -64,8 +65,8 @@ class DataOutHandler(logging.Handler):
 class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
-        app.theme_manager.set_default_formats(theme_formats)
-        app.theme_manager.set_default_attrs(theme_attrs)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
+        cjc_globals.theme_manager.set_default_attrs(theme_attrs)
         self.available_settings={
             "pretty_print": ("Reformat (pretty-print) sent and received XML (doesn't work well)",int),
             "check": ("Check if the raw-XML element is valid before sending",int),
@@ -101,7 +102,7 @@ class Plugin(PluginBase):
                     self.buffer.append_themed("error","XML not well-formed!")
                 else:
                     self.error("XML not well-formed!")
-                self.cjc.screen.redraw() # workaroud for libxml2 messing the screen
+                cjc_globals.screen.redraw() # workaroud for libxml2 messing the screen
                 return
             s=d.getRootElement().serialize("utf-8")
         self.cjc.stream.write_raw(s)
@@ -116,15 +117,15 @@ class Plugin(PluginBase):
     def cmd_xmlconsole(self,args):
         args.finish()
         if self.buffer:
-            self.cjc.screen.display_buffer(self.buffer)
+            cjc_globals.screen.display_buffer(self.buffer)
             return
-        self.buffer=ui.TextBuffer(self.cjc.theme_manager,{},"xmlconsole.descr",
+        self.buffer=ui.TextBuffer({},"xmlconsole.descr",
                 "xmlconsole buffer",self)
         self.buffer.user_input=self.user_input
         self.buffer.update()
         self.data_in_handler.setLevel(logging.DEBUG)
         self.data_out_handler.setLevel(logging.DEBUG)
-        self.cjc.screen.display_buffer(self.buffer)
+        cjc_globals.screen.display_buffer(self.buffer)
 
     def cmd_close(self,args):
         self.data_in_handler.setLevel(logging.CRITICAL)
@@ -138,7 +139,7 @@ class Plugin(PluginBase):
             try:
                 d=libxml2.parseDoc(to_utf8(data))
             except libxml2.parserError:
-                self.cjc.screen.redraw() # workaroud for libxml2 messing the screen
+                cjc_globals.screen.redraw() # workaroud for libxml2 messing the screen
             except:
                 raise
             else:

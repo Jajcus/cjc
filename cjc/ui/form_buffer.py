@@ -23,6 +23,7 @@ from types import StringType,IntType,UnicodeType
 from cjc.ui.text_buffer import TextBuffer
 from cjc import common
 from cjc.ui import keytable
+from cjc import cjc_globals
 
 from pyxmpp.jabber.dataforms import Form
 
@@ -52,15 +53,12 @@ theme_formats = (
 class FormBuffer(TextBuffer):
     editor_encoding = None
     editor = None
-    initialized_theme_managers = {}
-    def __init__(self, theme_manager, info, descr_format = "default_buffer_descr",
+    def __init__(self, info, descr_format = "default_buffer_descr",
                 command_table = None, command_table_object = None, length = 200):
-        if id(theme_manager) not in self.initialized_theme_managers:
-            theme_manager.set_default_attrs(theme_attrs)
-            theme_manager.set_default_formats(theme_formats)
-            self.initialized_theme_managers[id(theme_manager)] = True
+        cjc_globals.theme_manager.set_default_attrs(theme_attrs)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.__logger=logging.getLogger("cjc.ui.FormBuffer")
-        TextBuffer.__init__(self, theme_manager, info, descr_format, command_table,
+        TextBuffer.__init__(self, info, descr_format, command_table,
                 command_table_object, length)
         self.form = None
         self.callback = None
@@ -220,11 +218,11 @@ class FormBuffer(TextBuffer):
         command="%s %s" % (editor, self.tmpfile_name)
         ok=True
         try:
-            self.window.screen.shell_mode()
+            cjc_globals.screen.shell_mode()
             try:
                 ret=os.system(command)
             finally:
-                self.window.screen.prog_mode()
+                cjc_globals.screen.prog_mode()
         except (OSError,),e:
             self.append_themed(u"Couldn't start the editor: %s" % (e,))
             ok=False

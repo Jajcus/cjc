@@ -20,6 +20,7 @@ import locale
 
 from cjc.plugin import PluginBase
 from cjc import ui
+from cjc import cjc_globals
 
 class Plugin(PluginBase):
     def __init__(self,app,name):
@@ -46,11 +47,11 @@ class Plugin(PluginBase):
             return
         try:
             if term:
-                self.cjc.screen.shell_mode()
+                cjc_globals.screen.shell_mode()
                 try:
                     ret=os.system(command)
                 finally:
-                    self.cjc.screen.prog_mode()
+                    cjc_globals.screen.prog_mode()
             else:
                 ret=os.system(command+" 0</dev/null >/dev/null 2>&1")
         except OSError,e:
@@ -68,7 +69,7 @@ class Plugin(PluginBase):
             self.error("Command must be given")
             return
         if term:
-            self.cjc.screen.shell_mode()
+            cjc_globals.screen.shell_mode()
         else:
             command+=" 0</dev/null 2>&1"
         try:
@@ -87,8 +88,8 @@ class Plugin(PluginBase):
                             l=l[:-1]
                         if not l or l[0] in ("/","\\"):
                             l="\\"+l
-                        l=unicode(l,self.cjc.screen.encoding,"replace")
-                        self.cjc.screen.do_user_input(l)
+                        l=unicode(l,cjc_globals.screen.encoding,"replace")
+                        cjc_globals.screen.do_user_input(l)
                 except (OSError,IOError),e:
                     self.error("Pipe read failed: %s" % (e,))
             finally:
@@ -97,7 +98,7 @@ class Plugin(PluginBase):
                     self.command_returned(command,ret)
         finally:
             if term:
-                self.cjc.screen.prog_mode()
+                cjc_globals.screen.prog_mode()
 
     def cmd_pipe_out(self,args):
         if args.get()=="-noterm":
@@ -110,7 +111,7 @@ class Plugin(PluginBase):
             self.error("Command must be given")
             return
         if term:
-            self.cjc.screen.shell_mode()
+            cjc_globals.screen.shell_mode()
         else:
             command+=" >/dev/null 2>&1"
         try:
@@ -121,9 +122,9 @@ class Plugin(PluginBase):
                 return
             try:
                 try:
-                    if self.cjc.screen.active_window.buffer:
-                        s=self.cjc.screen.active_window.buffer.as_string()
-                        s=s.encode(self.cjc.screen.encoding,"replace")
+                    if cjc_globals.screen.active_window.buffer:
+                        s=cjc_globals.screen.active_window.buffer.as_string()
+                        s=s.encode(cjc_globals.screen.encoding,"replace")
                         pipe.write(s)
                 except (OSError,IOError),e:
                     self.error("Pipe read failed: %s" % (e,))
@@ -133,7 +134,7 @@ class Plugin(PluginBase):
                     self.command_returned(command,ret)
         finally:
             if term:
-                self.cjc.screen.prog_mode()
+                cjc_globals.screen.prog_mode()
 
 ui.CommandTable("shell",50,(
     ui.Command("shell",Plugin.cmd_shell,

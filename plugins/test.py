@@ -20,13 +20,14 @@ import threading
 import time
 
 from cjc import ui
+from cjc import cjc_globals
 from cjc.plugin import PluginBase
 
 class Test(threading.Thread):
     def __init__(self,plugin,name):
         threading.Thread.__init__(self,name=name)
         self.plugin=plugin
-        self.buffer=ui.TextBuffer(self.plugin.cjc.theme_manager,name)
+        self.buffer=ui.TextBuffer(name)
         ui.activate_cmdtable("test buffer",self)
         self.stop_it=0
     def cmd_close(self,args):

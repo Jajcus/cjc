@@ -27,6 +27,7 @@ import pyxmpp
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
+from cjc import cjc_globals
 from pyxmpp.jabber import delay
 
 theme_formats=(
@@ -41,8 +42,7 @@ Level: %(level)s
 """
     hdr_nocont_re=re.compile("\r?\n(?![ \t])")
     def __init__(self,plugin,recipient):
-        self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},
-                "jogger.composer_descr")
+        self.buffer=ui.TextBuffer({}, "jogger.composer_descr")
         self.plugin=plugin
         self.recipient=recipient
         self.tmpfile_name=None
@@ -113,11 +113,11 @@ Level: %(level)s
         command="%s %s" % (editor,self.tmpfile_name)
         ok=True
         try:
-            self.plugin.cjc.screen.shell_mode()
+            cjc_globals.screen.shell_mode()
             try:
                 ret=os.system(command)
             finally:
-                self.plugin.cjc.screen.prog_mode()
+                cjc_globals.screen.prog_mode()
         except (OSError,),e:
             self.error(u"Couldn't start the editor: %s" % (e,))
             ok=False
@@ -129,7 +129,7 @@ Level: %(level)s
                 self.warning("Editor exited with status %i" % (es,))
             ok=False
 
-        self.plugin.cjc.screen.display_buffer(self.buffer)
+        cjc_globals.screen.display_buffer(self.buffer)
         if not ok:
             self.buffer.ask_question(u"Try to [E]dit again or [C]ancel?",
                     "choice",None,self.send_edit_cancel,values=("ec"))
@@ -300,7 +300,7 @@ class Plugin(PluginBase):
         PluginBase.__init__(self,app,name)
         self.buffers={}
         self.last_thread=0
-        app.theme_manager.set_default_formats(theme_formats)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "editor": ("Editor for message composition."
                     " Default: $EDITOR or 'vi'",str),

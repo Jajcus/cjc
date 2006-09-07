@@ -24,6 +24,7 @@ from types import ListType,TupleType
 from cjc.ui import keytable
 from cjc import common
 from cjc.ui.input_widget import InputWidget
+from cjc import cjc_globals
 
 class ListInput(InputWidget):
     def __init__(self,abortable,required,default,values,multi=0):
@@ -64,7 +65,7 @@ class ListInput(InputWidget):
             self.parent.abort_handler()
             return
         else:
-            self.screen.beep()
+            cjc_globals.screen.beep()
 
     def key_enter(self):
         if self.multi:
@@ -73,11 +74,11 @@ class ListInput(InputWidget):
                 if self.selected[i]:
                     ans.append(self.keys[i])
             if not ans and self.required:
-                return self.screen.beep()
+                return cjc_globals.screen.beep()
         else:
             if self.choice<0:
                 if self.required:
-                    return self.screen.beep()
+                    return cjc_globals.screen.beep()
                 else:
                     ans=None
             else:
@@ -104,14 +105,14 @@ class ListInput(InputWidget):
 
     def key_select(self):
         if not self.multi:
-            return self.screen.beep()
+            return cjc_globals.screen.beep()
         self.selected[self.choice]=not self.selected[self.choice]
         self.redraw()
 
     def update(self,now=1,refresh=0):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             if refresh:
                 if self.choice<0:
@@ -126,20 +127,20 @@ class ListInput(InputWidget):
                 if len(s)>self.w-2:
                     s = s[:self.w/2-3] + u"(...)" + s[-self.w/2+4:]
                 self.__logger.debug("ListInput.update: s=%r", s)
-                s = s.encode(self.screen.encoding,"replace")
+                s = s.encode(cjc_globals.screen.encoding,"replace")
                 self.win.addch(0,0,curses.ACS_UARROW,
-                        self.theme_manager.attrs["scroll_mark"])
-                self.win.addstr(s, self.theme_manager.attrs["default"])
+                        cjc_globals.theme_manager.attrs["scroll_mark"])
+                self.win.addstr(s, cjc_globals.theme_manager.attrs["default"])
                 self.win.clrtoeol()
                 self.win.insch(0,self.w-1,curses.ACS_DARROW,
-                        self.theme_manager.attrs["scroll_mark"])
+                        cjc_globals.theme_manager.attrs["scroll_mark"])
             self.win.move(0,1)
             if now:
                 self.win.refresh()
             else:
                 self.win.noutrefresh()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
 
 from keytable import KeyFunction

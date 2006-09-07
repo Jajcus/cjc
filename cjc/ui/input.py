@@ -27,18 +27,18 @@ from cjc.ui import bool_input
 from cjc.ui import choice_input
 from cjc.ui import list_input
 from cjc.ui import complete
+from cjc import cjc_globals
 
 class InputError(StandardError):
     pass
 
 class Input(Widget):
-    def __init__(self,theme_manager):
+    def __init__(self):
         self.__logger=logging.getLogger("cjc.ui.Input")
         Widget.__init__(self)
         self.prompt_win=None
         self.input_win=None
         self.prompt=None
-        self.theme_manager=theme_manager
         self.command_line=None
         self.input_widget=None
         self.question_handler=None
@@ -49,11 +49,11 @@ class Input(Widget):
         self.command_line=text_input.TextInput(self,0,u"",100)
         self.input_widget=self.command_line
         self.make_windows()
-        self.screen.set_input_handler(self)
+        cjc_globals.screen.set_input_handler(self)
 
     def complete(self,s,pos,again):
         if self.input_widget!=self.command_line:
-            self.screen.beep()
+            cjc_globals.screen.beep()
             return 0
         head,tails=complete.complete(s[:pos])
         self.__logger.debug("complete() returned: "+`(head,tails)`)
@@ -67,10 +67,10 @@ class Input(Widget):
                     callback,abort_callback,tails,1);
                 return 0
             else:
-                self.screen.beep()
+                cjc_globals.screen.beep()
                 return 1
         if len(tails)!=1:
-            self.screen.beep()
+            cjc_globals.screen.beep()
             return 0
         self.input_widget.set_content(head+tails[0]+s[pos:])
         self.input_widget.set_pos(len(head)+len(tails[0]))
@@ -84,7 +84,7 @@ class Input(Widget):
 
     def input_handler(self,answer):
         if self.input_widget==self.command_line:
-            self.screen.user_input(answer)
+            cjc_globals.screen.user_input(answer)
             return
         handler=self.question_handler
         self.unask_question()
@@ -104,9 +104,9 @@ class Input(Widget):
     def make_windows(self):
         self.prompt_win=None
         self.input_win=None
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             if self.prompt:
                 l=len(self.prompt)
@@ -114,7 +114,7 @@ class Input(Widget):
                     prompt=self.prompt
                 else:
                     prompt=self.prompt[:self.w/4-3]+"(...)"+self.prompt[-self.w/4+4:]
-                prompt = prompt.encode(self.screen.encoding, "replace")
+                prompt = prompt.encode(cjc_globals.screen.encoding, "replace")
                 self.__logger.debug("prompt="+`prompt`)
                 l=len(prompt)
                 self.prompt_win=curses.newwin(self.h,l+1,self.y,self.x)
@@ -128,7 +128,7 @@ class Input(Widget):
             if self.input_widget:
                 self.input_widget.set_parent(self)
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def unask_question(self):
         if self.current_buffer:
@@ -156,9 +156,9 @@ class Input(Widget):
         return 1
 
     def update(self,now=1,redraw=0):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
             if self.prompt_win:
                 self.prompt_win.noutrefresh()
@@ -167,18 +167,19 @@ class Input(Widget):
             if now:
                 curses.doupdate()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def cursync(self):
         if self.input_widget:
             return self.input_widget.cursync()
 
     def getch(self):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if self.screen.active and self.input_widget:
+            if cjc_globals.screen.active and self.input_widget:
                 return self.input_widget.win.getch()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
         return -1
+
 # vi: sts=4 et sw=4

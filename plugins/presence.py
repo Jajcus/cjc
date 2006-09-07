@@ -21,6 +21,7 @@ import pyxmpp
 
 from cjc.plugin import PluginBase
 from cjc import ui
+from cjc import cjc_globals
 
 theme_formats=(
     ("presence.available","%[info][%(T:timestamp)s] %(J:user)s (%(J:user:rostername)s) is %(J:user:show)s: %(J:user:status)s\n"),
@@ -39,7 +40,7 @@ show_weight = {"xa": 0, "away": 1, "dnd": 2, None: 3, "chat": 4}
 class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
-        app.theme_manager.set_default_formats(theme_formats)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "priority": ("Priority of current resource",int),
             "chat_priority": ("Priority of current resource in ready-for-chat"
@@ -443,7 +444,7 @@ class Plugin(PluginBase):
             self.debug("Ignoring own presence subscription request")
             return
         reason=stanza.get_status()
-        buf=ui.TextBuffer(self.cjc.theme_manager,{"user":fr},"presence.subscribe_buffer")
+        buf=ui.TextBuffer({"user":fr},"presence.subscribe_buffer")
         buf.preference=self.settings["buffer_preference"]
         buf.append_themed("presence.subscribe",{"user":fr,"reason":reason})
         stanza_copy = stanza.copy()
@@ -451,7 +452,7 @@ class Plugin(PluginBase):
             return self.subscribe_decision(response, stanza_copy, buf)
         buf.ask_question("Accept?", "boolean", None, callback, None, None, 1)
         if self.settings.get("auto_popup"):
-            self.cjc.screen.display_buffer(buf)
+            cjc_globals.screen.display_buffer(buf)
 
     def subscribe_decision(self, accept, stanza, buf):
         fr=stanza.get_from()

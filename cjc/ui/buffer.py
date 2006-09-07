@@ -22,6 +22,7 @@ from types import StringType,UnicodeType
 from cjc import common
 from cjc.ui.input import InputError
 from cjc.ui import cmdtable
+from cjc import cjc_globals
 
 buffer_list=[]
 activity_handlers=[]
@@ -183,7 +184,7 @@ class Buffer:
         self.question_abort_handler=abort_handler
         self.question=question
         if self.window and self.window.active:
-            self.window.screen.input_handler.current_buffer_changed(self)
+            cjc_globals.screen.input_handler.current_buffer_changed(self)
         self.activity(2)
 
     def unask_question(self):
@@ -192,7 +193,7 @@ class Buffer:
         self.question=None
         self.input_widget=None
         if self.window and self.window.active:
-            self.window.screen.input_handler.current_buffer_changed(self)
+            cjc_globals.screen.input_handler.current_buffer_changed(self)
 
 def get_by_number(n):
     if n==0:

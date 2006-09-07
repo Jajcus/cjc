@@ -25,6 +25,7 @@ import pyxmpp
 from cjc import ui
 from cjc.plugin import PluginBase
 from cjc import common
+from cjc import cjc_globals
 from pyxmpp.jabber import delay
 
 theme_attrs=(
@@ -76,8 +77,7 @@ Subject: %(subject)s
 """
     hdr_nocont_re=re.compile("\r?\n(?![ \t])")
     def __init__(self,plugin):
-        self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},
-                "message.composer_descr")
+        self.buffer=ui.TextBuffer({}, "message.composer_descr")
         self.plugin=plugin
         self.tmpfile_name=None
         self.recipient=None
@@ -153,11 +153,11 @@ Subject: %(subject)s
         command="%s %s" % (editor,self.tmpfile_name)
         ok=True
         try:
-            self.plugin.cjc.screen.shell_mode()
+            cjc_globals.screen.shell_mode()
             try:
                 ret=os.system(command)
             finally:
-                self.plugin.cjc.screen.prog_mode()
+                cjc_globals.screen.prog_mode()
         except (OSError,),e:
             self.error(u"Couldn't start the editor: %s" % (e,))
             ok=False
@@ -169,7 +169,7 @@ Subject: %(subject)s
                 self.warning(u"Editor exited with status %i" % (es,))
             ok=False
 
-        self.plugin.cjc.screen.display_buffer(self.buffer)
+        cjc_globals.screen.display_buffer(self.buffer)
         if not ok:
             self.buffer.ask_question(u"Try to [E]dit again or [C]ancel?",
                     "choice",None,self.send_edit_cancel,values=("ec"))
@@ -270,10 +270,10 @@ class MessageBuffer:
         self.peer=peer
         self.thread=thread
         if peer:
-            self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{"peer":self.peer},
+            self.buffer=ui.TextBuffer({"peer":self.peer},
                     "message.descr-per-user","message buffer",self)
         else:
-            self.buffer=ui.TextBuffer(plugin.cjc.theme_manager,{},"message.descr",
+            self.buffer=ui.TextBuffer({},"message.descr",
                     "message buffer",self)
         self.buffer.preference=plugin.settings["buffer_preference"]
         self.buffer.update()
@@ -379,8 +379,8 @@ class Plugin(PluginBase):
         PluginBase.__init__(self,app,name)
         self.buffers={}
         self.last_thread=0
-        app.theme_manager.set_default_attrs(theme_attrs)
-        app.theme_manager.set_default_formats(theme_formats)
+        cjc_globals.theme_manager.set_default_attrs(theme_attrs)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "buffer": ("How received messages should be put in buffers"
                     " (single|separate|per-user|per-thread)",
@@ -517,7 +517,7 @@ class Plugin(PluginBase):
         else:
             self.buffers[key].append(buff)
         if self.settings.get("auto_popup"):
-            self.cjc.screen.display_buffer(buff)
+            cjc_globals.screen.display_buffer(buff)
         return buff
 
     def message_error(self,stanza):
@@ -576,8 +576,8 @@ class Plugin(PluginBase):
             d["peer"]=recipient
         if timestamp:
             d["timestamp"]=timestamp
-        filename=self.cjc.theme_manager.substitute(filename,d)
-        s=self.cjc.theme_manager.substitute(format,d)
+        filename=cjc_globals.theme_manager.substitute(filename,d)
+        s=cjc_globals.theme_manager.substitute(format,d)
         try:
             dirname=os.path.split(filename)[0]
             if dirname and not os.path.exists(dirname):

@@ -22,16 +22,16 @@ import logging
 from cjc import common
 from cjc.ui import keytable
 from cjc.ui.buffer import Buffer
+from cjc import cjc_globals
 
 class ListBufferError(StandardError):
     pass
 
 class ListBuffer(Buffer):
-    def __init__(self,theme_manager,name,command_table=None,command_table_object=None):
+    def __init__(self,name,command_table=None,command_table_object=None):
         Buffer.__init__(self,name,command_table=command_table,
                 command_table_object=command_table_object)
         self.__logger=logging.getLogger("cjc.ui.ListBuffer")
-        self.theme_manager=theme_manager
         self.keys=[]
         self.items=[]
         self.pos=0
@@ -125,7 +125,7 @@ class ListBuffer(Buffer):
 
     def insert_themed(self,key,format,params):
         view=[]
-        for attr,s in self.theme_manager.format_string(format,params):
+        for attr,s in cjc_globals.theme_manager.format_string(format,params):
             view.append((attr,s))
         if self.has_key(key):
             self.update_item(key,view)
@@ -160,9 +160,9 @@ class ListBuffer(Buffer):
         try:
             if not self.window:
                 return
-            self.window.screen.lock.acquire()
+            cjc_globals.screen.lock.acquire()
             try:
-                if not self.window.screen.active:
+                if not cjc_globals.screen.active:
                     return
                 if i < self.pos:
                     return
@@ -186,7 +186,7 @@ class ListBuffer(Buffer):
                 if y == i - self.pos:
                     self.window.clrtoeol()
             finally:
-                self.window.screen.lock.release()
+                cjc_globals.screen.lock.release()
                 self.window.win.scrollok(1)
         finally:
             self.lock.release()

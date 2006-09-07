@@ -20,11 +20,11 @@ import logging
 
 from cjc.ui.widget import Widget
 from cjc import common
+from cjc import cjc_globals
 
 class StatusBar(Widget):
-    def __init__(self,theme_manager,format,dict):
+    def __init__(self, format, dict):
         Widget.__init__(self)
-        self.theme_manager=theme_manager
         self.format=format
         self.dict=dict
         self.current_content=None
@@ -37,22 +37,22 @@ class StatusBar(Widget):
 
     def set_parent(self,parent):
         Widget.set_parent(self,parent)
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
             self.win=curses.newwin(self.h,self.w,self.y,self.x)
             self.win.leaveok(1)
-            attr=self.theme_manager.attrs["bar"]
+            attr=cjc_globals.theme_manager.attrs["bar"]
             if attr is not None:
                 self.win.bkgdset(ord(" "),attr)
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
     def update(self,now=1,redraw=0):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         try:
-            if not self.screen.active:
+            if not cjc_globals.screen.active:
                 return
-            content=self.theme_manager.format_string(self.format,self.dict)
+            content=cjc_globals.theme_manager.format_string(self.format,self.dict)
             if content==self.current_content and not redraw:
                 return
             self.current_content=content
@@ -63,7 +63,7 @@ class StatusBar(Widget):
                 x+=len(s)
                 if x>=self.w:
                     s=s[:-(x-self.w+1)]
-                s=s.encode(self.screen.encoding,"replace")
+                s=s.encode(cjc_globals.screen.encoding,"replace")
                 if attr is not None:
                     self.win.addstr(s,attr)
                 else:
@@ -73,10 +73,10 @@ class StatusBar(Widget):
             self.win.clrtoeol()
             if now:
                 self.win.refresh()
-                self.screen.cursync()
+                cjc_globals.screen.cursync()
             else:
                 self.win.noutrefresh()
         finally:
-            self.screen.lock.release()
+            cjc_globals.screen.lock.release()
 
 # vi: sts=4 et sw=4

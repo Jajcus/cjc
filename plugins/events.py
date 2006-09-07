@@ -19,6 +19,7 @@ import os
 import re
 from cjc.plugin import PluginBase
 from cjc import ui
+from cjc import cjc_globals
 import time
 
 theme_formats=(
@@ -28,7 +29,7 @@ theme_formats=(
 class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
-        app.theme_manager.set_default_formats(theme_formats)
+        cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
             "event_handlers": ("Event handlers (managed with /event_add and"
                     " /event_remove commands)",list),
@@ -47,12 +48,12 @@ class Plugin(PluginBase):
     def cmd_beep(self,args):
         arg=args.shift()
         if arg is None:
-            self.cjc.screen.beep()
+            cjc_globals.screen.beep()
             return
         while arg is not None:
             for c in arg:
                 if c not in " ._":
-                    self.cjc.screen.beep()
+                    cjc_globals.screen.beep()
                 else:
                     time.sleep(0.1)
             arg=args.shift()

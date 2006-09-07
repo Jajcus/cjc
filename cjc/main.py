@@ -49,6 +49,7 @@ from cjc import themes
 from cjc import common
 from cjc import tls
 from cjc import completions
+from cjc import cjc_globals
 
 class Exit(Exception):
     pass
@@ -132,8 +133,11 @@ global_theme_formats=(
 
 
 class Application(tls.TLSMixIn,jabber.Client):
-    def __init__(self, base_dir, config_file="default", theme_file="theme", 
-            home_dir=None,profile=False):
+    def __init__(self, base_dir, config_file = "default", theme_file = "theme", 
+            home_dir = None, profile = False):
+        if cjc_globals.application is not None:
+            raise "An Application instance already present"
+        cjc_globals.application = self
         self.profile=profile
         tls.TLSMixIn.__init__(self)
         jabber.Client.__init__(self, disco_name="CJC", disco_type="console")
@@ -366,49 +370,49 @@ class Application(tls.TLSMixIn,jabber.Client):
 
     def layout_plain(self):
         ui_buffer.activity_handlers=[]
-        self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+        self.top_bar=ui.StatusBar("title_bar",{})
         ui_buffer.activity_handlers.append(self.top_bar.update)
-        self.main_window=ui.Window(self.theme_manager,"Main")
-        self.command_line=ui.Input(self.theme_manager)
-        self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+        self.main_window=ui.Window("Main")
+        self.command_line=ui.Input()
+        self.bottom_bar=ui.StatusBar("status_bar",{})
         ui_buffer.activity_handlers.append(self.bottom_bar.update)
         sp=ui.HorizontalSplit(self.top_bar,self.main_window,self.bottom_bar,self.command_line)
-        self.screen.set_content(sp)
-        self.screen.focus_window(self.main_window)
+        cjc_globals.screen.set_content(sp)
+        cjc_globals.screen.focus_window(self.main_window)
         self.status_window=None
         self.roster_window=None
 
     def layout_icr(self):
         ui_buffer.activity_handlers=[]
-        self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+        self.top_bar=ui.StatusBar("title_bar",{})
         ui_buffer.activity_handlers.append(self.top_bar.update)
-        self.status_window=ui.Window(self.theme_manager,"Status",1)
-        self.main_window=ui.Window(self.theme_manager,"Main")
-        self.command_line=ui.Input(self.theme_manager)
-        self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+        self.status_window=ui.Window("Status",1)
+        self.main_window=ui.Window("Main")
+        self.command_line=ui.Input()
+        self.bottom_bar=ui.StatusBar("status_bar",{})
         ui_buffer.activity_handlers.append(self.bottom_bar.update)
-        self.roster_window=ui.Window(self.theme_manager,"Roster",1)
+        self.roster_window=ui.Window("Roster",1)
 
         sp=ui.VerticalSplit(self.main_window,self.roster_window)
         sp=ui.HorizontalSplit(self.top_bar,self.status_window,sp,self.bottom_bar,self.command_line)
-        self.screen.set_content(sp)
-        self.screen.focus_window(self.main_window)
+        cjc_globals.screen.set_content(sp)
+        cjc_globals.screen.focus_window(self.main_window)
 
     def layout_irc(self):
         ui_buffer.activity_handlers=[]
-        self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+        self.top_bar=ui.StatusBar("title_bar",{})
         ui_buffer.activity_handlers.append(self.top_bar.update)
-        self.status_window=ui.Window(self.theme_manager,"Status",1)
-        self.main_window=ui.Window(self.theme_manager,"Main")
-        self.command_line=ui.Input(self.theme_manager)
-        self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+        self.status_window=ui.Window("Status",1)
+        self.main_window=ui.Window("Main")
+        self.command_line=ui.Input()
+        self.bottom_bar=ui.StatusBar("status_bar",{})
         ui_buffer.activity_handlers.append(self.bottom_bar.update)
-        self.roster_window=ui.Window(self.theme_manager,"Roster",1)
+        self.roster_window=ui.Window("Roster",1)
 
         sp=ui.VerticalSplit(self.status_window,self.roster_window)
         sp=ui.HorizontalSplit(self.top_bar,sp,self.main_window,self.bottom_bar,self.command_line)
-        self.screen.set_content(sp)
-        self.screen.focus_window(self.main_window)
+        cjc_globals.screen.set_content(sp)
+        cjc_globals.screen.focus_window(self.main_window)
 
     def layout_vertical(self):
         status_bar_params={
@@ -417,32 +421,32 @@ class Application(tls.TLSMixIn,jabber.Client):
             "author": "Jacek Konieczny <jajcus@jajcus.net>",
             }
         ui_buffer.activity_handlers=[]
-        self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+        self.top_bar=ui.StatusBar("title_bar",{})
         ui_buffer.activity_handlers.append(self.top_bar.update)
-        self.main_window=ui.Window(self.theme_manager,"Main")
-        self.command_line=ui.Input(self.theme_manager)
-        self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+        self.main_window=ui.Window("Main")
+        self.command_line=ui.Input()
+        self.bottom_bar=ui.StatusBar("status_bar",{})
         ui_buffer.activity_handlers.append(self.bottom_bar.update)
-        self.roster_window=ui.Window(self.theme_manager,"Roster",1)
+        self.roster_window=ui.Window("Roster",1)
 
         sp=ui.VerticalSplit(self.main_window,self.roster_window)
         sp=ui.HorizontalSplit(self.top_bar,sp,self.bottom_bar,self.command_line)
-        self.screen.set_content(sp)
-        self.screen.focus_window(self.main_window)
+        cjc_globals.screen.set_content(sp)
+        cjc_globals.screen.focus_window(self.main_window)
         self.status_window=None
 
     def layout_horizontal(self):
         ui_buffer.activity_handlers=[]
-        self.top_bar=ui.StatusBar(self.theme_manager,"title_bar",{})
+        self.top_bar=ui.StatusBar("title_bar",{})
         ui_buffer.activity_handlers.append(self.top_bar.update)
-        self.main_window=ui.Window(self.theme_manager,"Main")
-        self.command_line=ui.Input(self.theme_manager)
-        self.bottom_bar=ui.StatusBar(self.theme_manager,"status_bar",{})
+        self.main_window=ui.Window("Main")
+        self.command_line=ui.Input()
+        self.bottom_bar=ui.StatusBar("status_bar",{})
         ui_buffer.activity_handlers.append(self.bottom_bar.update)
-        self.roster_window=ui.Window(self.theme_manager,"Roster",1)
+        self.roster_window=ui.Window("Roster",1)
         sp=ui.HorizontalSplit(self.top_bar,self.roster_window,self.main_window,self.bottom_bar,{})
-        self.screen.set_content(sp)
-        self.screen.focus_window(self.main_window)
+        cjc_globals.screen.set_content(sp)
+        cjc_globals.screen.focus_window(self.main_window)
         self.status_window=None
 
     def update_status_bars(self):
@@ -451,23 +455,23 @@ class Application(tls.TLSMixIn,jabber.Client):
         if self.bottom_bar:
             self.bottom_bar.update()
 
-    def run(self,screen):
+    def run(self, screen):
         signal.signal(signal.SIGINT,signal.SIG_IGN)
-        self.screen=screen
-        self.theme_manager=themes.ThemeManager(self)
+        cjc_globals.screen = screen
+        cjc_globals.theme_manager = themes.ThemeManager(self)
         try:
-            self.theme_manager.load()
+            cjc_globals.theme_manager.load()
         except (IOError,OSError):
             pass
-        self.theme_manager.set_default_attrs(global_theme_attrs)
-        self.theme_manager.set_default_formats(global_theme_formats)
+        cjc_globals.theme_manager.set_default_attrs(global_theme_attrs)
+        cjc_globals.theme_manager.set_default_formats(global_theme_formats)
 
-        self.status_buf=ui.TextBuffer(self.theme_manager,"Status")
-        self.status_buf.preference=self.settings["status_buffer_preference"]
+        self.status_buf = ui.TextBuffer("Status")
+        self.status_buf.preference = self.settings["status_buffer_preference"]
 
         self.set_layout(self.settings["layout"],"plain")
 
-        self.screen.update()
+        cjc_globals.screen.update()
 
         if not os.path.exists(self.home_dir):
             try:
@@ -535,11 +539,11 @@ class Application(tls.TLSMixIn,jabber.Client):
         logger.removeHandler(self.log_hdlr)
 
     def resize_handler(self):
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         layout=self.settings["layout"]
-        self.screen.set_input_handler(None)
+        cjc_globals.screen.set_input_handler(None)
         self.set_layout(layout,layout)
-        self.screen.lock.release()
+        cjc_globals.screen.lock.release()
 
     def stream_created(self,stream):
         self.send_event("stream created",stream)
@@ -692,7 +696,7 @@ class Application(tls.TLSMixIn,jabber.Client):
     def registration_form_received(self, stanza):
         register = jabber.Register(stanza.get_query())
         service_jid = stanza.get_from()
-        form_buffer = FormBuffer(self.theme_manager, {"service_name": service_jid}, "registration_form")
+        form_buffer = FormBuffer({"service_name": service_jid}, "registration_form")
         form = register.get_form()
         def callback(buf, form):
             buf.close()
@@ -707,7 +711,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             if "password" in form and not form["password"].value:
                 form["password"].value = self.password
         form_buffer.set_form(form, callback)
-        self.screen.display_buffer(form_buffer)
+        cjc_globals.screen.display_buffer(form_buffer)
 
     def registration_error(self, stanza):
         err = stanza.get_error()
@@ -722,7 +726,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.__logger.info(u"Registration at %s successful." % (stanza.get_from(),))
            
     def process_registration_form(self, stanza, form):
-        form_buffer = FormBuffer(self.theme_manager, {"service_name": stanza.get_from()}, "registration_form")
+        form_buffer = FormBuffer({"service_name": stanza.get_from()}, "registration_form")
         def callback(buf, form):
             buf.close()
             self.submit_registration_form(form)
@@ -734,7 +738,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             if "password" in form and not form["password"].value:
                 form["password"].value = self.password
         form_buffer.set_form(form, callback)
-        self.screen.display_buffer(form_buffer)
+        cjc_globals.screen.display_buffer(form_buffer)
 
     def cmd_disconnect(self,args):
         if not self.stream:
@@ -945,13 +949,13 @@ class Application(tls.TLSMixIn,jabber.Client):
         if newval not in ("plain","icr","irc","vertical","horizontal"):
             self.settings["layout"]=oldval
             return
-        self.screen.lock.acquire()
+        cjc_globals.screen.lock.acquire()
         if self.main_window:
             main_buf=self.main_window.buffer
         else:
             main_buf=None
         getattr(self,"layout_"+newval)()
-        self.screen.lock.release()
+        cjc_globals.screen.lock.release()
         if self.status_window:
             self.status_window.set_buffer(self.status_buf)
         elif main_buf==None:
@@ -959,7 +963,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         if self.main_window and main_buf:
             self.main_window.set_buffer(main_buf)
         self.send_event("layout changed",newval)
-        self.screen.redraw()
+        cjc_globals.screen.redraw()
 
     def cmd_save(self,args):
         filename=args.shift()
@@ -1121,7 +1125,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         return 1
 
     def cmd_redraw(self,args):
-        self.screen.redraw()
+        cjc_globals.screen.redraw()
 
     def cmd_info(self,args):
         user=args.shift()
@@ -1183,7 +1187,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.__logger.info(u"  "+cmd.descr)
 
     def cmd_theme(self,args):
-        self.theme_manager.command(args)
+        cjc_globals.theme_manager.command(args)
 
     def cmd_bind(self,args):
         function=args.shift()
@@ -1225,7 +1229,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         for b in ui_buffer.buffer_list:
             if not b:
                 continue
-            formatted_list+=self.theme_manager.format_string("buffer_on_list",b.info)
+            formatted_list+=cjc_globals.theme_manager.format_string("buffer_on_list",b.info)
             i+=1
         params={
                 "buffers_on_list": formatted_list,
@@ -1264,7 +1268,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             p={ "name": table.name, "priority": table.prio,
                 "bindings": self.format_keybindings,
                 "unbound": self.format_unbound_keyfunctions}
-            r+=self.theme_manager.format_string("keytable",p)
+            r+=cjc_globals.theme_manager.format_string("keytable",p)
         return r
 
     def format_keybindings(self,attr,params):
@@ -1273,7 +1277,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         for keyname,funame,desc in table.get_bindings():
             p={ "table": table.name, "key": keyname,
                 "function": funame, "description": desc}
-            r+=self.theme_manager.format_string("keybinding",p)
+            r+=cjc_globals.theme_manager.format_string("keybinding",p)
         return r
 
     def format_unbound_keyfunctions(self,attr,params):
@@ -1284,7 +1288,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                 "description": f.descr}
             if f.accepts_arg:
                 p["function"]=f.name+"(<arg>)"
-            r+=self.theme_manager.format_string("keyfunction",p)
+            r+=cjc_globals.theme_manager.format_string("keyfunction",p)
         return r
 
     def exit_request(self,reason):

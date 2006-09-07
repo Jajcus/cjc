@@ -19,6 +19,7 @@ import logging
 
 from cjc.ui import cmdtable
 from cjc import common
+from cjc import cjc_globals
 
 completions={}
 
@@ -61,12 +62,11 @@ class GenericCompletion(Completion):
         return self.make_result("",word,matches)
 
 class ActiveBufferDefinedCompletion(Completion):
-    def __init__(self,screen):
+    def __init__(self):
         Completion.__init__(self)
         self.__logger=logging.getLogger("cjc.ui.ActiveBufferDefinedCompletion")
-        self.screen=screen
     def complete(self,word):
-        aw=self.screen.active_window
+        aw = cjc_globals.screen.active_window
         self.__logger.debug("Active window: "+`aw`)
         if not aw:
             return "",[]

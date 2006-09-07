@@ -21,6 +21,7 @@ import os
 import logging
 
 from cjc import common
+from cjc import cjc_globals
 
 SUBJECT_NAME_INVALID = 1000
 
@@ -169,7 +170,7 @@ class TLSMixIn:
         self.cert_remember_ask(cert)
 
     def cert_remember_ask(self,cert):
-        buf=ui.TextBuffer(self.theme_manager,{})
+        buf=ui.TextBuffer({})
         p={
             "who": self.tls_peer_name,
             "subject": cert.get_subject(),
@@ -280,7 +281,7 @@ class TLSMixIn:
             return 0
 
     def cert_verify_ask(self, cert, errnum, depth):
-        buf=ui.TextBuffer(self.theme_manager, {})
+        buf=ui.TextBuffer({})
         errdesc=tls_errors.get(errnum,"unknown")
         p={
             "depth": depth,
@@ -318,8 +319,8 @@ class TLSMixIn:
         logger.debug("format_cert_chain(%r,%r,%r)" % (self,attr,params))
         chain=params.get("chain_data")
         if not chain:
-            return self.theme_manager.do_format_string("  <none>\n",attr,params)
-        f=self.theme_manager.formats["certificate"]
+            return cjc_globals.theme_manager.do_format_string("  <none>\n",attr,params)
+        f = cjc_globals.theme_manager.formats["certificate"]
         ret=[]
         for cert in chain:
             p={
@@ -329,7 +330,7 @@ class TLSMixIn:
                 "not_before": cert.get_not_before(),
                 "not_after": cert.get_not_after(),
                 }
-            ret+=self.theme_manager.do_format_string(f,attr,p)
+            ret+=cjc_globals.theme_manager.do_format_string(f,attr,p)
         return ret
 
 # vi: sts=4 et sw=4
