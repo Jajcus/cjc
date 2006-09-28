@@ -306,7 +306,7 @@ class TLSMixIn:
             cond.notify()
             cond.release()
         buf.ask_question("Accept?", "boolean", None, callback, None, None, 1)
-        self.screen.display_buffer(buf)
+        cjc_globals.screen.display_buffer(buf)
         cond.acquire()
         while arg.ok is None:
             cond.wait()
