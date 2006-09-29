@@ -28,6 +28,7 @@ import pyxmpp
 from cjc.ui import CommandError,CommandArgs
 from cjc import ui
 from cjc import common
+from cjc import cjc_globals
 
 attr_sel_re=re.compile(r"(?<!\%)\%\[([^]]*)\]",re.UNICODE)
 formatted_re=re.compile(r"(?<!\%)\%\{([^}]*)\}",re.UNICODE)
@@ -109,8 +110,8 @@ class ThemeManager:
             command=CommandArgs(unicode(l,"utf-8").strip())
             self.command(command,1)
         f.close()
-        if self.app and self.app.screen:
-            self.app.screen.redraw()
+        if self.app and cjc_globals.screen:
+            cjc_globals.screen.redraw()
 
     def save(self,filename=None):
         if not filename:
