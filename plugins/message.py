@@ -517,7 +517,7 @@ class Plugin(PluginBase):
         else:
             self.buffers[key].append(buff)
         if self.settings.get("auto_popup"):
-            cjc_globals.screen.display_buffer(buff)
+            cjc_globals.screen.display_buffer(buff.buffer)
         return buff
 
     def message_error(self,stanza):
