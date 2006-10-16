@@ -307,8 +307,8 @@ class Room(muc.MucRoomHandler):
         return 1
 
     def cmd_who(self, args):
-        nicks = ','.join(self.room_state.users.keys())
-        self.buffer.append(nicks)
+        nicks = u','.join(self.room_state.users.keys())
+        self.buffer.append(nicks + u"\n")
         self.buffer.update()
         
     def cmd_nick(self,args):
