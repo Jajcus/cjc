@@ -1507,10 +1507,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         return uinf.get(var)
 
     def set_user_info(self, jid, var, val):
-        if isinstance(val, pyxmpp.Stanza):
-            self.__logger.debug("set_user_info(%r,%r, stanza:%r)" % (jid, var, val.serialize()))
-        else:
-            self.__logger.debug("set_user_info(%r,%r,%r)" % (jid, var, val))
+        self.__logger.debug("set_user_info(%r,%r,%r)" % (jid, var, val))
         if not jid.resource:
             return self.set_bare_user_info(jid, var, val)
         bare = jid.bare()
