@@ -177,7 +177,7 @@ class Plugin(PluginBase):
 
         if not self.away_saved_presence:
             self.away_saved_presence = p.copy()
-            p.set_to(None)
+            self.away_saved_presence.set_to(None)
 
         insert_time=False
 
