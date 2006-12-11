@@ -115,7 +115,7 @@ global_theme_formats=(
             "  Serial number: %(serial_number)s\n"
             "  Valid not before: %(not_before)s\n"
             "  Valid not after: %(not_after)s\n"),
-    ("certificate_error",u"%[warning]Server certificate failed verifiaction.\n\n"
+    ("certificate_error",u"%[warning]Server certificate failed verification.\n\n"
         "%[info]Server has presented following certificate chain:\n"
         "%{chain}\n"
         "The rejected certificate is:\n"
@@ -123,7 +123,7 @@ global_theme_formats=(
         "%[error]Verification failed with error #%(errnum)i: %(errdesc)s\n"),
     ("certificate_remember",u"%[info]Server '%(who)s' has presented following certificate:\n\n"
         "%{certificate}\n"
-        "Verification of that certificat failed.\n"
+        "Verification of that certificate failed.\n"
         "Should it be accepted in future sessions anyway?\n"),
     ("tls_error_ignored",u"%[warning]Certificate verification error #%(errnum)i:"
             " '%(errdesc)s' ignored - peer certificate is known as trustworthy.\n"),
