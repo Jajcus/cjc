@@ -106,13 +106,13 @@ class Plugin(PluginBase):
         version_string=u"%s: " % (stanza.get_from(),)
         name=stanza.xpath_eval("v:query/v:name",{"v":"jabber:iq:version"})
         if name:
-            version_string+=name[0].getContent()
+            version_string += name[0].getContent().decode("utf-8")
         version=stanza.xpath_eval("v:query/v:version",{"v":"jabber:iq:version"})
         if version:
-            version_string+=u"/"+version[0].getContent()
+            version_string + = u"/" + version[0].getContent().decode("utf-8")
         os=stanza.xpath_eval("v:query/v:os",{"v":"jabber:iq:version"})
         if os:
-            version_string+=u" (%s)" % (os[0].getContent(),)
+            version_string+=u" (%s)" % (os[0].getContent().decode("utf-8"),)
         self.info(version_string)
 
     def version_error(self,stanza):
