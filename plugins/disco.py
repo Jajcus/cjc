@@ -241,6 +241,7 @@ class Plugin(PluginBase):
                 jid=self.cjc.settings['jid']
             node=None
         else:
+            jid = JID(jid)
             node=args.shift()
         args.finish()
         buffer=DiscoBuffer(self,jid,node)
