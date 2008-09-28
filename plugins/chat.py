@@ -32,7 +32,7 @@ theme_attrs=(
 )
 
 theme_formats=(
-    ("chat.started",u"[%(T:timestamp)s] %[chat.info]* Chat with %(J:peer)s started\n"),
+        ("chat.started",u"[%(T:timestamp)s] %[chat.info]* Chat with %(J:peer:nick)s (%(J:peer:jid)s) started\n"),
     ("chat.me",u"[%(T:timestamp)s] %[chat.me]<%(J:me:nick)s>%[] %(msg)s\n"),
     ("chat.peer",u"[%(T:timestamp)s] %[chat.peer]<%(J:peer:nick)s>%[] %(msg)s\n"),
     ("chat.action",u"[%(T:timestamp)s] %[chat.info]* %(J:jid:nick)s %(msg)s\n"),
