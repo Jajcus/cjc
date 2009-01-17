@@ -1,5 +1,5 @@
 			     Console Jabber Client
-		   (c) 2003-2006 Jacek Konieczny <jajcus@jajcus.net>
+		   (c) 2003-2009 Jacek Konieczny <jajcus@jajcus.net>
 
 CJC is a Jabber/XMPP client for text terminals. It uses pyxmpp library for XMPP
 comunication and curses for screen output. It is not finished yet, but still
@@ -11,12 +11,12 @@ Requirements:
 
 1. Python interpreter
 
-	PyXMPP and CJC were tested with Python 2.4.2, but probably it will also
+	PyXMPP and CJC were tested with Python 2.6, but probably it will also
 	work with some older Python versions (but not older than 2.3).
 
 2. PyXMPP - http://pyxmpp.jajcus.net/
 
-	CJC 1.0 requires PyXMPP 1.0 or newer.
+	CJC 1.0.1 requires PyXMPP 1.0.1 or newer.
 
 	If you are using CJC from SVN then probably the best choice is to use
 	latest PyXMPP from SVN too. For official releases the latest PyXMPP
