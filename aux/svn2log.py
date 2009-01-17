@@ -14,7 +14,7 @@
 #    3. The name of the University may not be used to endorse or promote
 #       products derived from this software without specific prior
 #       written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY ``AS IS'' AND ANY EXPRESS OR
 # IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 # OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
@@ -35,7 +35,7 @@ import getopt
 import string
 import codecs
 
-from xml.utils import qp_xml
+from xml.etree import ElementTree
 
 kill_prefix_rx = None
 default_domain = "localhost"
@@ -51,19 +51,16 @@ def die(msg):
   sys.stderr.write(msg + "\n")
   sys.exit(1)
 
-def attr(e, n):
-  return e.attrs[("", n)]
-
 def has_child(e, n):
-  for c in e.children:
-    if c.name == n: return 1
+  for c in e.getchildren():
+    if c.tag == n: return 1
   return 0
 
 def child(e, n):
-  for c in e.children:
-    if c.name == n: return c
-  die("<%s> doesn't have <%s> child" % (e.name, n))
-  
+  for c in e.getchildren():
+    if c.tag == n: return c
+  die("<%s> doesn't have <%s> child" % (e.tag, n))
+
 def convert_path(n):
   for src in reloc.keys():
     n = string.replace(n, src, reloc[src])
@@ -143,49 +140,49 @@ class Entry:
                           (time.strftime("%Y-%m-%d %H:%M +0000", time.localtime(self.beg_tm)), \
                            self.rev, convert_user(self.author)))
     out.write(self.msg)
-  
+
   def can_join(self, other):
     return self.author == other.author and abs(self.tm - other.tm) < max_join_delta
 
 def process_entry(e):
-  rev = attr(e, "revision")
+  rev = e.get("revision")
   if has_child(e, "author"):
-    author = child(e, "author").textof()
+    author = child(e, "author").text
   else:
     author = "anonymous"
-  m = date_rx.search(child(e, "date").textof())
-  msg = child(e, "msg").textof()
+  m = date_rx.search(child(e, "date").text)
+  msg = child(e, "msg").text
   if m:
     tm = time.mktime(time.strptime(m.group(1), "%Y-%m-%dT%H:%M:%S"))
   else:
-    die("evil date: %s" % child(e, "date").textof())
+    die("evil date: %s" % child(e, "date").text)
   paths = []
-  for path in child(e, "paths").children:
-    if path.name != "path": die("<paths> has non-<path> child")
-    nam = convert_path(path.textof())
+  for path in child(e, "paths").getchildren():
+    if path.tag != "path": die("<paths> has non-<path> child")
+    nam = convert_path(path.text)
     if nam != None:
-      if attr(path, "action") == "D":
+      if path.get("action") == "D":
         paths.append(nam + " (removed)")
-      elif attr(path, "action") == "A":
+      elif path.get("action") == "A":
         paths.append(nam + " (added)")
       else:
         paths.append(nam)
- 
+
   if paths != []:
     return Entry(tm, rev, author, "\t* %s\n" % wrap_text(", ".join(paths) + ": " + msg, "\t  ", 65))
 
   return None
 
 def process(fin, fout):
-  parser = qp_xml.Parser()
-  root = parser.parse(fin)
+  tree = ElementTree.parse(fin)
+  root = tree.getroot()
 
-  if root.name != "log": die("root is not <log>")
-  
+  if root.tag != "log": die("root is not <log>")
+
   cur = None
-  
-  for logentry in root.children:
-    if logentry.name != "logentry": die("non <logentry> <log> child")
+
+  for logentry in root.getchildren():
+    if logentry.tag != "logentry": die("non <logentry> <log> child")
     e = process_entry(logentry)
     if e != None:
       if cur != None:
@@ -195,7 +192,7 @@ def process(fin, fout):
           cur.dump(fout)
           cur = e
       else: cur = e
-        
+
   if cur != None: cur.dump(fout)
 
 def usage():
@@ -205,7 +202,7 @@ Convert specified subversion xml logfile to GNU-style ChangeLog.
 
 Options:
   -p, --prefix=REGEXP  set root directory of project (it will be striped off
-                       from ChangeLog entries, paths outside it will be 
+                       from ChangeLog entries, paths outside it will be
                        ignored)
   -x, --exclude=DIR    exclude DIR from ChangeLog (relative to prefix)
   -o, --output         set output file (defaults to 'ChangeLog')
@@ -230,7 +227,7 @@ mark    Marcus Blah <mb@example.org>
 Typical usage of this script is something like this:
 
   svn log -v --xml | %s -p '/foo/(branches/[^/]+|trunk)' -u aux/users
-  
+
 Please send bug reports and comments to author:
   Michal Moskal <malekith@pld-linux.org>
 
@@ -241,7 +238,7 @@ def utf_open(name, mode):
 
 def process_opts():
   try:
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "o:u:p:x:d:r:d:D:Fh", 
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "o:u:p:x:d:r:d:D:Fh",
                                    ["users=", "prefix=", "domain=", "delta=",
                                     "exclude=", "help", "output=", "relocate=",
                                     "list-format"])
@@ -267,7 +264,7 @@ def process_opts():
       f = utf_open(a, "r")
       for line in f.xreadlines():
         w = line.split()
-        if len(line) < 1 or line[0] == '#' or len(w) < 2: 
+        if len(line) < 1 or line[0] == '#' or len(w) < 2:
           continue
         users[w[0]] = " ".join(w[1:])
     elif o in ("--relocate", "-r"):
@@ -296,3 +293,4 @@ if __name__ == "__main__":
   except AttributeError:
     pass
   process_opts()
+# vi: sts=4 et sw=4
