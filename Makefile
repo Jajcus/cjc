@@ -16,7 +16,7 @@ UNINSTALL_DIR=rm -r
 pkg_datadir=$(datadir)/cjc
 pkg_docdir=$(docdir)/cjc
 
-VERSION=1.0.0
+VERSION=1.0.1
 SNAPSHOT=
 
 PY_DIRS=cjc cjc/ui plugins
