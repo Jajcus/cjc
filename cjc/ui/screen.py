@@ -44,6 +44,10 @@ class Screen:
         lc,self.encoding=locale.getlocale()
         if self.encoding is None:
             self.encoding="us-ascii"
+        if self.encoding.lower().replace("-","") == "utf8":
+            self.utf8_mode = True
+        else:
+            self.utf8_mode = False
         keytable.activate("screen",self,input_window=self.scr)
         cmdtable.activate("screen",self)
         complete.ActiveBufferDefinedCompletion().register("text")

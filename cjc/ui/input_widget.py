@@ -19,6 +19,7 @@ import curses
 import curses.textpad
 import string
 import logging
+import unicodedata
 
 from cjc import common
 from cjc import cjc_globals
@@ -34,7 +35,6 @@ class InputWidget:
         if parent:
             self.win=parent.input_win
             self.h,self.w=self.win.getmaxyx()
-            self.printable=string.digits+string.letters+string.punctuation+" "
             self.win.keypad(1)
             self.win.leaveok(0)
         else:
@@ -58,5 +58,12 @@ class InputWidget:
                 self.win.noutrefresh()
         finally:
             cjc_globals.screen.lock.release()
+
+    def is_printable(self, unichr):
+        category = unicodedata.category(unichr)
+        if category[0] == "C":
+            return False
+        else:
+            return True
 
 # vi: sts=4 et sw=4

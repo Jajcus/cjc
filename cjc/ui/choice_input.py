@@ -79,7 +79,7 @@ class ChoiceInput(InputWidget):
             cjc_globals.screen.beep()
             return
         c=chr(c)
-        if c in self.printable:
+        if self.is_printable(c):
             self.key_char(c)
         else:
             cjc_globals.screen.beep()

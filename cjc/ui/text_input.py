@@ -60,18 +60,17 @@ class TextInput(InputWidget):
             cjc_globals.screen.lock.release()
 
     def _keypressed(self,c,meta):
-        if c==27:
+        if c == '\e':
             if self.abortable:
                 self.parent.abort_handler()
                 return
             else:
                 cjc_globals.screen._beep()
                 return
-        elif c>255 or c<0 or meta:
+        elif type(c) not in (chr, unicode) or meta:
             cjc_globals.screen._beep()
             return
-        c=chr(c)
-        if c in self.printable:
+        if self.is_printable(c):
             self.key_char(c)
         else:
             cjc_globals.screen._beep()
@@ -313,10 +312,10 @@ class TextInput(InputWidget):
     def key_complete(self):
         self.completing=self.parent.complete(self.content,self.pos,self.completing)
 
-    def key_char(self,ch):
+    def key_char(self, c):
         self.completing=0
-        c=unicode(ch,cjc_globals.screen.encoding,"replace")
         cjc_globals.screen.lock.acquire()
+        ch = c.encode(cjc_globals.screen.encoding, "replace")
         try:
             if self.pos==len(self.content):
                 self.content+=c

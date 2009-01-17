@@ -21,6 +21,7 @@ import logging
 from types import StringType,UnicodeType
 
 from cjc import common
+from cjc import cjc_globals
 
 __logger=logging.getLogger("cjc.ui.keytable")
 
@@ -208,38 +209,50 @@ class KeyTable:
         install(self)
 
 def keyname_to_code(name):
-    if name.startswith("M-") or name.startswith("m-") or name.startswith("^["):
+    if name.startswith(u"M-") or name.startswith(u"m-") or name.startswith(u"^["):
         meta=1
         name=name[2:]
     else:
         meta=0
-    if hasattr(curses,"KEY_"+name.upper()):
-        return getattr(curses,"KEY_"+name.upper()),meta
-    if hasattr(curses,"key_"+name.lower()):
-        return getattr(curses,"key_"+name.lower()),meta
-    if name.upper()=="SPACE":
-        return 32,meta
-    if name.upper()=="ESCAPE":
-        return 27,meta
-    if len(name)==2 and name[0]=="^":
-        if name[1]=="?":
-            return 0x7f,meta
+    if hasattr(curses, u"KEY_"+name.upper()):
+        return getattr(curses, u"KEY_"+name.upper()),meta
+    if hasattr(curses, u"key_"+name.lower()):
+        return getattr(curses, u"key_"+name.lower()),meta
+    if name.upper()== u"SPACE":
+        return u' ',meta
+    if name.upper()== u"ESCAPE":
+        return u'\e',meta
+    if len(name)==2 and name[0] == u"^":
+        if name[1] == u"?":
+            return u'\x7f', meta
         c=ord(name[1].upper())
         if c<64 or c>95:
-            raise KeytableError,"Bad key name: "+`name`
-        return c-64,meta
+            raise KeytableError, "Bad key name: " + `name`
+        return unichr(c-64), meta
     if name.startswith("\\"):
-        if len(name)==2:
+        if name[1] == "u" and len(name) == 6:
+            name = unichr( int(name[2:], 16) )
+        elif name[1] == "U" and len(name) == 10:
+            name = unichr( int(name[2:], 16) )
+        elif len(name)==2:
             name=name[1]
         elif len(name)==4:
             name=chr(int(name[1:],8))
         else:
-            raise KeytableError,"Bad key name: "+`name`
+            raise KeytableError, "Bad key name: "+`name`
     if len(name)!=1:
         raise KeytableError,"Bad key name: "+`name`
-    return ord(name[0]),meta
+    return name[0], meta
 
-def keycode_to_name(code,meta):
+def keycode_to_name(code, meta):
+    if type(code) in (unicode, str):
+        num_code = ord(code)
+        if num_code >= 0x10000:
+            return "\\U%08x" % (num_code,)
+        elif num_code >= 0x100:
+            return "\\u%04x" % (num_code,)
+        else:
+            code = num_code
     if code>=256:
         name=curses.keyname(code)
         if name.startswith("KEY_"):
@@ -339,6 +352,9 @@ def lookup_function(name,active_only=0):
 meta=0
 
 def process_key(code):
+    """Process a key press.
+
+    `code` is ncurses key code or a single unicode character."""
     global default_handler
     if not is_key_unhandled((code,meta)):
         for t in [t for t in keytables if t.active]:
@@ -358,17 +374,19 @@ def process_key(code):
         return 0
 
 def keypressed():
+    """Handle a keypress event."""
     global meta
     if not active_input_window:
         raise KeytableError,"No input window set"
     ch=active_input_window.getch()
     if ch==-1:
         return 0
+    __logger.debug("getch() returned: %r", ch)
     if ch==27:
         if meta:
             meta=0
             try:
-                process_key(27)
+                process_key('\e')
             except common.non_errors:
                 raise
             except:
@@ -377,7 +395,21 @@ def keypressed():
         else:
             meta=1
             return 1
+    if ch < 0x80:
+        # ASCII character
+        ch = unicode(chr(ch), cjc_globals.screen.encoding, "replace")
+    elif ch < 0x100:
+        # local encoding character
+        if cjc_globals.screen.utf8_mode:
+            try:
+                ch = read_utf8_keypress(ch)
+            except ValueError:
+                cjc_globals.screen.beep()
+                return 0
+        else:
+            ch = unicode(chr(ch), cjc_globals.screen.encoding, "replace")
     try:
+        __logger.debug("processing key: %r", ch)
         process_key(ch)
     except common.non_errors:
         raise
@@ -385,6 +417,36 @@ def keypressed():
         __logger.exception("Exception during keybinding execution")
     meta=0
     return 1
+
+def read_utf8_keypress(ch):
+    """Process a single utf-8 keypress. It should be visible
+    as two to six keypresess for each byte of the UTF-8 code."""
+    if ch < 0xc0:
+        raise ValueError, "Bad UTF-8 sequence start"
+    elif ch < 0xe0:
+        value = ch & 0x1f
+        bytes = 2
+    elif ch < 0xf0:
+        value = ch & 0x0f
+        bytes = 3
+    elif ch < 0xf8:
+        value = ch & 0x07
+        bytes = 4
+    elif ch < 0xfc:
+        value = ch & 0x03
+        bytes = 5
+    elif ch < 0xfe:
+        value = ch & 0x01
+        bytes = 6
+    for b in range(1, bytes):
+        ch = -1
+        while ch == -1:
+            ch = active_input_window.getch()
+        __logger.debug("getch() returned: %r", ch)
+        if ch > 0xff or (ch & 0xc0) != 0x80:
+            raise ValueError, "Bad UTF-8 sequence"
+        value = (value << 6) | (ch & 0x3f)
+    return unichr(value)
 
 def bind(keyname,fun,table=None):
     binding=KeyBinding(fun,keyname)
