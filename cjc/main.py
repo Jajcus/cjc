@@ -1,7 +1,7 @@
 #!/usr/bin/python -u
 
 # Console Jabber Client
-# Copyright (C) 2004-2009  Jacek Konieczny
+# Copyright (C) 2004-2010  Jacek Konieczny
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -111,21 +111,17 @@ global_theme_formats=(
     ("keybinding",u"%[info]  %(key)-10s %(function)-20s %(description)s\n"),
     ("keyfunction",u"%[info]         %(function)-20s %(description)s\n"),
     ("certificate",u"  Subject: %(subject)s\n"
-            "  Issuer: %(issuer)s\n"
-            "  Serial number: %(serial_number)s\n"
-            "  Valid not before: %(not_before)s\n"
+            "  Subject alt name: %(subject_alt_name)s\n"
             "  Valid not after: %(not_after)s\n"),
     ("certificate_error",u"%[warning]Server certificate failed verification.\n\n"
-        "%[info]Server has presented following certificate chain:\n"
-        "%{chain}\n"
-        "The rejected certificate is:\n"
+        "%[info]The rejected certificate is:\n"
         "%{certificate}\n"
-        "%[error]Verification failed with error #%(errnum)i: %(errdesc)s\n"),
+        "%[error]Verification failed with error: %(errdesc)s\n"),
     ("certificate_remember",u"%[info]Server '%(who)s' has presented following certificate:\n\n"
         "%{certificate}\n"
         "Verification of that certificate failed.\n"
         "Should it be accepted in future sessions anyway?\n"),
-    ("tls_error_ignored",u"%[warning]Certificate verification error #%(errnum)i:"
+    ("tls_error_ignored",u"%[warning]Certificate verification error:"
             " '%(errdesc)s' ignored - peer certificate is known as trustworthy.\n"),
     ("tls_error_not_ignored",u"%[error]Fatal certificate verification error #%(errnum)i:"
             " '%(errdesc)s' not ignored.\n"),
