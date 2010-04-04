@@ -191,7 +191,6 @@ class TLSMixIn:
             else:
                 subject_name_valid = True
 
-            subject_name_valid = False
             der_cert = self.stream.tls.getpeercert(binary_form = True)
             if self.tls_is_cert_known(der_cert):
                 if not subject_name_valid:
