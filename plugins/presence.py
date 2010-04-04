@@ -156,8 +156,8 @@ class Plugin(PluginBase):
     def ev_idle(self,event,arg):
         if not self.cjc.stream:
             return
-        auto_away=self.settings["auto_away"]
-        auto_xa=self.settings["auto_xa"]
+        auto_away = self.settings.get("auto_away")
+        auto_xa = self.settings.get("auto_xa")
         if auto_away and auto_xa:
             minidle=min(auto_away,auto_xa)
         elif auto_away:
