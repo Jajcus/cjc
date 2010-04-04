@@ -61,6 +61,7 @@ global_settings={
     "port": ("Port number to connect to", int),
     "server": ("Server address to connect to", (str, None)),
     "tls_enable": ("Enable TLS (encrypted) connections", bool),
+    "tls_verify": ("Enable TLS certificate verification", bool),
     "tls_require": ("Require TLS (encrypted) connections", bool),
     "tls_cert_file": ("Path to user certificate file", (str, None)),
     "tls_key_file": ("Path to user private key file (default: same to tls_cert_file)", (str, None)),
@@ -111,7 +112,10 @@ global_theme_formats=(
     ("keybinding",u"%[info]  %(key)-10s %(function)-20s %(description)s\n"),
     ("keyfunction",u"%[info]         %(function)-20s %(description)s\n"),
     ("certificate",u"  Subject: %(subject)s\n"
-            "  Subject alt name: %(subject_alt_name)s\n"
+            "%(subject_alt_name?  Subject alt name: %(subject_alt_name)s\n)s"
+            "%(issuer?  Issuer\\: %(issuer)s\n)s"
+            "%(serial_number?  Serial number\\: %(serial_number)s\n)s"
+            "%(not_before?  Valid not before\\: %(not_before)s\n)s"
             "  Valid not after: %(not_after)s\n"),
     ("certificate_error",u"%[warning]Server certificate failed verification.\n\n"
         "%[info]The rejected certificate is:\n"
@@ -147,6 +151,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             "disconnect_delay":0.25,
             "autoconnect":False,
             "tls_enable":True,
+            "tls_verify":True,
             "tls_require":False,
             "keepalive": 15*60,
             "backup_config":False,
@@ -1383,7 +1388,10 @@ class Application(tls.TLSMixIn,jabber.Client):
                 try:
                     self.__logger.error(unicode(e))
                     if isinstance(e, pyxmpp.exceptions.TLSError):
-                        self.__logger.error(u"You may try disabling encryption: /set tls_enable false")
+                        self.__logger.error(
+                                u"You may try disabling encryption" 
+                                    "(/set tls_enable false) or certificate"
+                                    " verification (/set tls_verify false) ")
                     try:
                         self.stream.close()
                     except:

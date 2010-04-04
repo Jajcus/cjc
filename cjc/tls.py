@@ -19,6 +19,8 @@ import ui
 import threading
 import os
 import logging
+import subprocess
+
 from collections import namedtuple
 
 from cjc import common
@@ -55,12 +57,16 @@ class TLSMixIn:
                                                             .format(cacert_file))
                 else:
                     self.__logger.warning("tls_cert_file not set"
-                            " and system CA certificate list not found. Expect failure.")
+                            " and system CA certificate list not found."
+                            " Expect failure.")
+            else:
+                cacert_file = os.path.expanduser(cacert_file)
             self.tls_settings = pyxmpp.TLSSettings(
                     require = self.settings.get("tls_require"),
                     cert_file = self.settings.get("tls_cert_file"),
                     key_file = self.settings.get("tls_key_file"),
                     cacert_file = cacert_file,
+                    verify_peer = self.settings.get("tls_verify", True),
                     verify_callback = self.cert_verification_callback
                     )
 
@@ -79,21 +85,57 @@ class TLSMixIn:
         self.__logger.info("Encrypted connection to {0} established using" 
                             " {1}, {2} ({3} bits)".format(unicode(self.stream.peer),
                                         ssl_version, cipher, ssl_version, bits))
-        if not self.cert_verify_error:
+        verified = self.settings.get("tls_verify", True)
+        if verified and not self.cert_verify_error:
             return
         cert = tls.getpeercert()
         der_cert = tls.getpeercert(binary_form = True)
         if self.tls_is_cert_known(der_cert):
+            self.__logger.warning("Server certificate not verified,"
+                                    " but accepted as already known.")
             return
+        if not verified:
+            cert = self._decode_der_cert(der_cert)
+            ok = self.cert_verify_ask(cert,
+                                        "Certificate not verified")
+            if not ok:
+                self.disconnect()
+                return
         self.cert_remember_ask(cert, der_cert)
+    
+    @staticmethod
+    def _decode_der_cert(der_cert):
+        """Decode binary certifiacte with 'opessl x509' command."""
+        pipe = subprocess.Popen(["openssl", "x509", "-inform", "DER", "-noout",
+                                    "-issuer", "-subject", "-serial", "-dates"],
+                            stdin = subprocess.PIPE, stdout = subprocess. PIPE)
+        pipe.stdin.write(der_cert)
+        pipe.stdin.close()
+        result = {}
+        for line in pipe.stdout:
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            if key in ('serial', 'notBefore', 'notAfter'):
+                result[key] = value.strip()
+            elif key in ('issuer', 'subject'):
+                result[key + "_string"] = value.strip()
+        pipe.stdout.close()
+        rc = pipe.wait()
+        if rc:
+            self.__logger.debug("openssl x509 exited with {0}".format(rc))
+            return {}
+        return result
 
     @staticmethod
-    def _cert_subject(cert):
-        if "subject" not in cert:
+    def _cert_dn(cert, field):
+        if field + "_string" in cert:
+            return cert[field + "_string"]
+        if field not in cert:
             return None
         return ", ".join([
             ", ".join([u"{0}={1}".format(key, value) for key, value in rdn])
-                for rdn in cert["subject"]])
+                for rdn in cert[field]])
 
     @staticmethod
     def _cert_subject_alt_name(cert):
@@ -106,10 +148,10 @@ class TLSMixIn:
         buf = ui.TextBuffer({})
         p = {
             "who": self.tls_peer_name,
-            "subject": self._cert_subject(cert),
+            "subject": self._cert_dn(cert, "subject"),
             "subject_alt_name": self._cert_subject_alt_name(cert),
-            "issuer": "unknown",
-            "serial_number": "unknown",
+            "issuer": self._cert_dn(cert, "issuer"),
+            "serial_number": cert.get("serial"),
             "not_before": cert.get('notBefore'),
             "not_after": cert.get('notAfter'),
             "certificate": "certificate",
@@ -155,7 +197,7 @@ class TLSMixIn:
                 if not subject_name_valid:
                     self.status_buf.append_themed("tls_error_ignored",
                             {"errdesc": "Certificate subject name doesn't"
-                                                                " match server name"})
+                                                        " match server name"})
                     return True
             
             logger.debug("subject_name_valid=%r" % (subject_name_valid,))
@@ -198,12 +240,11 @@ class TLSMixIn:
         buf=ui.TextBuffer({})
         p={
             "depth": 0,
-            "errnum": 0,
             "errdesc": errdesc,
-            "subject": self._cert_subject(cert),
+            "subject": self._cert_dn(cert, "subject"),
             "subject_alt_name": self._cert_subject_alt_name(cert),
-            "issuer": "unknown",
-            "serial_number": "unknown",
+            "issuer": self._cert_dn(cert, "issuer"),
+            "serial_number": cert.get("serial"),
             "not_before": cert.get("notBefore"),
             "not_after": cert.get("notAfter"),
             "certificate": "certificate",
