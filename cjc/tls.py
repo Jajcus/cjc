@@ -91,7 +91,8 @@ class TLSMixIn:
         cert = tls.getpeercert()
         der_cert = tls.getpeercert(binary_form = True)
         if self.tls_is_cert_known(der_cert):
-            self.__logger.warning("Server certificate not verified,"
+            if not verified:
+                self.__logger.warning("Server certificate not verified,"
                                     " but accepted as already known.")
             return
         if not verified:
