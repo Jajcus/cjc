@@ -304,6 +304,7 @@ class TextInput(InputWidget):
         p=self.content.rfind(" ",0,self.pos)
         if p<=0:
             self.content=self.content[self.pos:]
+            self.pos = 0
         else:
             self.content=self.content[:p+1]+self.content[self.pos:]
             self.pos=p+1
