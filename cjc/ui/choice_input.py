@@ -75,10 +75,6 @@ class ChoiceInput(InputWidget):
             cjc_globals.screen.lock.release()
 
     def _keypressed(self,c,escape):
-        if c>255 or c<0:
-            cjc_globals.screen.beep()
-            return
-        c=chr(c)
         if self.is_printable(c):
             self.key_char(c)
         else:
@@ -140,7 +136,6 @@ class ChoiceInput(InputWidget):
             cjc_globals.screen.lock.release()
 
     def key_char(self,c):
-        c=unicode(c,cjc_globals.screen.encoding,"replace")
         if not self.string_choice and c in self.single_choice:
             return self.answer(c)
         if self.pos>=self.w-len(self.prompt)-2:
