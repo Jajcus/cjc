@@ -112,7 +112,7 @@ global_theme_formats=(
     ("keybinding",u"%[info]  %(key)-10s %(function)-20s %(description)s\n"),
     ("keyfunction",u"%[info]         %(function)-20s %(description)s\n"),
     ("certificate",u"  Subject: %(subject)s\n"
-            "%(subject_alt_name?  Subject alt name: %(subject_alt_name)s\n)s"
+            "%(subject_alt_name?  Subject alt name\\: %(subject_alt_name)s\n)s"
             "%(issuer?  Issuer\\: %(issuer)s\n)s"
             "%(serial_number?  Serial number\\: %(serial_number)s\n)s"
             "%(not_before?  Valid not before\\: %(not_before)s\n)s"
