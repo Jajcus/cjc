@@ -373,9 +373,11 @@ class Plugin(PluginBase):
                 self.error("Self presence subscription is automatic."
                         " Cannot group own JID in the roster.")
                 continue
-            item=self.cjc.roster.get_item_by_jid(user)
-            if not item:
-                self.error(u"You don't have %s in your roster" % (user.as_unicode(),))
+            try:
+                item = self.cjc.roster.get_item_by_jid(user)
+            except KeyError:
+                self.error(u"You don't have %s in your roster" 
+                                                    % (user.as_unicode(),))
                 continue
 
             if not groups and not groups_add and not groups_remove:
