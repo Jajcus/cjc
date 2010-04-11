@@ -36,7 +36,7 @@ class Plugin(PluginBase):
             self.error("No roster available.")
             return
 
-        roster_plugin = self.cjc.get_plugin("roster")
+        roster_plugin = self.cjc.plugins.get_service(Plugin, "roster")
 
         first_arg = args.get()
         if not first_arg:

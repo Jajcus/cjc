@@ -16,8 +16,88 @@
 
 import logging
 
-class PluginBase:
-    def __init__(self,cjc,name):
+from collections import Mapping
+from abc import ABCMeta, abstractmethod, abstractproperty
+
+class Plugin:
+    """Subclasses of `Plugin` will be instantiated when loading modules from
+    CJC plugin directories."""
+    __metaclass__ = ABCMeta
+    @property
+    def services(self):
+        """Collection of services provided by this plugin."""
+        return [self]
+    @abstractmethod
+    def unload(self):
+        """Unload the plugin if possible.
+
+        :Return: `True` on success, `False` if unload is not possible."""
+        pass
+
+class NamedService:
+    """Service registered with a name.
+
+    All services may be looked up in the plugin registry using a base class name. When 
+    a service is a subclass of `NamedService` it can also be looked up by class
+    and name."""
+    __metaclass__ = ABCMeta
+    @abstractproperty
+    def service_name(self):
+        """:Return: service name"""
+
+class Configurable:
+    """Configurable is a object with own settings."""
+    __metaclass__ = ABCMeta
+    @abstractproperty
+    def available_settings(self):
+        """A `Mapping` providing description of available settings."""
+        pass
+    @abstractproperty
+    def settings(self):
+        """A `Mapping` providing current values of available settings.  This
+        property should provide defaults when the class is instantiated."""
+        pass
+    @abstractproperty
+    def settings_namespace(self):
+        """Settings namespace string - the part used before '.' in the setting
+        name."""
+        pass
+
+class Archiver:
+    """Generic message/chat_event logging service."""
+    __metaclass__ = ABCMeta
+    @abstractmethod
+    def log_event(self, event_type, peer, direction = None, timestamp = None,
+                        subject = None, body = None, thread = None,
+                        **kwargs):
+        """Write an event record to a log or archive.
+
+        :Parameters:
+            - `event_type`: predefined possible values are: 'message', 'chat'
+              and 'muc'
+            - `peer`: full JID of the conversation peer or event source
+            - `direction`: 'in' for incoming messages, 'out' for outgoing
+            - `timestamp`: event timestamp
+            - `subject`: messages subject
+            - `body`: message body
+            - `thread`: message thread
+            - `kwargs`: extra keyword parameters for future use
+        :Types:
+            - `event_type`: `str`
+            - `peer`: `pyxmpp.jid.JID`
+            - `direction`: `str`
+            - `timestamp`: `datetime.datetime`
+            - `subject`: `unicode`
+            - `body`: `unicode`
+            - `thread`: `unicode`
+        """
+        pass
+
+class PluginBase(Plugin, Configurable):
+    """'Old-style' plugin base class"""
+    settings = None
+    available_settings = None
+    def __init__(self, cjc, name):
         """
         Initialize the plugin.
         """
@@ -51,5 +131,11 @@ class PluginBase:
         Called when a session is closed (the stream has been disconnected).
         """
         pass
+    @property
+    def services(self):
+        return [self]
+    @property
+    def settings_namespace(self):
+        return self.name
 
 # vi: sts=4 et sw=4

@@ -426,16 +426,10 @@ class Plugin(PluginBase):
         cjc_globals.theme_manager.set_default_attrs(theme_attrs)
         cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
-            "log_filename": ("Where messages should be logged to",(unicode,None)),
-            "log_format_in": ("Format of incoming message log entries",(unicode,None)),
-            "log_format_out": ("Format of outgoing message log entries",(unicode,None)),
             "default_nick": ("Default nickname. If not give then node part of JID will be used",(unicode,None)),
             "buffer_preference": ("Preference of groupchat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             }
         self.settings={
-                "log_filename": "%($HOME)s/.cjc/logs/chats/%(J:room:bare)s",
-                "log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
-                "log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "buffer_preference": 10,
                 "default_nick": None,
                 }
@@ -506,36 +500,6 @@ class Plugin(PluginBase):
         for room in self.room_manager.rooms.values():
             room.handler.buffer.append_themed("muc.day_change",{},activity_level=0)
             room.handler.buffer.update()
-
-    def log_message(self,dir,sender,recipient,subject,body,thread):
-        #FIXME
-        return
-        format=self.settings["log_format_"+dir]
-        filename=self.settings["log_filename"]
-        d={
-            "sender": sender,
-            "recipient": recipient,
-            "subject": subject,
-            "body": body,
-            "thread": thread
-            }
-        if dir=="in":
-            d["peer"]=sender
-        else:
-            d["peer"]=recipient
-        filename=cjc_globals.theme_manager.substitute(filename,d)
-        s=cjc_globals.theme_manager.substitute(format,d)
-        try:
-            dirname=os.path.split(filename)[0]
-            if dirname and not os.path.exists(dirname):
-                os.makedirs(dirname)
-            f=open(filename,"a")
-            try:
-                f.write(s.encode("utf-8","replace"))
-            finally:
-                f.close()
-        except (IOError,OSError),e:
-            self.error("Couldn't write chat log: "+str(e))
 
 ui.CommandTable("muc",50,(
     ui.Command("join",Plugin.cmd_join,

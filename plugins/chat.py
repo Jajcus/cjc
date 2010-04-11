@@ -21,7 +21,7 @@ import os
 import pyxmpp
 from pyxmpp.jabber import delay
 from cjc import ui
-from cjc.plugin import PluginBase
+from cjc.plugin import PluginBase, Archiver
 from cjc import common
 from cjc import cjc_globals
 
@@ -93,8 +93,11 @@ class Conversation:
             self.buffer.append_themed("error","Not connected")
             self.buffer.update()
             return 0
-        if self.plugin.settings.get("log_filename"):
-            self.plugin.log_message("out",self.me,self.peer,None,s,self.thread)
+
+        archivers = self.plugin.cjc.plugins.get_services(Archiver)
+        for archiver in archivers:
+            archiver.log_event("chat", self.peer, 'out', None, None, s, self.thread)
+
         m=pyxmpp.Message(to_jid=self.peer,stanza_type="chat",body=s,thread=self.thread)
         self.plugin.cjc.stream.send(m)
         self.add_sent(s)
@@ -174,16 +177,16 @@ class Plugin(PluginBase):
         cjc_globals.theme_manager.set_default_attrs(theme_attrs)
         cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
-            "log_filename": ("Where messages should be logged to",(str,None)),
-            "log_format_in": ("Format of incoming message log entries",(str,None)),
-            "log_format_out": ("Format of outgoing message log entries",(str,None)),
+#            "log_filename": ("Where messages should be logged to",(str,None)),
+#            "log_format_in": ("Format of incoming message log entries",(str,None)),
+#            "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of chat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             "auto_popup": ("When enabled each new chat buffer is automatically made active.",bool),
             }
         self.settings={
-                "log_filename": "%($HOME)s/.cjc/logs/chats/%(J:peer:bare)s",
-                "log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
-                "log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
+#                "log_filename": "%($HOME)s/.cjc/logs/chats/%(J:peer:bare)s",
+#                "log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
+#                "log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "buffer_preference": 100,
                 "auto_popup": False,
                 }
@@ -279,8 +282,10 @@ class Plugin(PluginBase):
             timestamp=d.get_datetime_local()
         else:
             timestamp=None
-        if self.settings.get("log_filename"):
-            self.log_message("in",fr,self.cjc.jid,subject,body,thread,timestamp)
+
+        archivers = self.cjc.plugins.get_services(Archiver)
+        for archiver in archivers:
+            archiver.log_event("chat", fr, 'in', timestamp, subject, body, thread)
 
         key=fr.bare().as_unicode()
         conv=None
@@ -316,35 +321,6 @@ class Plugin(PluginBase):
         conv.add_received(body,timestamp)
         return 1
 
-    def log_message(self,dir,sender,recipient,subject,body,thread,timestamp=None):
-        format=self.settings["log_format_"+dir]
-        filename=self.settings["log_filename"]
-        d={
-            "sender": sender,
-            "recipient": recipient,
-            "subject": subject,
-            "body": body,
-            "thread": thread
-            }
-        if timestamp:
-            d["timestamp"]=timestamp
-        if dir=="in":
-            d["peer"]=sender
-        else:
-            d["peer"]=recipient
-        filename=cjc_globals.theme_manager.substitute(filename,d)
-        s=cjc_globals.theme_manager.substitute(format,d)
-        try:
-            dirname=os.path.split(filename)[0]
-            if dirname and not os.path.exists(dirname):
-                os.makedirs(dirname)
-            f=open(filename,"a")
-            try:
-                f.write(s.encode("utf-8","replace"))
-            finally:
-                f.close()
-        except (IOError,OSError),e:
-            self.error("Couldn't write chat log: "+str(e))
 
 ui.CommandTable("chat",51,(
     ui.Command("chat",Plugin.cmd_chat,

@@ -74,9 +74,9 @@ class SettingCompletion(ui.Completion):
     def complete(self,word):
         self.__logger.debug("SettingCompletion.complete(self,%r)" % (word,))
         if "." in word:
-            return self.complete_plugin(word)
+            return self.complete_namespace(word)
         matches=[]
-        for p in self.app.plugins.keys():
+        for p in self.app.plugins.setting_namespaces:
             if p.startswith(word):
                 matches.append([p+".",0])
         for s in self.app.available_settings.keys():
@@ -84,19 +84,20 @@ class SettingCompletion(ui.Completion):
                 matches.append([s,1])
         self.__logger.debug("word=%r matches=%r" % (word,matches))
         return self.make_result("",word,matches)
-    def complete_plugin(self,word):
+    def complete_namespace(self, word):
         if word.startswith("."):
-            obj=self.app
-            head="."
-            word=word[1:]
+            obj = self.app
+            head = "."
+            word = word[1:]
         else:
-            d=word.find(".")
-            plugin=word[0:d]
-            if not self.app.plugins.has_key(plugin):
-                return "",[]
-            obj=self.app.plugins[plugin]
-            head=plugin+"."
-            word=word[d+1:]
+            d = word.find(".")
+            namespace = word[0:d]
+            try:
+                obj = self.app.plugins.get_configurable(namespace)
+            except KeyError:
+                return "", []
+            head = namespace + "."
+            word = word[d + 1:]
         matches=[]
         for s in obj.available_settings.keys():
             if s.startswith(word) and s not in matches:

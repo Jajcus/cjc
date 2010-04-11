@@ -21,7 +21,7 @@ import re
 import pyxmpp
 import pyxmpp.roster
 
-from cjc.plugin import PluginBase
+from cjc.plugin import PluginBase, NamedService
 from cjc.ui import ListBuffer,ListBufferError
 from cjc import common
 from cjc import ui
@@ -53,7 +53,8 @@ theme_formats=(
 VG_ME=1
 VG_UNKNOWN=2
 
-class Plugin(PluginBase):
+class Plugin(PluginBase, NamedService):
+    service_name = "roster"
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
         self.available_settings={

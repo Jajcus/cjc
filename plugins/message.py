@@ -23,7 +23,7 @@ import re
 
 import pyxmpp
 from cjc import ui
-from cjc.plugin import PluginBase
+from cjc.plugin import PluginBase, Archiver
 from cjc import common
 from cjc import cjc_globals
 from pyxmpp.jabber import delay
@@ -385,9 +385,6 @@ class Plugin(PluginBase):
             "buffer": ("How received messages should be put in buffers"
                     " (single|separate|per-user|per-thread)",
                     ("single","separate","per-user","per-thread")),
-            "log_filename": ("Where messages should be logged to",(str,None)),
-            "log_format_in": ("Format of incoming message log entries",(str,None)),
-            "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of message buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             "auto_popup": ("When enabled each new message buffer is automatically made active.",bool),
             "editor": ("Editor for message composition. Default: global 'editor' option, $EDITOR or 'vi'",str),
@@ -395,13 +392,6 @@ class Plugin(PluginBase):
             }
         self.settings={
                 "buffer":"per-user",
-                "log_filename": u"%($HOME)s/.cjc/logs/messages/%(J:peer:bare)s",
-                "log_format_in": u"[%(T:now:%c)s] Incoming message\n"
-                        "From: %(sender)s\n"
-                        "Subject: %(subject)s\n%(body)s\n",
-                "log_format_out": u"[%(T:now:%c)s] Outgoing message\n"
-                        "To: %(recipient)s\n"
-                        "Subject: %(subject)s\n%(body)s\n",
                 "buffer_preference": 50,
                 "auto_popup": False,
                 }
@@ -452,8 +442,11 @@ class Plugin(PluginBase):
         self.cjc.stream.send(m)
         if buff is None:
             buff=self.find_or_make(recipient,thread)
-        if self.settings.get("log_filename"):
-            self.log_message("out",self.cjc.jid,recipient,subject,body,thread)
+
+        archivers = self.cjc.plugins.get_services(Archiver)
+        for archiver in archivers:
+            archiver.log_event("message", recipient, 'out', None, subject, body, thread)
+
         buff.add_sent(recipient,subject,body,thread)
 
     def ev_presence_changed(self,event,arg):
@@ -553,42 +546,15 @@ class Plugin(PluginBase):
             timestamp=d.get_datetime_local()
         else:
             timestamp=None
-        if self.settings.get("log_filename"):
-            self.log_message("in",fr,self.cjc.jid,subject,body,thread,timestamp)
+
+        archivers = self.cjc.plugins.get_services(Archiver)
+        for archiver in archivers:
+            archiver.log_event("message", fr, 'in', timestamp, subject, body, thread)
+
         buff=self.find_or_make(fr,thread)
         self.cjc.send_event("message received",body)
         buff.add_received(fr,subject,body,thread,timestamp)
         return 1
-
-    def log_message(self,dir,sender,recipient,subject,body,thread,timestamp=None):
-        format=self.settings["log_format_"+dir]
-        filename=self.settings["log_filename"]
-        d={
-            "sender": sender,
-            "recipient": recipient,
-            "subject": subject,
-            "body": body,
-            "thread": thread
-            }
-        if dir=="in":
-            d["peer"]=sender
-        else:
-            d["peer"]=recipient
-        if timestamp:
-            d["timestamp"]=timestamp
-        filename=cjc_globals.theme_manager.substitute(filename,d)
-        s=cjc_globals.theme_manager.substitute(format,d)
-        try:
-            dirname=os.path.split(filename)[0]
-            if dirname and not os.path.exists(dirname):
-                os.makedirs(dirname)
-            f=open(filename,"a")
-            try:
-                f.write(s.encode("utf-8","replace"))
-            finally:
-                f.close()
-        except (IOError,OSError),e:
-            self.error(u"Couldn't write message log: "+unicode(e))
 
 ui.CommandTable("message",50,(
     ui.Command("message",Plugin.cmd_message,

@@ -50,6 +50,8 @@ from cjc import common
 from cjc import tls
 from cjc import completions
 from cjc import cjc_globals
+from cjc.plugins import PluginContainer
+from cjc.plugin import PluginBase, Configurable
 
 class Exit(Exception):
     pass
@@ -133,11 +135,13 @@ global_theme_formats=(
 
 
 class Application(tls.TLSMixIn,jabber.Client):
+    instance = None
     def __init__(self, base_dir, config_file = "default", theme_file = "theme", 
             home_dir = None, profile = False):
         if cjc_globals.application is not None:
             raise "An Application instance already present"
         cjc_globals.application = self
+        Application.instance = self
         self.profile=profile
         tls.TLSMixIn.__init__(self)
         jabber.Client.__init__(self, disco_name="CJC", disco_type="console")
@@ -170,10 +174,8 @@ class Application(tls.TLSMixIn,jabber.Client):
         else:
             home=os.environ.get("HOME","")
             self.home_dir=os.path.join(home,".cjc")
-        self.plugin_dirs=[os.path.join(base_dir,"plugins"),
-                    os.path.join(self.home_dir,"plugins")]
-        self.plugins={}
-        self.plugin_modules={}
+        self.plugins = PluginContainer([os.path.join(base_dir,"plugins"),
+                    os.path.join(self.home_dir,"plugins")])
         self.event_handlers={}
         self.user_info={}
         self.info_handlers={}
@@ -194,111 +196,6 @@ class Application(tls.TLSMixIn,jabber.Client):
         completions.SettingCompletion(self).register("setting")
         completions.UserCompletion(self).register("user")
         completions.CommandCompletion(self).register("command")
-
-    def _load_plugin(self,name):
-        try:
-            mod=self.plugin_modules.get(name)
-            if mod:
-                mod=reload(mod)
-            else:
-                mod=__import__(name)
-            plugin=mod.Plugin(self,name)
-            plugin.module=mod
-            plugin.sys_path=sys.path
-            self.plugins[name]=plugin
-            self.plugin_modules[name]=mod
-        except:
-            self.__logger.exception("Exception:")
-            self.__logger.info("Plugin load failed")
-
-    def load_plugin(self,name):
-        sys_path=sys.path
-        try:
-            for path in self.plugin_dirs:
-                sys.path=[path]+sys_path
-                f=os.path.join(path,name+".py")
-                if not os.path.exists(f):
-                    continue
-                if self.plugins.has_key(name):
-                    self.__logger.error("Plugin %s already loaded!" % (name,))
-                    return
-                self.__logger.info("Loading plugin %s..." % (name,))
-                self._load_plugin(name)
-                return
-            self.__logger.error("Couldn't find plugin %s" % (name,))
-        finally:
-            sys.path=sys_path
-
-    def unload_plugin(self,name):
-        try:
-            plugin=self.plugins[name]
-        except KeyError:
-            self.__logger.error("Plugin %s is not loaded" % (name,))
-            return False
-        self.__logger.info("Unloading plugin %s..." % (name,))
-        try:
-            r=plugin.unload()
-        except:
-            self.__logger.exception("Exception:")
-            r=None
-        if not r:
-            self.__logger.error("Plugin %s cannot be unloaded" % (name,))
-            return False
-        del self.plugins[name]
-        return True
-
-    def reload_plugin(self,name):
-        try:
-            plugin=self.plugins[name]
-        except KeyError:
-            self.__logger.error("Plugin %s is not loaded" % (name,))
-            return False
-        self.__logger.info("Reloading plugin %s..." % (name,))
-        try:
-            r=plugin.unload()
-        except:
-            self.__logger.exception("Exception:")
-            r=None
-        if not r:
-            self.__logger.error("Plugin %s cannot be reloaded" % (name,))
-            return False
-        sys_path=sys.path
-        sys.path=plugin.sys_path
-        try:
-            mod=reload(plugin.module)
-            plugin=mod.Plugin(self,name)
-            plugin.module=mod
-            self.plugins[name]=plugin
-        except:
-            self.__logger.exception("Exception:")
-            self.__logger.info("Plugin load failed")
-            del self.plugins[name]
-        sys.path=sys_path
-
-    def load_plugins(self):
-        sys_path=sys.path
-        try:
-            for path in self.plugin_dirs:
-                sys.path=[path]+sys_path
-                try:
-                    d=os.listdir(path)
-                except (OSError,IOError),e:
-                    self.__logger.debug("Couldn't get plugin list: %s" % (e,))
-                    self.__logger.info("Skipping plugin directory %s" % (path,))
-                    continue
-                self.__logger.info("Loading plugins from %s:" % (path,))
-                for f in d:
-                    if f[0]=="." or not f.endswith(".py"):
-                        continue
-                    name=os.path.join(f[:-3])
-                    if not self.plugins.has_key(name):
-                        self.__logger.info("  %s" % (name,))
-                        self._load_plugin(name)
-        finally:
-            sys.path=sys_path
-
-    def get_plugin(self,name):
-        return self.plugins[name]
 
     def add_event_handler(self,event,handler):
         self.lock.acquire()
@@ -489,7 +386,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         logger.addHandler(self.log_hdlr)
         libxml2.registerErrorHandler(self.xml_error_handler,None)
 
-        self.load_plugins()
+        self.plugins.load_plugins()
         self.load()
         if not self.settings["jid"]:
             self.__logger.info("")
@@ -550,7 +447,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.send_event("stream created",stream)
 
     def session_started(self):
-        for p in self.plugins.values():
+        for p in self.plugins.get_services(PluginBase):
             try:
                 p.session_started(self.stream)
             except:
@@ -767,16 +664,16 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.lock.release()
         self.disconnected()
 
-    def cmd_set(self,args):
+    def cmd_set(self, args, keep_unknown = False):
         #self.__logger.debug("args: "+`args.args`)
         fvar=args.shift()
         #self.__logger.debug("fvar: "+`fvar`+" args:"+`args.args`)
         if not fvar:
-            for plugin in [None]+self.plugins.keys():
-                if plugin is None:
-                    obj=self
+            for configurable in [None] + self.plugins.get_configurables():
+                if configurable is None:
+                    obj = self
                 else:
-                    obj=self.plugins[plugin]
+                    obj = configurable
                 for var in obj.available_settings:
                     sdef=obj.available_settings[var]
                     if len(sdef)<3:
@@ -787,8 +684,8 @@ class Application(tls.TLSMixIn,jabber.Client):
                     val=obj.settings.get(var)
                     if var=="password" and val is not None:
                         val=len(val) * '*'
-                    if plugin is not None:
-                        var="%s.%s" % (plugin,var)
+                    if configurable is not None:
+                        var="%s.%s" % (configurable.settings_namespace, var)
                     if val is None:
                         self.__logger.info("%s is not set" % (var,))
                         continue
@@ -807,12 +704,18 @@ class Application(tls.TLSMixIn,jabber.Client):
         args.finish()
 
         if "." in fvar:
-            plugin,var=fvar.split(".",1)
+            namespace, var = fvar.split(".",1)
             try:
-                obj=self.plugins[plugin]
-            except KeyError:
-                self.__logger.error("Unknown category: "+plugin)
-                return
+                obj = self.plugins.get_configurable(namespace)
+            except KeyError, err:
+                self.__logger.debug(err)
+                if keep_unknown:
+                    self.__logger.warning("Unknown category: " + namespace)
+                    obj = self
+                    var = fvar
+                else:
+                    self.__logger.error("Unknown category: " + namespace)
+                    return
         elif fvar[0]==".":
             obj=self
             var=fvar[1:]
@@ -828,7 +731,12 @@ class Application(tls.TLSMixIn,jabber.Client):
                 sdef=nsdef
             descr,typ,handler=sdef
         except KeyError:
-            self.__logger.error("Unknown setting: "+fvar)
+            if keep_unknown and val is not None:
+                self.settings[fvar] = val
+                if "." not in var:
+                    self.__logger.warning("Unknown setting: "+fvar)
+            else:
+                self.__logger.error("Unknown setting: "+fvar)
             return
 
         if val is None:
@@ -912,12 +820,16 @@ class Application(tls.TLSMixIn,jabber.Client):
             return self.cmd_set(args)
 
         if "." in fvar:
-            plugin,var=fvar.split(".",1)
+            namespace, var = fvar.split(".", 1)
             try:
-                obj=self.plugins[plugin]
+                obj = self.plugins.get_configurable(namespace)
             except KeyError:
-                self.__logger.error("Unknown category: "+plugin)
-                return
+                if fvar in self.settings:
+                    obj = self
+                    var = fvar
+                else:
+                    self.__logger.error("Unknown category: " + namespace)
+                    return
         else:
             obj=self
             var=fvar
@@ -925,7 +837,12 @@ class Application(tls.TLSMixIn,jabber.Client):
         try:
             descr,typ=obj.available_settings[var][:2]
         except KeyError:
-            self.__logger.error("Unknown setting: "+fvar)
+            if var in obj.settings:
+                del obj.settings[var]
+            elif fvar in self.settings:
+                del self.settings[fvar]
+            else:
+                self.__logger.error("Unknown setting: "+fvar)
             return
 
         if typ is None:
@@ -1014,18 +931,18 @@ class Application(tls.TLSMixIn,jabber.Client):
             return 0
         os.chmod(tmpfilename, 0600);
 
-        for plugin in [None]+self.plugins.keys():
-            if plugin is None:
-                obj=self
+        for configurable in [None] + self.plugins.get_configurables():
+            if configurable is None:
+                obj = self
             else:
-                obj=self.plugins[plugin]
+                obj = configurable
             for var in obj.available_settings:
                 descr,typ=obj.available_settings[var][:2]
                 val=obj.settings.get(var)
                 if val is None:
                     continue
-                if plugin is not None:
-                    var="%s.%s" % (plugin,var)
+                if configurable is not None:
+                    var="%s.%s" % (configurable.settings_namespace, var)
                 args=ui.CommandArgs(var)
                 if type(typ) is tuple:
                     typ=typ[0]
@@ -1107,7 +1024,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                 elif cmd=="set":
                     args.shift()
                     self.__logger.debug("set %r" % (args.args,))
-                    self.cmd_set(args)
+                    self.cmd_set(args, keep_unknown = True)
                 elif cmd=="bind":
                     args.shift()
                     self.__logger.debug("bind %r" % (args.args,))
@@ -1118,7 +1035,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                     self.cmd_unbind(args)
                 else:
                     self.__logger.debug("set %r" % (args.args,))
-                    self.cmd_set(args)
+                    self.cmd_set(args, keep_unknown = True)
             except (ValueError,UnicodeError):
                 self.__logger.warning(
                     "Invalid config directive %r ignored" % (l,))
@@ -1245,7 +1162,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         if not name:
             self.__logger.error("Plugin name missing.")
             return
-        self.load_plugin(name)
+        self.plugins.load_plugin(name)
 
     def cmd_unload_plugin(self,args):
         name=args.shift()
@@ -1253,7 +1170,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         if not name:
             self.__logger.error("Plugin name missing.")
             return
-        self.unload_plugin(name)
+        self.plugins.unload_plugin(name)
 
     def cmd_reload_plugin(self,args):
         name=args.shift()
@@ -1261,7 +1178,7 @@ class Application(tls.TLSMixIn,jabber.Client):
         if not name:
             self.__logger.error("Plugin name missing.")
             return
-        self.reload_plugin(name)
+        self.plugins.reload_plugin(name)
 
     def format_keytables(self,attr,params):
         r=[]
