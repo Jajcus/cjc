@@ -221,7 +221,7 @@ def keyname_to_code(name):
     if name.upper()== u"SPACE":
         return u' ',meta
     if name.upper()== u"ESCAPE":
-        return u'\e',meta
+        return u'\x1b',meta
     if len(name)==2 and name[0] == u"^":
         if name[1] == u"?":
             return u'\x7f', meta
@@ -386,7 +386,7 @@ def keypressed():
         if meta:
             meta=0
             try:
-                process_key('\e')
+                process_key('\x1b')
             except common.non_errors:
                 raise
             except:
