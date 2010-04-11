@@ -93,6 +93,71 @@ class Archiver:
         """
         pass
 
+class ArchiveRecord:
+    """Message archive record."""
+    __metaclass__ = ABCMeta
+    @abstractproperty
+    def event_type(self):
+        "Event type"
+        pass
+    @abstractproperty
+    def peer(self):
+        "Conversation peer"
+        pass
+    @abstractproperty
+    def direction(self):
+        "'in', 'out' or None"
+        pass
+    @abstractproperty
+    def timestamp(self):
+        "Event timestamp"
+        pass
+    @abstractproperty
+    def subject(self):
+        "Message subject"
+        pass
+    @abstractproperty
+    def body(self):
+        "Message body"
+        pass
+    @abstractproperty
+    def thread(self):
+        "Message thread"
+        pass
+
+class Archive:
+    """Archive access and manipulation service."""
+    __metaclass__ = ABCMeta
+    @abstractmethod
+    def get_records(self, event_type = None, peer = None,
+            older_than = None, newer_than = None, limit = None,
+                                                        *kwargs):
+        """Get records from archive.
+
+        :Parameters:
+            - `event_type`: predefined possible values are: 'message', 'chat'
+              and 'muc'
+            - `peer`: conversation peer
+            - `older_than`: return records older than this timestamp or archive
+              id
+            - `newer_than`: return recorse newer than this timestamp or archive
+              id
+            - `limit`: return up to that many most recent entries matching the
+              query
+            - `kwargs`: more archive record properties may be specified 
+              as extra keyword arguments to limit the query, thogh it may
+              be not supported by the archive service.
+        :Types:
+            - `event_type`: `str`
+            - `peer`: `pyxmpp.jid.JID`
+            - `older_than`: `datetime.datetime` or opaque identifier
+            - `newer_than`: `datetime.datetime` or opaque identifier
+            - `limit`: `int`
+
+        :Returns: archive entries matching the specified critetia.
+        :Returntype: `collections.Iterable` of (archive_id, `ArchiveRecord`) 
+            typles."""
+
 class PluginBase(Plugin, Configurable):
     """'Old-style' plugin base class"""
     settings = None
