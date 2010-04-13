@@ -14,308 +14,499 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-import logging
-from types import StringType,IntType,UnicodeType
+"""
+Buffer for rich text content.
+"""
 
-from cjc.ui.buffer import Buffer
-from cjc import common
-from cjc.ui import keytable
-from cjc import cjc_globals
+from __future__ import absolute_import
+
+import collections
+
+from .buffer import Buffer
+from . import keytable
+from .. import cjc_globals
+
+BufferPosition = collections.namedtuple("BufferPosition", "l c")
 
 class TextBuffer(Buffer):
+    """A scrolable container for a formatted text.
+
+    `TextBuffer` contains a list of 'lines'. Each line is a list
+    of (attribute, string) tuples. 
+    
+    `TextBuffer` class is responsible for keeping track of the visible part of
+    the text and writting it to a `curses` window.
+    
+    :Ivariables:
+        - `lines`: the buffer content
+        - `pos`: current position in the buffer of the window top-left corner.
+          `None` means the window will follow the end of the buffer.
+    :Types:
+        - `lines`: `list`
+        - `pos`: `BufferPosition`
+    """
     default_length = 200
     def __init__(self, info, descr_format = "default_buffer_descr",
-                command_table = None, command_table_object = None, length = None):
-        Buffer.__init__(self,info,descr_format,command_table,command_table_object)
+                command_table = None, command_table_object = None,
+                                                        length = None):
+        """
+        :Parameters:
+            - `info`: buffer metadata. E.g. as used in the buffer description
+              vi `descr_format`
+            - `descr_format`: name of the theme format for creating buffer
+              description
+            - `command_table`: name of the command table to be active with this
+              buffer.
+            - `command_table_object`: subject of the commands from the selected
+              `command_table`
+            - `length`: maximum length of the buffer
+        :Types:
+            - `info`: `dict`
+            - `descr_format`: `str`
+            - `command_table`: `str`
+            - `length`: `int`
+        """
+        Buffer.__init__(self, info, descr_format, command_table,
+                                                    command_table_object)
         if length:
             self.length = length
         else:
             self.length = self.default_length
-        self.lines=[]
-        self.pos=None
+        self.lines = []
+        self.pos = None
         self.update_pos()
 
-    def set_window(self,win):
-        Buffer.set_window(self,win)
+    def set_window(self, win):
+        """Map the buffer into a window."""
+        Buffer.set_window(self, win)
         if win:
-            keytable.activate("text-buffer",self)
+            keytable.activate("text-buffer", self)
         else:
-            keytable.deactivate("text-buffer",self)
+            keytable.deactivate("text-buffer", self)
 
-    def append(self,s,attr="default",activity_level=1):
-        self.lock.acquire()
-        try:
-            return self._append(s,attr,activity_level)
-        finally:
-            self.lock.release()
+    def append(self, text, attr = "default", activity_level = 1):
+        """Add some text to the buffer.
+        
+        :Parameters:
+            - `text`: the text
+            - `attr`: attribute (color) of the string
+            - `activity_level`: 'importance level' of the action
+        :Types:
+            - `text`: `unicode`
+            - `attr`: `str` or `int`
+            - `activity_level`: `int`
+        """
+        with self.lock:
+            return self._append(text, attr, activity_level)
 
-    def _append(self,s,attr,activity_level=1):
-        if attr is not None and type(attr) is not IntType:
-            attr=cjc_globals.theme_manager.attrs[attr]
+    def _append(self, text, attr, activity_level = 1):
+        """Add some text to the buffer.
+
+        This one, as opposed to `self.append` assummes `self.lock`
+        is already acquired.
+        
+        :Parameters:
+            - `text`: the text
+            - `attr`: attribute (color) of the string
+            - `activity_level`: 'importance level' of the action
+        :Types:
+            - `text`: `unicode`
+            - `attr`: `str` or `int`
+            - `activity_level`: `int`
+
+        """
+        if attr is not None and not isinstance(attr, int):
+            attr = cjc_globals.theme_manager.attrs[attr]
         if not self.lines:
-            self.lines=[[]]
-        elif self.lines[-1]==[] and self.window and self.pos is None:
+            self.lines = [[]]
+        elif self.lines[-1] == [] and self.window and self.pos is None:
             self.window.nl()
-        newl=0
-        s=s.split(u"\n")
-        ln=len(s)
-        for i in range(0,ln):
-            l=s[i]
-            if newl:
-                if i<ln-1 and self.window and self.pos is None:
+        lines = text.split(u"\n")
+        num_lines = len(lines)
+        for i, line in enumerate(lines):
+            if i:
+                if i < (num_lines - 1) and self.window and self.pos is None:
                     self.window.nl()
                 self.lines.append([])
-            if l:
-                self.lines[-1].append((attr,l))
+            if line:
+                self.lines[-1].append( (attr, line) )
                 if self.window and self.pos is None:
-                    y,x=self.window.win.getyx()
-                    while l:
-                        if x+len(l)>self.window.iw:
-                            p,l=self.split_text(l,self.window.iw-x)
+                    win_y, win_x = self.window.win.getyx()
+                    while line:
+                        if win_x + len(line) > self.window.iw:
+                            current, line = self._split_text(line,
+                                                        self.window.iw - win_x)
                         else:
-                            p,l=l,None
-                        self.window.write(p,attr)
-                        x+=len(p)
-                        if x>=self.window.iw:
-                            x=0
-                            y+=1
-                            if y>=self.window.ih:
-                                y=self.window.ih-1
+                            current, line = line, None
+                        self.window.write(current, attr)
+                        win_x += len(current)
+                        if win_x >= self.window.iw:
+                            win_x = 0
+                            win_y += 1
+                            if win_y >= self.window.ih:
+                                win_y = self.window.ih - 1
                     else:
-                        self.window.write(l,attr)
-            newl=1
-        l=len(self.lines)
-        if l>self.length and self.pos is None:
-            self.lines=self.lines[-self.length:]
+                        self.window.write(line, attr)
+        if len(self.lines) > self.length and self.pos is None:
+            self.lines = self.lines[-self.length:]
         if not self.window or self.pos is not None and activity_level:
             self.activity(activity_level)
 
-    def append_line(self,s,attr="default",activity_level=1):
+    def append_line(self, text, attr="default", activity_level = 1):
+        """Append a line to the buffer.
+        
+        :Parameters:
+            - `text`: the line of text (with no EOL character)
+            - `attr`: attribute (color) of the string
+            - `activity_level`: 'importance level' of the action
+        :Types:
+            - `text`: `unicode`
+            - `attr`: `str` or `int`
+            - `activity_level`: `int`
+        """
+        with self.lock:
+            return self._append_line(text, attr, activity_level)
+
+    def _append_line(self, text, attr, activity_level = 1):
+        """Append a line to the buffer.
+        
+        This one, as opposed to `self.append_line` assummes `self.lock` is
+        already acquired.
+
+        :Parameters:
+            - `text`: the line of text (with no EOL character)
+            - `attr`: attribute (color) of the string
+            - `activity_level`: 'importance level' of the action
+        :Types:
+            - `text`: `unicode`
+            - `attr`: `str` or `int`
+            - `activity_level`: `int`
+        """
+        if not isinstance(attr, int):
+            attr = cjc_globals.theme_manager.attrs[attr]
+        self._append(text + u"\n", attr, activity_level)
+
+    def append_themed(self, theme_fmt, params, activity_level = 1):
+        """Add a message formatted via a CJC theme to the buffer.
+
+        :Parameters:
+            - `theme_fmt`: name of the theme format to use
+            - `params`: message data
+            - `activity_level`: 'importance level' of the action
+        :Types:
+            - `theme_fmt`: `str`
+            - `params`: mapping
+            - `activity_level`: `int`
+        """
+        for attr, text in cjc_globals.theme_manager.format_string(
+                                                            theme_fmt, params):
+            self.append(text, attr, activity_level)
+
+    def write(self, text):
+        """Write a text to the buffer using default attributes.
+
+        :Parameters:
+            - `text`: the text to write
+        :Types:
+            - `text`: `unicode`"""
         self.lock.acquire()
         try:
-            return self._append_line(s,attr,activity_level)
-        finally:
-            self.lock.release()
-
-    def _append_line(self,s,attr,activity_level=1):
-        if type(attr) is not IntType:
-            attr=cjc_globals.theme_manager.attrs[attr]
-        self._append(s+u"\n",attr,activity_level)
-
-    def append_themed(self,format,params,activity_level=1):
-        for attr,s in cjc_globals.theme_manager.format_string(format,params):
-            self.append(s,attr,activity_level)
-
-    def write(self,s):
-        self.lock.acquire()
-        try:
-            self._append(s,"default")
+            self._append(text, "default")
             self.update()
         finally:
             self.lock.release()
 
     def clear(self):
-        self.lock.acquire()
-        try:
-            self.pos=None
-            self.lines=[[]]
+        """Clear the buffer."""
+        with self.lock:
+            self.pos = None
+            self.lines = [[]]
             if self.window:
                 self.window.clear()
-        finally:
-            self.lock.release()
 
-    def line_length(self,line):
-        ret=0
-        for attr,s in line:
-            ret+=len(s)
+    @staticmethod
+    def _line_length(line):
+        """Compute the length of a buffer line.
+
+        :Parameters:
+            - `line`: a line from the buffer
+        :Types:
+            - `line`: a list of (attribute, text) tuples.
+
+        :Returns: length of the line in characters
+        """
+        ret = 0
+        for dummy, text in line:
+            ret += len(text)
         return ret
 
-    def offset_back(self,width,back,l=None,c=0):
+    def offset_back(self, width, back, pos = None):
+        """Compute a position (buffer line, character in the line) in the
+        buffer `back` 'screen lines' up from postition `pos`.
+        
+        :Parameters:
+            - `width`: window width ('screen line' width)
+            - `back`: number of screen lines
+            - `pos`: start position. `None` for the end of the buffer.
+        :Types:
+            - `width`: `int`
+            - `back`: `int`
+            - `pos`: `BufferPosition`
+
+        :Returns: the computed position
+        :Returntype: `BufferPosition`
+        """
+        # FIXME: what about pos.c
         if not self.lines:
-            return 0,0
-        if l is None or l>=len(self.lines):
-            if self.lines[-1]==[]:
-                l=len(self.lines)-1
+            return BufferPosition(0, 0)
+        if pos is None or pos.l >= len(self.lines):
+            if self.lines[-1] == []:
+                pos_l = len(self.lines) - 1
             else:
-                l=len(self.lines)
-            if l<=0:
-                return 0,0
-        while back>0 and l>1:
-            l-=1
-            line=self.lines[l]
-            ln=self.line_length(line)
-            h=ln/width+1
-            back-=h
-        if back>0:
-            return 0,0
-        if back==0:
-            return l,0
-        return l,(-back)*width
-
-    def offset_forward(self,width,forward,l=0,c=0):
-        if l>=len(self.lines):
-            l=len(self.lines)-1
-            if self.lines[-1]==[]:
-                l-=1
-            if l>0:
-                return l,0
-            else:
-                return 0,0
-
-        if c>0:
-            left,right=self.split_text(self.lines[l],c)
-            l+=1
-            ln=self.line_length(right)
-            forward-=ln/width+1
-
-        end=len(self.lines)
-        if self.lines[-1]==[]:
-            end-=1
-
-        l-=1
-        while forward>0 and l<end-1:
-            l+=1
-            line=self.lines[l]
-            ln=self.line_length(line)
-            h=ln/width+1
-            forward-=h
-
-        if forward>=0:
-            return l,0
-
-        if l>0:
-            return l-1,0
+                pos_l = len(self.lines)
+            if pos_l <= 0:
+                return 0, 0
         else:
-            return 0,0
+            pos_l = pos.l
+        while back > 0 and pos_l > 1:
+            pos_l -= 1
+            line = self.lines[pos_l]
+            line_len = self._line_length(line)
+            line_height = line_len / width + 1
+            back -= line_height
+        if back > 0:
+            return BufferPosition(0, 0)
+        if back == 0:
+            return BufferPosition(pos_l, 0)
+        return BufferPosition(pos_l, (-back) * width)
 
-    def split_text(self,s,n,allow_all=0):
-        return s[:n],s[n:]
+    def offset_forward(self, width, forward, pos):
+        """Compute a position (buffer line, character in the line) in the
+        buffer `forward` 'screen lines' down from postition `pos`.
+        
+        :Parameters:
+            - `width`: window width ('screen line' width)
+            - `forward`: number of screen lines
+            - `pos`: start position. `None` for the end of the buffer.
+        :Types:
+            - `width`: `int`
+            - `forward`: `int`
+            - `pos`: `BufferPosition`
 
-    def cut_line(self,line,cut):
-        i=0
-        left=[]
-        right=[]
-        for attr,s in line:
-            l=len(s)
-            i1=i
-            i+=l
-            if i<cut:
-                left.append((attr,s))
-            elif i1<cut and i>cut:
-                left.append((attr,s[:cut-i]))
-                right.append((attr,s[cut-i:]))
+        :Returns: the computed position
+        :Returntype: `BufferPosition`
+        """
+        if pos is None:
+            return pos
+
+        if pos.l >= len(self.lines):
+            pos_l = len(self.lines) - 1
+            if self.lines[-1] == []:
+                pos_l -= 1
+            if pos_l > 0:
+                return BufferPosition(pos_l, 0)
             else:
-                right.append((attr,s))
-        return left,right
+                return BufferPosition(0, 0)
+        else:
+            pos_l = pos.l
 
-    def format(self,width,height):
-        self.lock.acquire()
-        try:
-            return self._format(width,height)
-        finally:
-            self.lock.release()
+        if pos.c > 0:
+            right = self._split_text(self.lines[pos_l], pos.c)[1]
+            pos_l += 1
+            line_len = self._line_length(right)
+            forward -= line_len / width + 1
 
-    def _format(self,width,height):
+        end = len(self.lines)
+        if self.lines[-1] == []:
+            end -= 1
+
+        pos_l -= 1
+        while forward > 0 and pos_l < end - 1:
+            pos_l += 1
+            line = self.lines[pos_l]
+            line_len = self._line_length(line)
+            line_height = line_len / width + 1
+            forward -= line_height
+
+        if forward >= 0:
+            return BufferPosition(pos_l, 0)
+
+        if pos_l > 0:
+            return BufferPosition(pos_l - 1, 0)
+        else:
+            return BufferPosition(0, 0)
+
+    @staticmethod
+    def _split_text(text, index):
+        """Split a string into two at given position.
+        
+        :Parameters:
+            - `text`: the string to split
+            - `index`: the position
+        """
+        return text[:index], text[index:]
+
+    @staticmethod
+    def _cut_line(line, cut_position):
+        """Split a buffer line into two.
+
+        :Parameters:
+            - `line`: the buffer line to split
+            - `cut_position`: cut position
+        :Types:
+            - `line`: list of (attribute, text) tuples
+            - `cut_position`: `int`
+
+        :Returns: two lines
+        :Returntype: tuple of two lists of (attribute, text) tuples
+        """
+        index = 0
+        left = []
+        right = []
+        for attr, text in line:
+            start_index = index
+            index += len(text)
+            if index < cut_position:
+                left.append( (attr, text) )
+            elif start_index < cut_position and index > cut_position:
+                left.append( (attr, text[:cut_position - index]) )
+                right.append( (attr, text[cut_position - index:]) )
+            else:
+                right.append( (attr, text) )
+        return left, right
+
+    def format(self, width, height):
+        """Return the buffer content starting from the current position
+        as a list of (attribute, text) pairs to be displayed in a window
+        of given dimensions.
+
+        This is used to redraw a window displaying this buffer.
+        
+        :Parameters:
+            - `width`: target window width
+            - `height`: target window height
+        :Types:
+            - `width`: `int`
+            - `height`: `int`
+        
+        :Return: formatted content
+        :Returntype: `list` of (`int`, `unicode`) tuples"""
+        with self.lock:
+            return self._format(width, height)
+
+    def _format(self, width, height):
+        """Return the buffer content starting from the current position
+        as a list of (attribute, text) pairs to be displayed in a window
+        of given dimensions.
+
+        This is used to redraw a window displaying this buffer.
+
+        This one assumes `self.lock` is already acquired.
+        
+        :Parameters:
+            - `width`: target window width
+            - `height`: target window height
+        :Types:
+            - `width`: `int`
+            - `height`: `int`
+        
+        :Return: formatted content
+        :Returntype: `list` of (`int`, `unicode`) tuples"""
+
         if self.pos is None:
-            l,c=self.offset_back(width,height)
+            pos_l, pos_c = self.offset_back(width, height)
         else:
-            l,c=self.pos
-        if c:
-            x,line=self.cut_line(self.lines[l],c)
-            ret=[line]
-            l+=1
-            height-=self.line_length(line)/width+1
+            pos_l, pos_c = self.pos
+
+        if pos_c:
+            line = self._cut_line(self.lines[pos_l], pos_c)[1]
+            ret = [line]
+            pos_l += 1
+            height -= self._line_length(line) / width + 1
         else:
-            ret=[]
+            ret = []
 
-        end=len(self.lines)
-        if end and self.lines[-1]==[]:
-            end-=1
+        end = len(self.lines)
+        if end and self.lines[-1] == []:
+            end -= 1
 
-        while height>0 and l<end:
-            line=self.lines[l]
-            while line is not None and height>0:
-                ln=self.line_length(line)
-                if ln>width:
-                    part,line=self.cut_line(line,width)
+        while height > 0 and pos_l < end:
+            line = self.lines[pos_l]
+            while line is not None and height > 0:
+                line_len = self._line_length(line)
+                if line_len > width:
+                    part, line = self._cut_line(line, width)
                 else:
-                    part,line=line,None
-                if part==[] and height==1:
+                    part, line = line, None
+                if part == [] and height == 1:
                     break
                 ret.append(part)
-                height-=1
-            l+=1
+                height -= 1
+            pos_l += 1
         return ret
 
     def update_pos(self):
+        """Update current position information in the buffer meta-data and
+        visible description."""
         if self.pos:
-            self.update_info({"bufrow":self.pos[0],"bufcol":self.pos[1]})
+            self.update_info({"bufrow": self.pos[0], "bufcol": self.pos[1]})
         else:
-            self.update_info({"bufrow":"","bufcol":""})
+            self.update_info({"bufrow": "", "bufcol":""})
 
     def page_up(self):
-        self.lock.acquire()
-        try:
+        """Handle page-up request."""
+        with self.lock:
             if self.pos is None:
-                l,c=self.offset_back(self.window.iw,self.window.ih-1)
+                pos = self.offset_back(self.window.iw, self.window.ih-1)
             else:
-                l,c=self.pos
+                pos = self.pos
 
-            if (l,c)==(0,0):
-                self.pos=l,c
-                formatted=self._format(self.window.iw,self.window.ih+1)
-                if len(formatted)<=self.window.ih:
-                    self.pos=None
+            if pos == (0, 0):
+                self.pos = pos
+                formatted = self._format(self.window.iw, self.window.ih + 1)
+                if len(formatted) <= self.window.ih:
+                    self.pos = None
                 self.update_pos()
                 return
-            l1,c1=self.offset_back(self.window.iw,self.window.ih-1,l,c)
-            self.pos=l1,c1
-        finally:
-            self.lock.release()
+            self.pos = self.offset_back(self.window.iw, self.window.ih-1, pos)
         self.update_pos()
         self.window.draw_buffer()
         self.window.update()
 
     def page_down(self):
-        self.lock.acquire()
-        try:
+        """Handle page-down request."""
+        with self.lock:
             if self.pos is None:
                 self.update_pos()
                 return
 
-            l,c=self.pos
-
-            l1,c1=self.offset_forward(self.window.iw,self.window.ih-1,l,c)
-            self.pos=l1,c1
-            formatted=self.format(self.window.iw,self.window.ih+1)
-            if len(formatted)<=self.window.ih:
-                self.pos=None
-            if self.pos:
-                self.window.update_status({"bufrow":self.pos[0],"bufcol":self.pos[1]})
-            else:
-                self.window.update_status({"bufrow":"","bufcol":""})
-            self.update_pos()
-            self.window.draw_buffer()
-            self.window.update()
-        finally:
-            self.lock.release()
+            self.pos = self.offset_forward(self.window.iw, self.window.ih - 1,
+                                                                    self.pos)
+            formatted = self.format(self.window.iw, self.window.ih + 1)
+            if len(formatted) <= self.window.ih:
+                self.pos = None
+        self.update_pos()
+        self.window.draw_buffer()
+        self.window.update()
 
     def as_string(self):
-        self.lock.acquire()
-        try:
-            ret=""
-            l=len(self.lines)
-            for i in range(0,l):
-                for a,s in self.lines[i]:
-                    ret+=s
-                if i<l-1:
-                    ret+="\n"
-        finally:
-            self.lock.release()
+        """Return string (unicode) representation of the buffer content.
+        
+        :Returntype: `unicode`"""
+        with self.lock:
+            ret = u""
+            num_lines = len(self.lines)
+            for i in range(0, num_lines):
+                for dummy, text in self.lines[i]:
+                    ret += text
+                if i < num_lines - 1:
+                    ret += u"\n"
         return ret
 
-from keytable import KeyFunction
-ktb=keytable.KeyTable("text-buffer",30,(
+from .keytable import KeyFunction
+
+keytable.install(
+    keytable.KeyTable("text-buffer", 30, (
         KeyFunction("page-up",
                 TextBuffer.page_up,
                 "Scroll buffer one page up",
@@ -325,6 +516,6 @@ ktb=keytable.KeyTable("text-buffer",30,(
                 "Scroll buffer one page down",
                 "NPAGE"),
         ))
+    )
 
-keytable.install(ktb)
 # vi: sts=4 et sw=4
