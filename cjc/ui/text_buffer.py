@@ -41,9 +41,13 @@ class TextBuffer(Buffer):
         - `lines`: the buffer content
         - `pos`: current position in the buffer of the window top-left corner.
           `None` means the window will follow the end of the buffer.
+        - `_underflow_data`: when in 'fillinig up underflow' mode the
+          data to be added at the beginig of `lines`. `None` when not in
+          the 'filling up the underflow' mode.
     :Types:
         - `lines`: `list`
         - `pos`: `BufferPosition`
+        - `_underflow_data`: `list`
     """
     default_length = 200
     def __init__(self, info, descr_format = "default_buffer_descr",
@@ -75,6 +79,7 @@ class TextBuffer(Buffer):
         self.lines = []
         self.pos = None
         self.update_pos()
+        self._underflow_data = None
 
     def set_window(self, win):
         """Map the buffer into a window."""
@@ -115,22 +120,28 @@ class TextBuffer(Buffer):
             - `activity_level`: `int`
 
         """
+        if self._underflow_data is not None:
+            target = self._underflow_data
+            display = False
+        else:
+            display = self.window and self.pos is None
+            target = self.lines
         if attr is not None and not isinstance(attr, int):
             attr = cjc_globals.theme_manager.attrs[attr]
-        if not self.lines:
-            self.lines = [[]]
-        elif self.lines[-1] == [] and self.window and self.pos is None:
+        if not target:
+            target[:] = [[]]
+        elif display and target[-1] == []:
             self.window.nl()
         lines = text.split(u"\n")
         num_lines = len(lines)
         for i, line in enumerate(lines):
             if i:
-                if i < (num_lines - 1) and self.window and self.pos is None:
+                if i < (num_lines - 1) and display:
                     self.window.nl()
-                self.lines.append([])
+                target.append([])
             if line:
-                self.lines[-1].append( (attr, line) )
-                if self.window and self.pos is None:
+                target[-1].append( (attr, line) )
+                if display:
                     win_y, win_x = self.window.win.getyx()
                     while line:
                         if win_x + len(line) > self.window.iw:
@@ -240,7 +251,17 @@ class TextBuffer(Buffer):
             ret += len(text)
         return ret
 
-    def offset_back(self, width, back, pos = None):
+    def fill_top_underflow(self, lines_needed):
+        """Called when trying to scroll over the top of the buffer.
+
+        May be overriden in derived classes to provide extra data (e.g.
+        archival messages).
+        
+        Content added to the buffer in the code called from this method will be
+        appended at the top of the buffer."""
+        pass
+
+    def offset_back(self, width, back, pos = None, fill_underflow = True):
         """Compute a position (buffer line, character in the line) in the
         buffer `back` 'screen lines' up from postition `pos`.
         
@@ -275,7 +296,20 @@ class TextBuffer(Buffer):
             line_height = line_len / width + 1
             back -= line_height
         if back > 0:
-            return BufferPosition(0, 0)
+            if not fill_underflow:
+                return BufferPosition(0, 0)
+            self._underflow_data = []
+            try:
+                self.fill_top_underflow(back)
+                if self._underflow_data and self._underflow_data[-1] == []:
+                    self._underflow_data = self._underflow_data[:-1]
+                if not self._underflow_data:
+                    return BufferPosition(0, 0)
+                pos_l = len(self._underflow_data)
+                self.lines = self._underflow_data + self.lines
+            finally:
+                self._underflow_data = None
+            return self.offset_back(width, back, BufferPosition(pos_l, 0))
         if back == 0:
             return BufferPosition(pos_l, 0)
         return BufferPosition(pos_l, (-back) * width)
@@ -414,7 +448,8 @@ class TextBuffer(Buffer):
         :Returntype: `list` of (`int`, `unicode`) tuples"""
 
         if self.pos is None:
-            pos_l, pos_c = self.offset_back(width, height)
+            pos_l, pos_c = self.offset_back(width, height,
+                                                    fill_underflow = False)
         else:
             pos_l, pos_c = self.pos
 
