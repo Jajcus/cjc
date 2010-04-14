@@ -501,9 +501,9 @@ class TextBuffer(Buffer):
                 formatted = self._format(self.window.iw, self.window.ih + 1)
                 if len(formatted) <= self.window.ih:
                     self.pos = None
-                self.update_pos()
-                return
-            self.pos = self.offset_back(self.window.iw, self.window.ih-1, pos)
+            else:
+                self.pos = self.offset_back(self.window.iw, self.window.ih-1,
+                                                                            pos)
         self.update_pos()
         self.window.draw_buffer()
         self.window.update()
