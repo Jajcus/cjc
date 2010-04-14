@@ -44,6 +44,12 @@ def unquote(s):
 class CommandError(ValueError):
     pass
 
+class CommandNotFoundError(KeyError):
+    pass
+
+class TableNotFoundError(KeyError):
+    pass
+
 class Command:
     def __init__(self,name,handler,usage,descr,hints=None):
         self.__logger=logging.getLogger("cjc.ui.Command")
@@ -91,10 +97,17 @@ class CommandTable:
         return self.commands.has_key(cmd)
 
     def lookup_command(self,cmd):
-        return self.commands[cmd]
+        try:
+            return self.commands[cmd]
+        except KeyError:
+            raise CommandNotFoundError, cmd
 
     def run_command(self,cmd,args):
-        return self.commands[cmd].run(self.object,args)
+        try:
+            command = self.commands[cmd]
+        except KeyError:
+            raise CommandNotFoundError, cmd
+        return command.run(self.object,args)
 
     def get_commands(self):
         l=self.commands.items()
@@ -121,7 +134,7 @@ def install(command_table):
 def uninstall(name):
     try:
         table=lookup_table(name)
-    except KeyError:
+    except TableNotFoundError:
         return
     table.active=0
     table.object=None
@@ -135,7 +148,7 @@ def lookup_table(name):
     for t in command_tables:
         if t.name==name:
             return t
-    raise KeyError,name
+    raise TableNotFoundError, name
 
 def activate(name,object):
     table=lookup_table(name)
@@ -145,7 +158,7 @@ def activate(name,object):
 def deactivate(name,object=None):
     try:
         table=lookup_table(name)
-    except KeyError:
+    except TableNotFoundError:
         return
     if object and table.object!=object:
         return
@@ -160,9 +173,9 @@ def lookup_command(name,active_only=0,with_help_only=0):
             cmd=ctb.lookup_command(name)
             if not with_help_only or cmd.descr:
                 return cmd
-        except KeyError:
+        except CommandNotFoundError:
             pass
-    raise KeyError,name
+    raise CommandNotFoundError, name
 
 def run_command(cmd,args=None):
     if args is None:
@@ -174,7 +187,7 @@ def run_command(cmd,args=None):
             continue
         try:
             return t.run_command(cmd,args)
-        except KeyError:
+        except CommandNotFoundError:
             continue
     if default_handler:
         return default_handler(cmd,args)

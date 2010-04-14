@@ -28,6 +28,15 @@ __logger=logging.getLogger("cjc.ui.keytable")
 class KeytableError(StandardError):
     pass
 
+class KeyTableNotFoundError(KeyError):
+    pass
+
+class FunctionNotFoundError(KeyError):
+    pass
+
+class KeyBindingNotFoundError(KeyError):
+    pass
+
 fun_re=re.compile(r"^([a-z-]+)(\((([^)]|(\\\)))*)\))?$")
 
 class KeyBinding:
@@ -88,10 +97,10 @@ class KeyTable:
                 binding=x
                 try:
                     fun=self.lookup_function(binding.fun)
-                except KeyError:
+                except FunctionNotFoundError:
                     try:
                         fun,obj=lookup_function(binding.fun)
-                    except KeyError:
+                    except FunctionNotFoundError:
                         fun=binding.fun
             elif isinstance(x,KeyFunction):
                 binding=x.default_binding
@@ -119,11 +128,17 @@ class KeyTable:
         return self.keytable.has_key((c,meta))
 
     def lookup_key(self,c,meta):
-        return self.keytable[(c,meta)]
+        try:
+            return self.keytable[(c,meta)]
+        except KeyError:
+            raise KeyBindingNotFoundError, (c, meta)
 
     def process_key(self,c,meta):
         object=None
-        fun,arg=self.keytable[(c,meta)]
+        try:
+            fun,arg=self.keytable[(c,meta)]
+        except KeyError:
+            raise KeyBindingNotFoundError, (c, meta)
         if not isinstance(fun,KeyFunction):
             try:
                 fun=self.lookup_function(fun)
@@ -137,7 +152,10 @@ class KeyTable:
         return self.funtable.has_key(name)
 
     def lookup_function(self,name):
-        return self.funtable[name]
+        try:
+            return self.funtable[name]
+        except KeyError:
+            raise FunctionNotFoundError, name
 
     def get_bindings(self,only_new=0):
         ret=[]
@@ -190,7 +208,7 @@ class KeyTable:
     def bind(self,binding):
         try:
             fun=self.lookup_function(binding.fun)
-        except KeyError:
+        except FunctionNotFoundError:
 #            try:
 #                fun=lookup_function(binding.fun)
 #            except KeyError:
@@ -298,7 +316,7 @@ def lookup_table(name):
     for t in keytables:
         if t.name==name:
             return t
-    raise KeyError,name
+    raise KeyTableNotFoundError, name
 
 def find_default_handler():
     global default_handler
@@ -345,9 +363,9 @@ def lookup_function(name,active_only=0):
             continue
         try:
             return ktb.lookup_function(name),ktb.object
-        except KeyError:
+        except FunctionNotFoundError:
             pass
-    raise KeyError,name
+    raise FunctionNotFoundError,name
 
 meta=0
 
@@ -360,7 +378,7 @@ def process_key(code):
         for t in [t for t in keytables if t.active]:
             try:
                 return t.process_key(code,meta)
-            except KeyError:
+            except (KeyBindingNotFoundError, FunctionNotFoundError):
                 continue
         unhandled_keys[code,meta]=True
     if default_handler:
