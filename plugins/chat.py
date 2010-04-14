@@ -17,13 +17,16 @@
 import string
 import curses
 import os
+import logging
 
 import pyxmpp
 from pyxmpp.jabber import delay
 from cjc import ui
-from cjc.plugin import PluginBase, Archiver
+from cjc.plugin import PluginBase, Archiver, Archive
 from cjc import common
 from cjc import cjc_globals
+
+logger = logging.getLogger("cjc.plugin.chat")
 
 theme_attrs=(
     ("chat.me", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -39,6 +42,46 @@ theme_formats=(
     ("chat.descr",u"Chat with %(J:peer:full)s [%(J:peer:show)s] %(J:peer:status)s"),
     ("chat.day_change",u"%{@day_change}"),
 )
+
+class ChatBuffer(ui.TextBuffer):
+    def __init__(self, conversation):
+        self.conversation = conversation
+        try:
+            self.archive = cjc_globals.application.plugins.get_service(Archive)
+        except KeyError:
+            self.archive = None
+        ui.TextBuffer.__init__(self, conversation.fparams, "chat.descr",
+                                                "chat buffer", conversation)
+        self.last_record = None
+    def fill_top_underflow(self, lines_needed):
+        if not self.archive:
+            return
+        record_iter = self.archive.get_records('chat', self.conversation.peer,
+                        older_than = self.last_record, limit = lines_needed,
+                        order = Archive.REVERSE_CHRONOLOGICAL)
+        records = list(record_iter)
+        if not records:
+            return
+        records.reverse()
+        self.last_record = records[0][0]
+        logger.debug("Got {0} records:".format(len(records)))
+        for record_id, record in records:
+            logger.debug("Record {0!r}: {1!r}".format(record_id, record))
+            fparams = dict(self.conversation.fparams)
+            if record.direction == "in":
+                fparams["jid"] = self.conversation.peer
+                theme_fmt = "chat.peer"
+            else:
+                fparams["jid"] = self.conversation.me
+                theme_fmt = "chat.me"
+            if record.timestamp:
+                fparams["timestamp"] = record.timestamp
+            if record.body.startswith(u"/me "):
+                fparams["msg"] = record.body[4:]
+                self.append_themed("chat.action", fparams)
+                return
+            fparams["msg"] = record.body
+            self.append_themed(theme_fmt, fparams)
 
 class Conversation:
     def __init__(self,plugin,me,peer,thread=None):
@@ -56,8 +99,7 @@ class Conversation:
             "peer":self.peer,
             "jid":self.me,
         }
-        self.buffer=ui.TextBuffer(self.fparams,"chat.descr",
-                "chat buffer",self)
+        self.buffer = ChatBuffer(self)
         self.buffer.preference=plugin.settings["buffer_preference"]
         self.buffer.user_input=self.user_input
         self.buffer.append_themed("chat.started",self.fparams)

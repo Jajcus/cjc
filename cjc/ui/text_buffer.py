@@ -21,10 +21,13 @@ Buffer for rich text content.
 from __future__ import absolute_import
 
 import collections
+import logging
 
 from .buffer import Buffer
 from . import keytable
 from .. import cjc_globals
+
+logger = logging.getLogger("cjc.ui.text_buffer")
 
 BufferPosition = collections.namedtuple("BufferPosition", "l c")
 
@@ -289,7 +292,7 @@ class TextBuffer(Buffer):
                 return 0, 0
         else:
             pos_l = pos.l
-        while back > 0 and pos_l > 1:
+        while back > 0 and pos_l > 0:
             pos_l -= 1
             line = self.lines[pos_l]
             line_len = self._line_length(line)
@@ -300,7 +303,7 @@ class TextBuffer(Buffer):
                 return BufferPosition(0, 0)
             self._underflow_data = []
             try:
-                self.fill_top_underflow(back)
+                self.fill_top_underflow(back + 1)
                 if self._underflow_data and self._underflow_data[-1] == []:
                     self._underflow_data = self._underflow_data[:-1]
                 if not self._underflow_data:
@@ -491,19 +494,17 @@ class TextBuffer(Buffer):
     def page_up(self):
         """Handle page-up request."""
         with self.lock:
-            if self.pos is None:
-                pos = self.offset_back(self.window.iw, self.window.ih-1)
-            else:
-                pos = self.pos
-
-            if pos == (0, 0):
-                self.pos = pos
+            logger.debug("page_up, self.pos = {0!r}".format(self.pos))
+            self.pos = self.offset_back(self.window.iw, self.window.ih - 1,
+                                                                    self.pos)
+            logger.debug("  after offset back: self.pos = {0!r}"
+                                                        .format(self.pos))
+            if self.pos == (0, 0):
                 formatted = self._format(self.window.iw, self.window.ih + 1)
-                if len(formatted) <= self.window.ih:
+                if len(formatted) < self.window.ih:
+                    logger.debug("  formated content is {0} lines high"
+                                " setting self.pos to None".format(formatted))
                     self.pos = None
-            else:
-                self.pos = self.offset_back(self.window.iw, self.window.ih-1,
-                                                                            pos)
         self.update_pos()
         self.window.draw_buffer()
         self.window.update()

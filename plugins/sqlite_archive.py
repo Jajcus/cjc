@@ -23,6 +23,8 @@ import sqlite3
 import collections
 import threading
 
+from pyxmpp.jid import JID
+
 from cjc.main import Application
 from cjc.plugin import Archiver, Archive, ArchiveRecord, Plugin, Configurable
 
@@ -86,7 +88,9 @@ class SqliteArchive(Plugin, Archiver, Archive, Configurable):
         else:
             new = True
         try:
-            self._database = sqlite3.connect(filename)
+            self._database = sqlite3.connect(filename,
+                                    detect_types = sqlite3.PARSE_COLNAMES)
+            self._database.row_factory = sqlite3.Row
             if not new:
                 return self._database
             for command in SCHEMA:
@@ -136,9 +140,55 @@ class SqliteArchive(Plugin, Archiver, Archive, Configurable):
 
     def get_records(self, event_type = None, peer = None,
             older_than = None, newer_than = None, limit = None,
-                                                        *kwargs):
-        # FIXME:
-        return []
-
-
-
+                                            order = None, *kwargs):
+        if self._database is None:
+            self._open_database()
+            if self._database is None:
+                return
+        query = ('SELECT record_id, event_type, peer, peer_resource,' 
+                    ' direction, timestamp AS "timestamp [TIMESTAMP]",' 
+                    ' subject, body, thread FROM archive')
+        where = []
+        params = []
+        if event_type is not None:
+            where.append("event_type = ?")
+            params.append(event_type)
+        if peer is not None:
+            where.append("peer = ?")
+            params.append(unicode(peer.bare()))
+            if peer.resource:
+                where.append("peer_resource = ?")
+                params.append(peer.resource)
+        if isinstance(older_than, datetime):
+            where.append("timestamp < ?")
+            params.append(older_than)
+        elif older_than is not None:
+            where.append("timestamp < "
+                        " (select timestamp from archive where record_id = ?)")
+            params.append(older_than)
+        if isinstance(newer_than, datetime):
+            where.append("timestamp > ?")
+            params.append(newer_than)
+        elif newer_than is not None:
+            where.append("timestamp > "
+                        " (select timestamp from archive where record_id = ?)")
+            params.append(newer_than)
+        if where:
+            query += " WHERE " + " AND ".join(where)
+        if order == self.CHRONOLOGICAL:
+            query += " ORDER BY timestamp"
+        elif order == self.REVERSE_CHRONOLOGICAL:
+            query += " ORDER BY timestamp DESC"
+        if limit:
+            query += " LIMIT ?"
+            params.append(limit)
+        logger.debug("Executing query: {0!r} with params: {1!r}"
+                                                    .format(query, params))
+        result = []
+        for row in self._database.execute(query, params):
+            peer = JID(row['peer'])
+            if row['peer_resource']:
+                peer = JID(peer.node, peer.domain, row['peer_resource'])
+            yield (row['record_id'], SqliteArchiveRecord(
+                row['event_type'], peer, row['direction'],
+                row['timestamp'], row['subject'], row['body'], row['thread']))

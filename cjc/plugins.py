@@ -42,6 +42,12 @@ class WeakSequence(collections.Iterable):
         """Return an iterator over contained items."""
         return self._generator()
 
+    def __getitem__(self, index):
+        for i, item in enumerate(self._generator()):
+            if index == i:
+                return item
+        raise IndexError, index
+
     def __contains__(self, value):
         if value is None:
             return False
@@ -84,6 +90,7 @@ class PluginContainer(object):
         """Get all services subclassing given base class and, optionally,
         matching given name.
 
+        :Raises: `KeyError` when no matching service is found
         :Return: all plugin inheriting from given ABC"""
         if not base_class in self._interface_cache:
             for objects in self._plugins.values():
@@ -100,7 +107,10 @@ class PluginContainer(object):
 
     def get_service(self, base_class, name = None):
         """Get a single service implementing given interface and, optionally,
-        matching given name."""
+        matching given name.
+        
+        :Raises: `KeyError` when the service is not found
+        """
         services = self.get_services(base_class, name)
         if not services:
             raise KeyError, (base_class, name)

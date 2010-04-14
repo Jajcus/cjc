@@ -128,10 +128,12 @@ class ArchiveRecord:
 class Archive:
     """Archive access and manipulation service."""
     __metaclass__ = ABCMeta
+    CHRONOLOGICAL = 1
+    REVERSE_CHRONOLOGICAL = 2
     @abstractmethod
     def get_records(self, event_type = None, peer = None,
             older_than = None, newer_than = None, limit = None,
-                                                        *kwargs):
+            chronological = None, *kwargs):
         """Get records from archive.
 
         :Parameters:
@@ -147,12 +149,16 @@ class Archive:
             - `kwargs`: more archive record properties may be specified 
               as extra keyword arguments to limit the query, thogh it may
               be not supported by the archive service.
+            - `order`: `Archive.CHRONOLOGICAL` for chronological order (affects sorting
+              and set returned by limit), `Archive.REVERSE_CHRONOLOGICAL` for
+              reversed chronological order and `None` for no sorting.
         :Types:
             - `event_type`: `str`
             - `peer`: `pyxmpp.jid.JID`
             - `older_than`: `datetime.datetime` or opaque identifier
             - `newer_than`: `datetime.datetime` or opaque identifier
             - `limit`: `int`
+            - `order`: `int`
 
         :Returns: archive entries matching the specified critetia.
         :Returntype: `collections.Iterable` of (archive_id, `ArchiveRecord`) 
