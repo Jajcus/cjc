@@ -445,7 +445,10 @@ class ThemeManager:
                 form=form.encode(self.encoding,"replace")
                 formatted=val.strftime(form)
             else:
-                formatted=val.strftime("%H:%M")
+                if val.date() == datetime.date.today():
+                    formatted=val.strftime("%H:%M")
+                else:
+                    formatted=val.strftime("%Y-%m-%d %H:%M")
             params[key]=unicode(formatted,self.encoding,"replace")
             return format
         elif typ==u"J":
