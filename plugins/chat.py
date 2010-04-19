@@ -18,6 +18,7 @@ import string
 import curses
 import os
 import logging
+from datetime import datetime
 
 import pyxmpp
 from pyxmpp.jabber import delay
@@ -52,7 +53,7 @@ class ChatBuffer(ui.TextBuffer):
             self.archive = None
         ui.TextBuffer.__init__(self, conversation.fparams, "chat.descr",
                                                 "chat buffer", conversation)
-        self.last_record = None
+        self.last_record = conversation.start_time
     def fill_top_underflow(self, lines_needed):
         if not self.archive:
             return
@@ -85,6 +86,7 @@ class ChatBuffer(ui.TextBuffer):
 
 class Conversation:
     def __init__(self,plugin,me,peer,thread=None):
+        self.start_time = datetime.now()
         self.plugin=plugin
         self.me=me
         self.peer=peer
