@@ -494,9 +494,16 @@ class TextBuffer(Buffer):
     def page_up(self):
         """Handle page-up request."""
         with self.lock:
+            if self.pos is None:
+                formatted = self._format(self.window.iw, self.window.ih + 1)
+                height = len(formatted)
+                if height > self.window.ih:
+                    height = self.window.ih
+                pos = self.offset_back(self.window.iw, height, self.pos)
+            else:
+                pos = self.pos
             logger.debug("page_up, self.pos = {0!r}".format(self.pos))
-            self.pos = self.offset_back(self.window.iw, self.window.ih - 1,
-                                                                    self.pos)
+            self.pos = self.offset_back(self.window.iw, self.window.ih - 1, pos)
             logger.debug("  after offset back: self.pos = {0!r}"
                                                         .format(self.pos))
             if self.pos == (0, 0):
