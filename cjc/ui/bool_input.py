@@ -29,9 +29,9 @@ class BooleanInput(InputWidget):
     def __init__(self,abortable,required,default=None):
         InputWidget.__init__(self,abortable,required)
         self.content=u""
-        if default==1:
+        if default == True:
             self.prompt="[Y/n]: "
-        elif default==0:
+        elif default == False:
             self.prompt="[y/N]: "
         else:
             self.prompt="[y/n]: "
@@ -72,7 +72,7 @@ class BooleanInput(InputWidget):
             self.content=u"y"
             self.win.addstr(self.content)
             self.update()
-            self.parent.input_handler(1)
+            self.parent.input_handler(True)
         finally:
             cjc_globals.screen.lock.release()
 
@@ -84,11 +84,11 @@ class BooleanInput(InputWidget):
             self.content=u"n"
             self.win.addstr(self.content)
             self.update()
-            self.parent.input_handler(0)
+            self.parent.input_handler(False)
         finally:
             cjc_globals.screen.lock.release()
 
-    def update(self,now=1,refresh=0):
+    def update(self, now = True, refresh = False):
         cjc_globals.screen.lock.acquire()
         try:
             if not cjc_globals.screen.active:
