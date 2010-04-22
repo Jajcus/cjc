@@ -5,8 +5,9 @@ import sys
 import os
 import weakref
 
-from .plugin import Plugin, PluginBase, Configurable, NamedService
+from .plugin import Plugin, PluginBase, Configurable, NamedService, CLI
 from . import cjc_globals
+from . import ui
 
 logger = logging.getLogger("cjc.plugins")
 
@@ -136,18 +137,30 @@ class PluginContainer(object):
         """All known setting namespaces."""
         return set(self._configurables.keys())
 
+    def _register_configurable(self, obj):
+        """Register a `Configurable` service."""
+        namespace = obj.settings_namespace
+        if namespace in self._configurables:
+            logger.error("Configuration namespace conflict: {0!r}"
+                                                .format(namespace,))
+        else:
+            logger.debug("Registering a Configurable {0!r}"
+                            " with namespace {1!r}".format(namespace, obj))
+            self._configurables[namespace] = obj
+
+    def _register_cli(self, obj):
+        """Register a `CLI` service."""
+        command_table = obj.get_command_table()
+        command_table.install()
+        ui.activate_cmdtable(obj.command_table_name, obj)
+
     def _register(self, obj):
         """Register object as a plugin service."""
         logger.debug("Registering object: {0!r}".format(obj))
         if isinstance(obj, Configurable):
-            namespace = obj.settings_namespace
-            if namespace in self._configurables:
-                logger.error("Configuration namespace conflict: {0!r}"
-                                                    .format(namespace,))
-            else:
-                logger.debug("Registering a Configurable {0!r}"
-                                " with namespace {1!r}".format(namespace, obj))
-                self._configurables[namespace] = obj
+            self._register_configurable(obj)
+        if isinstance(obj, CLI):
+            self._register_cli(obj)
         for base_class in self._interface_cache:
             if isinstance(obj, base_class) \
                         and not obj in self._interface_cache[base_class]:
@@ -176,7 +189,7 @@ class PluginContainer(object):
             for obj in plugin.services:
                 objects.append(obj)
                 self._register(obj)
-            return objects
+        return objects
 
     def _load_plugin(self, name):
         """Load plugin by name from current `sys.path` or the path used

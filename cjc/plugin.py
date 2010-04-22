@@ -15,6 +15,9 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 import logging
+import re
+
+from .ui import cmdtable
 
 from collections import Mapping
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -27,6 +30,8 @@ class Plugin:
     def services(self):
         """Collection of services provided by this plugin."""
         return [self]
+
+class UnloadablePlugin:
     @abstractmethod
     def unload(self):
         """Unload the plugin if possible.
@@ -163,6 +168,88 @@ class Archive:
         :Returns: archive entries matching the specified critetia.
         :Returntype: `collections.Iterable` of (archive_id, `ArchiveRecord`) 
             typles."""
+
+def cli_command(func, completions = None):
+    """Decorator for CLI commands methods."""
+    func._cjc_command = True
+    func._completions = completions
+    return func
+
+def cli_completion(*completions):
+    """Decorator for CLI commands methods providing completion data."""
+    return functools.partial(cli_command, completions = completions)
+
+class CLI:
+    """Base for classes implementing new CJC commands.
+    
+    Subclasses may return own command table by overriding the
+    `get_command_table` method or implement the commands as methods
+    decorated with @cli_command or @cli_command(completion,...).
+    
+    Names of the methods implementing CJC commands may be prefixed with
+    'cmd_' to avoid conflicts, the prefix will be automatically stripped
+    from the command name.
+
+    The docstings of the methods will be converted to CJC help strings.
+    Such docstring should consist of two parts separated with an empty line.
+    First part will be the usage string (like '/do_something [argument]')
+    and the other, the detailed description.
+    
+    Examples:
+        >>> class MyCommands(CLI):
+        ...     @cli_command
+        ...     def cmd_do_something(self, args):
+        ...         '''/do_something
+        ...         
+        ...         Do something interesting.'''
+        ...         pass
+        ...     @cli_completion("user", "text")
+        ...     def cmd_tell(self, args):
+        ...         '''/tell whom [what]
+        ...
+        ...         Tell something to somewhat'''
+        ...         pass
+        """
+    __metaclass__ = ABCMeta
+   
+    @property
+    def command_table_name(self):
+        """Name of the command table implemented by this object."""
+        return self.__class__.__name__.lower()
+
+    @property
+    def command_table_priority(self):
+        """Priority of the command table implemented by this object."""
+        return 60
+
+    def get_command_table(self):
+        """Return CLI command table.
+
+        This implementation build the table from class methods
+        decorated with @cli_command or @cli_completion."""
+        commands = []
+        for name, method in self.__class__.__dict__.items():
+            if not hasattr(method, "_cjc_command"):
+                continue
+            if not method._cjc_command:
+                continue
+            if name.startswith("cmd_"):
+                name = name[4:]
+            if method.__doc__:
+                doc = re.sub(r"[ \t]*\n[ \t]*", "\n", method.__doc__)
+                if "\n\n" in doc:
+                    usage, doc = [x.strip() for x in doc.split("\n\n", 1)]
+                else:
+                    usage = "/{0} [arg...]".format(name)
+                    doc = doc.strip()
+            else:
+                usage = "/{0} [arg...]".format(name)
+                doc = "*undocumented*"
+            commands.append(
+                    cmdtable.Command(name, method, usage, doc,
+                                                    method._completions))
+        return cmdtable.CommandTable(self.command_table_name,
+                                    self.command_table_priority, commands)
 
 class PluginBase(Plugin, Configurable):
     """'Old-style' plugin base class"""
