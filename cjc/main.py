@@ -1040,6 +1040,7 @@ class Application(tls.TLSMixIn,jabber.Client):
                 self.__logger.warning(
                     "Invalid config directive %r ignored" % (l,))
         f.close()
+        self.send_event("config loaded", self.settings)
         return 1
 
     def cmd_redraw(self,args):
