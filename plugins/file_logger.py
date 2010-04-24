@@ -118,6 +118,7 @@ class FileLogger(Archiver, Plugin, Configurable):
             "peer": peer,
             }
         filename = cjc_globals.theme_manager.substitute(filename, params)
+        filename = os.path.expanduser(filename.encode("utf-8"))
         entry = cjc_globals.theme_manager.substitute(format, params)
         try:
             dirname = os.path.dirname(filename)
