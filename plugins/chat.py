@@ -70,10 +70,10 @@ class ChatBuffer(ui.TextBuffer):
             logger.debug("Record {0!r}: {1!r}".format(record_id, record))
             fparams = dict(self.conversation.fparams)
             if record.direction == "in":
-                fparams["jid"] = self.conversation.peer
+                fparams["jid"] = record.peer
                 theme_fmt = "chat.peer"
             else:
-                fparams["jid"] = self.conversation.me
+                fparams["jid"] = record.peer
                 theme_fmt = "chat.me"
             if record.timestamp:
                 fparams["timestamp"] = record.timestamp
@@ -244,7 +244,7 @@ class Plugin(PluginBase):
             self.error("/chat without arguments")
             return
 
-        if not self.cjc.stream:
+        if not self.cjc.stream and args.get():
             self.error("Connect first!")
             return
 
