@@ -143,7 +143,7 @@ class Plugin(PluginBase, NamedService):
             return
         filename = cjc_globals.theme_manager.substitute(filename,
                             {"jid": unicode(my_jid.bare())}).encode("utf-8")
-        return filename
+        return os.path.expanduser(filename)
 
     def save_cache(self):
         if not self.cjc.roster:
@@ -190,6 +190,7 @@ class Plugin(PluginBase, NamedService):
                                                 .format(filename, err))
             return
         self.cjc.roster = roster
+        self.write_all()
 
     def update_item(self,item):
         self.debug("Roster.update_item(%r): %r" % (item, item))
