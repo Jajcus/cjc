@@ -20,10 +20,14 @@ import os
 import locale
 import tempfile
 import re
+from datetime import datetime
+import logging
+
+logger = logging.getLogger("cjc.plugin.message")
 
 import pyxmpp
 from cjc import ui
-from cjc.plugin import PluginBase, Archiver
+from cjc.plugin import PluginBase, Archiver, Archive
 from cjc import common
 from cjc import cjc_globals
 from pyxmpp.jabber import delay
@@ -264,17 +268,58 @@ Subject: %(subject)s
         self.buffer.append_themed("warning",msg)
         self.buffer.update()
 
-class MessageBuffer:
+
+class MessagesBuffer(ui.TextBuffer):
+    def __init__(self, conversation):
+        self.conversation = conversation
+        try:
+            self.archive = cjc_globals.application.plugins.get_service(Archive)
+        except KeyError:
+            self.archive = None
+        if conversation.peer:
+            ui.TextBuffer.__init__(self, {"peer": conversation.peer},
+                "message.descr-per-user","message buffer", conversation)
+        else:
+            ui.TextBuffer__init__(self, {}, "message.descr",
+                                    "message buffer", conversation)
+        self.last_record = conversation.start_time
+
+    def fill_top_underflow(self, lines_needed):
+        if not self.archive:
+            return
+        record_iter = self.archive.get_records('message', self.conversation.peer,
+                        older_than = self.last_record, limit = lines_needed,
+                        order = Archive.REVERSE_CHRONOLOGICAL)
+        records = list(record_iter)
+        if not records:
+            return
+        records.reverse()
+        self.last_record = records[0][0]
+        logger.debug("Got {0} records:".format(len(records)))
+        for record_id, record in records:
+            logger.debug("Record {0!r}: {1!r}".format(record_id, record))
+            fparams = dict()
+            if record.direction == "in":
+                fparams["from"] = record.peer
+                theme_fmt = "message.received"
+            else:
+                fparams["to"] = record.peer
+                theme_fmt = "message.sent"
+            if record.timestamp:
+                fparams["timestamp"] = record.timestamp
+            fparams["subject"] = record.subject
+            fparams["thread"] = record.thread
+            fparams["body"] = record.body
+            self.append_themed(theme_fmt, fparams)
+
+
+class Conversation:
     def __init__(self,plugin,peer,thread):
+        self.start_time = datetime.now()
         self.plugin=plugin
         self.peer=peer
         self.thread=thread
-        if peer:
-            self.buffer=ui.TextBuffer({"peer":self.peer},
-                    "message.descr-per-user","message buffer",self)
-        else:
-            self.buffer=ui.TextBuffer({},"message.descr",
-                    "message buffer",self)
+        self.buffer = MessagesBuffer(self)
         self.buffer.preference=plugin.settings["buffer_preference"]
         self.buffer.update()
         self.last_sender=None
@@ -364,11 +409,12 @@ class MessageBuffer:
 
         self.plugin.send_message(self.last_sender,subject,body,self.last_thread)
 
+
 ui.CommandTable("message buffer",50,(
-    ui.Command("close", MessageBuffer.cmd_close,
+    ui.Command("close", Conversation.cmd_close,
         "/close",
         "Closes current chat buffer"),
-    ui.Command("reply", MessageBuffer.cmd_reply,
+    ui.Command("reply", Conversation.cmd_reply,
         "/reply [-subject subject] [text]",
         "Reply to the last message in window",
         ("-subject opaque","text")),
@@ -500,7 +546,7 @@ class Plugin(PluginBase):
                 return buff
             thread=None
             user=None
-        buff=MessageBuffer(self,user,thread)
+        buff=Conversation(self,user,thread)
         if user:
             key=user.bare().as_unicode()
         else:
