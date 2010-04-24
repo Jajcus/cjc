@@ -33,7 +33,12 @@ class Buffer:
         self.__logger=logging.getLogger("cjc.ui.Buffer")
         self.preference=10
         self.command_table=command_table
-        self.command_table_object=command_table_object
+        if command_table_object:
+            self.command_table_object = command_table_object
+        elif command_table == "buffer":
+            self.command_table_object = self
+        else:
+            self.command_table_object = None
         self.command_table_active=True
         try:
             buffer_list[buffer_list.index(None)]=self
@@ -120,6 +125,9 @@ class Buffer:
             buffer_list[n]=None
             for f in activity_handlers:
                 f()
+    
+    def _cmd_close(self, args):
+        self.close()
 
     def get_number(self):
         return buffer_list.index(self)+1
@@ -194,6 +202,13 @@ class Buffer:
         self.input_widget=None
         if self.window and self.window.active:
             cjc_globals.screen.input_handler.current_buffer_changed(self)
+
+cmdtable.CommandTable("buffer",50,(
+    cmdtable.Command("close", Buffer._cmd_close,
+        "/close",
+        "Closes current buffer"),
+    )).install()
+
 
 def get_by_number(n):
     if n==0:
