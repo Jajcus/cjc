@@ -17,6 +17,9 @@
 import string
 import curses
 import re
+import os
+
+import libxml2
 
 import pyxmpp
 import pyxmpp.roster
@@ -61,13 +64,22 @@ class Plugin(PluginBase, NamedService):
             "show": ("Which items show - list of 'available','unavailable','chat',"
                     "'online','away','xa' or 'all'",list,self.set_show),
             "buffer_preference": ("Preference of roster buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
+            "cache_file": ("Location of roster cache files."
+                " /unset it not to keep local copy of the roster.",
+                                        (unicode, None))
             }
-        self.settings={"show":["all"],"buffer_preference":2}
+        self.settings={
+                "show": ["all"],
+                "buffer_preference": 2,
+                "cache_file": "%($HOME)s/.cjc/cache/%(jid)s.roster",
+                }
         app.add_info_handler("rostername",self.info_rostername)
         app.add_info_handler("rostergroups",self.info_rostergroups)
         app.add_event_handler("roster updated",self.ev_roster_updated)
         app.add_event_handler("presence changed",self.ev_presence_changed)
         app.add_event_handler("layout changed",self.ev_layout_changed)
+        app.add_event_handler("stream closed", self.ev_stream_closed)
+        app.add_event_handler("config loaded", self.ev_config_loaded)
         cjc_globals.theme_manager.set_default_attrs(theme_attrs)
         cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.buffer=ListBuffer("Roster")
@@ -87,6 +99,10 @@ class Plugin(PluginBase, NamedService):
 
     def set_show(self,oldval,newval):
         self.write_all()
+    
+    def ev_config_loaded(self, event, arg):
+        if not self.cjc.roster:
+            self.load_cache()
 
     def ev_roster_updated(self,event,arg):
         if not arg:
@@ -110,6 +126,70 @@ class Plugin(PluginBase, NamedService):
     def ev_layout_changed(self,event,arg):
         if self.cjc.roster_window:
             self.cjc.roster_window.set_buffer(self.buffer)
+
+    def ev_stream_closed(self, event, arg):
+        self.save_cache()
+
+    @property
+    def cache_filename(self):
+        filename = self.settings.get("cache_file")
+        if not filename:
+            return
+        if self.cjc.jid:
+            my_jid = self.cjc.jid
+        else:
+            my_jid = self.cjc.settings.get("jid")
+        if not my_jid:
+            return
+        filename = cjc_globals.theme_manager.substitute(filename,
+                            {"jid": unicode(my_jid.bare())}).encode("utf-8")
+        return filename
+
+    def save_cache(self):
+        if not self.cjc.roster:
+            return
+        filename = self.cache_filename
+        if not filename:
+            return
+        parent = os.path.dirname(filename)
+        if not os.path.exists(parent):
+            try:
+                os.makedirs(parent.encode("utf-8"))
+            except (OSError, IOError), err:
+                self.error("Cannot write roster cache file."
+                                    "Cannot make directory {0}: {1}"
+                                                    .format(parent, err))
+                return
+        try:
+            with open(filename, "w") as roster_file:
+                print >>roster_file, str(self.cjc.roster)
+        except IOError, err:
+            self.error("Cannot write roster cache file {0}: {1}"
+                                                .format(filename, err))
+
+    def load_cache(self):
+        if self.cjc.roster:
+            return
+        filename = self.cache_filename
+        if not filename or not os.path.exists(filename):
+            return
+        try:
+            with open(filename, "r") as roster_file:
+                roster_data = roster_file.read().strip()
+        except IOError, err:
+            self.warning("Cannot read roster cache file {0}: {1}"
+                                                .format(filename, err))
+            return
+        if not roster_data:
+            return
+        try:
+            xml = libxml2.parseDoc(roster_data)
+            roster = pyxmpp.roster.Roster(xml.getRootElement())
+        except (ValueError, libxml2.libxmlError), err:
+            self.warning("Cannot read roster cache file {0}: {1}"
+                                                .format(filename, err))
+            return
+        self.cjc.roster = roster
 
     def update_item(self,item):
         self.debug("Roster.update_item(%r): %r" % (item, item))
@@ -266,7 +346,7 @@ class Plugin(PluginBase, NamedService):
 
     def session_started(self,stream):
         self.cjc.request_roster()
-
+    
     def cmd_add(self,args):
         groups=[]
         while 1:
