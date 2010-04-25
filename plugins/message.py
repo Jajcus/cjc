@@ -33,6 +33,7 @@ from cjc import cjc_globals
 from pyxmpp.jabber import delay
 
 theme_attrs=(
+    ("message.info", curses.COLOR_GREEN,curses.COLOR_BLACK,curses.A_NORMAL, curses.A_NORMAL),
     ("message.date", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
     ("message.subject", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
     ("message.sender", curses.COLOR_YELLOW,curses.COLOR_BLACK,curses.A_BOLD, curses.A_UNDERLINE),
@@ -40,6 +41,7 @@ theme_attrs=(
 )
 
 theme_formats=(
+    ("message.archive_end", "%[message.info]----- message archive end -----"),
     ("message.received",
 u"""------------------
 %[message.date]Date:    %(T:timestamp:%c)s
@@ -298,7 +300,6 @@ class MessagesBuffer(ui.TextBuffer):
         if not records:
             return
         records.reverse()
-        self.last_record = records[0][0]
         logger.debug("Got {0} records:".format(len(records)))
         for record_id, record in records:
             logger.debug("Record {0!r}: {1!r}".format(record_id, record))
@@ -315,6 +316,8 @@ class MessagesBuffer(ui.TextBuffer):
             fparams["thread"] = record.thread
             fparams["body"] = record.body
             self.append_themed(theme_fmt, fparams)
+        self.append_themed("message.archive_end", {})
+        self.last_record = records[0][0]
 
 
 class Conversation:
@@ -380,8 +383,8 @@ class Conversation:
             key=self.peer.bare().as_unicode()
         else:
             key=None
-        if self.plugin.buffers.has_key(key):
-            l=self.plugin.buffers[key]
+        if self.plugin.conversations.has_key(key):
+            l=self.plugin.conversations[key]
             if self in l:
                 l.remove(self)
         self.buffer.close()
@@ -514,8 +517,8 @@ class Plugin(PluginBase):
                 conv.buffer.update()
 
     def ev_day_changed(self,event,arg):
-        for buffers in self.conversations.values():
-            for conv in buffers:
+        for conversations in self.conversations.values():
+            for conv in conversations:
                 conv.buffer.append_themed("message.day_change",{},activity_level=0)
                 conv.buffer.update()
 
