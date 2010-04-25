@@ -53,12 +53,16 @@ class ChatBuffer(ui.TextBuffer):
             self.archive = None
         ui.TextBuffer.__init__(self, conversation.fparams, "chat.descr",
                                                 "chat buffer", conversation)
-        self.last_record = conversation.start_time
+        self.last_record = None
     def fill_top_underflow(self, lines_needed):
         if not self.archive:
             return
+        if self.last_record:
+            older_than = self.last_record
+        else:
+            older_than = self.conversation.start_time
         record_iter = self.archive.get_records('chat', self.conversation.peer,
-                        older_than = self.last_record, limit = lines_needed,
+                        older_than = older_than, limit = lines_needed,
                         order = Archive.REVERSE_CHRONOLOGICAL)
         records = list(record_iter)
         if not records:
@@ -85,8 +89,8 @@ class ChatBuffer(ui.TextBuffer):
             self.append_themed(theme_fmt, fparams)
 
 class Conversation:
-    def __init__(self,plugin,me,peer,thread=None):
-        self.start_time = datetime.now()
+    def __init__(self,plugin,me,peer,thread=None, start_time = None):
+        self.start_time = start_time if start_time else datetime.now()
         self.plugin=plugin
         self.me=me
         self.peer=peer
@@ -138,13 +142,14 @@ class Conversation:
             self.buffer.update()
             return 0
 
+        m=pyxmpp.Message(to_jid=self.peer,stanza_type="chat",body=s,thread=self.thread)
+        self.plugin.cjc.stream.send(m)
+        self.add_sent(s)
+
         archivers = self.plugin.cjc.plugins.get_services(Archiver)
         for archiver in archivers:
             archiver.log_event("chat", self.peer, 'out', None, None, s, self.thread)
 
-        m=pyxmpp.Message(to_jid=self.peer,stanza_type="chat",body=s,thread=self.thread)
-        self.plugin.cjc.stream.send(m)
-        self.add_sent(s)
         return 1
 
     def error(self,stanza):
@@ -327,10 +332,6 @@ class Plugin(PluginBase):
         else:
             timestamp=None
 
-        archivers = self.cjc.plugins.get_services(Archiver)
-        for archiver in archivers:
-            archiver.log_event("chat", fr, 'in', timestamp, subject, body, thread)
-
         key=fr.bare().as_unicode()
         conv=None
         if self.conversations.has_key(key):
@@ -348,7 +349,7 @@ class Plugin(PluginBase):
                 conv.thread_inuse=1
 
         if not conv:
-            conv=Conversation(self,self.cjc.jid,fr,thread)
+            conv=Conversation(self,self.cjc.jid,fr,thread, timestamp)
             if self.conversations.has_key(key):
                 self.conversations[key].append(conv)
             else:
@@ -363,6 +364,11 @@ class Plugin(PluginBase):
 
         self.cjc.send_event("chat message received",body)
         conv.add_received(body,timestamp)
+        
+        archivers = self.cjc.plugins.get_services(Archiver)
+        for archiver in archivers:
+            archiver.log_event("chat", fr, 'in', timestamp, subject, body, thread)
+
         return 1
 
 
