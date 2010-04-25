@@ -282,13 +282,17 @@ class MessagesBuffer(ui.TextBuffer):
         else:
             ui.TextBuffer__init__(self, {}, "message.descr",
                                     "message buffer", conversation)
-        self.last_record = conversation.start_time
+        self.last_record = None
 
     def fill_top_underflow(self, lines_needed):
         if not self.archive:
             return
+        if self.last_record:
+            older_than = self.last_record
+        else:
+            older_than = self.conversation.start_time
         record_iter = self.archive.get_records('message', self.conversation.peer,
-                        older_than = self.last_record, limit = lines_needed,
+                        older_than = older_than, limit = lines_needed,
                         order = Archive.REVERSE_CHRONOLOGICAL)
         records = list(record_iter)
         if not records:
@@ -315,7 +319,7 @@ class MessagesBuffer(ui.TextBuffer):
 
 class Conversation:
     def __init__(self,plugin,peer,thread):
-        self.start_time = datetime.now()
+        self.start_time = None
         self.plugin=plugin
         self.peer=peer
         self.thread=thread
@@ -336,6 +340,10 @@ class Conversation:
                 }
         if timestamp:
             d["timestamp"]=timestamp
+         
+        if not self.start_time:
+            self.start_time = timestamp if timestamp else datetime.now()
+
         self.buffer.append_themed("message.received",d)
         self.buffer.update()
         self.last_sender=sender
@@ -344,6 +352,8 @@ class Conversation:
         self.last_thread=thread
 
     def add_sent(self,recipient,subject,body,thread):
+        if not self.start_time:
+            self.start_time = datetime.now()
         self.buffer.append_themed("message.sent",{
                 "to": recipient,
                 "subject": subject,
@@ -423,7 +433,7 @@ ui.CommandTable("message buffer",50,(
 class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
-        self.buffers={}
+        self.conversations={}
         self.last_thread=0
         cjc_globals.theme_manager.set_default_attrs(theme_attrs)
         cjc_globals.theme_manager.set_default_formats(theme_formats)
@@ -480,84 +490,84 @@ class Plugin(PluginBase):
         composer=Composer(self)
         return composer.start(recipient,subject,body)
 
-    def send_message(self,recipient,subject,body,thread=0,buff=None):
+    def send_message(self,recipient,subject,body,thread=0,conv=None):
         if thread==0:
             self.last_thread+=1
             thread="message-thread-%i" % (self.last_thread,)
         m=pyxmpp.Message(to_jid=recipient,stanza_type="normal",subject=subject,body=body,thread=thread)
         self.cjc.stream.send(m)
-        if buff is None:
-            buff=self.find_or_make(recipient,thread)
+        if conv is None:
+            conv=self.find_or_make(recipient,thread)
+
+        conv.add_sent(recipient,subject,body,thread)
 
         archivers = self.cjc.plugins.get_services(Archiver)
         for archiver in archivers:
             archiver.log_event("message", recipient, 'out', None, subject, body, thread)
 
-        buff.add_sent(recipient,subject,body,thread)
-
     def ev_presence_changed(self,event,arg):
         key=arg.bare().as_unicode()
-        if not self.buffers.has_key(key):
+        if not self.conversations.has_key(key):
             return
-        for buff in self.buffers[key]:
-            if buff.peer==arg or buff.peer==arg.bare():
-                buff.buffer.update()
+        for conv in self.conversations[key]:
+            if conv.peer==arg or conv.peer==arg.bare():
+                conv.buffer.update()
 
     def ev_day_changed(self,event,arg):
-        for buffers in self.buffers.values():
-            for buf in buffers:
-                buf.buffer.append_themed("message.day_change",{},activity_level=0)
-                buf.buffer.update()
+        for buffers in self.conversations.values():
+            for conv in buffers:
+                conv.buffer.append_themed("message.day_change",{},activity_level=0)
+                conv.buffer.update()
 
     def session_started(self,stream):
         self.cjc.stream.set_message_handler("normal",self.message_normal)
         self.cjc.stream.set_message_handler("error",self.message_error,None,90)
 
-    def find_buffer(self,user,thread):
-        buff=None
+    def find_conversation(self,user,thread):
+        conv=None
         if user:
             key=user.bare().as_unicode()
         else:
             key=user
-        if self.buffers.has_key(key):
-            buffs=self.buffers[key]
+        if self.conversations.has_key(key):
+            buffs=self.conversations[key]
             for b in buffs:
                 if thread==b.thread:
-                    buff=b
+                    conv=b
                     break
-        return buff
+        return conv
 
     def find_or_make(self,user,thread):
         bset=self.settings["buffer"]
         if bset=="separate":
             pass
         elif bset=="per-thread":
-            buff=self.find_buffer(user,thread)
-            if buff:
-                return buff
+            conv=self.find_conversation(user,thread)
+            if conv:
+                return conv
         elif bset=="per-user":
-            buff=self.find_buffer(user,None)
-            if buff:
-                return buff
+            conv=self.find_conversation(user,None)
+            if conv:
+                return conv
             thread=None
         else:
-            buff=self.find_buffer(None,None)
-            if buff:
-                return buff
+            conv=self.find_conversation(None,None)
+            if conv:
+                return conv
             thread=None
             user=None
-        buff=Conversation(self,user,thread)
+        conv=Conversation(self,user,thread)
         if user:
             key=user.bare().as_unicode()
         else:
             key=user
-        if not self.buffers.has_key(key):
-            self.buffers[key]=[buff]
+        if not self.conversations.has_key(key):
+            self.conversations[key]=[conv]
         else:
-            self.buffers[key].append(buff)
+            self.conversations[key].append(conv)
         if self.settings.get("auto_popup"):
-            cjc_globals.screen.display_buffer(buff.buffer)
-        return buff
+            cjc_globals.screen.display_buffer(conv.buffer)
+        return conv
 
     def message_error(self,stanza):
         if self.settings["buffer"]=="separate":
@@ -565,17 +575,17 @@ class Plugin(PluginBase):
         fr=stanza.get_from()
         thread=stanza.get_thread()
 
-        buff=self.find_buffer(fr,thread)
+        conv=self.find_conversation(fr,thread)
         bset=self.settings["buffer"]
-        if not buff and bset in ("per-thread","per-user","single"):
-            buff=self.find_buffer(fr,thread)
-        if not buff and bset in ("per-user","single"):
-            buff=self.find_buffer(fr,None)
-        if not buff and bset=="single":
-            buff=self.find_buffer(None,None)
-        if not buff:
+        if not conv and bset in ("per-thread","per-user","single"):
+            conv=self.find_conversation(fr,thread)
+        if not conv and bset in ("per-user","single"):
+            conv=self.find_conversation(fr,None)
+        if not conv and bset=="single":
+            conv=self.find_conversation(None,None)
+        if not conv:
             return 0
-        buff.error(stanza)
+        conv.error(stanza)
         return 1
 
     def message_normal(self,stanza):
@@ -593,13 +603,14 @@ class Plugin(PluginBase):
         else:
             timestamp=None
 
+        conv=self.find_or_make(fr,thread)
+        self.cjc.send_event("message received",body)
+        conv.add_received(fr,subject,body,thread,timestamp)
+
         archivers = self.cjc.plugins.get_services(Archiver)
         for archiver in archivers:
             archiver.log_event("message", fr, 'in', timestamp, subject, body, thread)
 
-        buff=self.find_or_make(fr,thread)
-        self.cjc.send_event("message received",body)
-        buff.add_received(fr,subject,body,thread,timestamp)
         return 1
 
 ui.CommandTable("message",50,(
