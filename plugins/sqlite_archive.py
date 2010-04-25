@@ -32,6 +32,7 @@ from pyxmpp.jid import JID
 from cjc.main import Application
 from cjc.plugin import Archiver, Archive, ArchiveRecord, Plugin, Configurable
 from cjc.plugin import CLI, cli_command, cli_completion
+from cjc.plugin import EventListener, event_handler
 from cjc import ui, cjc_globals
 
 logger = logging.getLogger("cjc.plugin.sqlite_archive")
@@ -56,7 +57,7 @@ CREATE TABLE archive (
     "CREATE INDEX archive_timestamp_i ON archive(timestamp);",
     ]
 
-class SqliteArchive(Plugin, Archiver, Archive, Configurable):
+class SqliteArchive(Plugin, Archiver, Archive, Configurable, EventListener):
     """Reimplementation of the old logging by the message, chat and muc
     plugins."""
     settings_namespace = "sqlite_archive"
@@ -69,6 +70,11 @@ class SqliteArchive(Plugin, Archiver, Archive, Configurable):
                 "filename": "~/.cjc/archive.db",
                 }
         self._local = threading.local()
+
+    @event_handler("config loaded")
+    def ev_config_loaded(self, event, arg):
+        """Initialize the database on load."""
+        self._open_database()
 
     @property
     def filename(self):
@@ -98,6 +104,7 @@ class SqliteArchive(Plugin, Archiver, Archive, Configurable):
             new = False
         else:
             new = True
+            logger.info("Sqlite archive: no database found, will create a new one.")
         try:
             self._database = sqlite3.connect(filename,
                                     detect_types = sqlite3.PARSE_COLNAMES)
@@ -117,6 +124,10 @@ class SqliteArchive(Plugin, Archiver, Archive, Configurable):
                 pass
             return None
         self._database.commit()
+        if new:
+            logger.warning("New sqlite archive created."
+                    " You may want to use /migrate_archive command to load old"
+                    " log files into the new archive.")
         return self._database
 
     def _start_transaction(self):
@@ -545,6 +556,8 @@ class ArchiveImporter(object):
                                             .format(*chat_stats))
         self.info("  {0} messages found, {1} unparseable, {2} imported."
                                             .format(*msg_stats))
+        self.info()
+        self.info("You may now want to disable file logging.")
     
 class ArchiveCLI(Plugin, CLI):
     command_table_name = "sqlite_archive"
