@@ -6,6 +6,7 @@ import os
 import weakref
 
 from .plugin import Plugin, PluginBase, Configurable, NamedService, CLI
+from .plugin import EventListener
 from . import cjc_globals
 from . import ui
 
@@ -154,6 +155,14 @@ class PluginContainer(object):
         command_table.install()
         ui.activate_cmdtable(obj.command_table_name, obj)
 
+    def _register_event_listener(self, obj):
+        """Register an `EventListener` service."""
+        event_handlers = obj.get_event_handlers()
+        cjc = cjc_globals.application
+        for events, handler in event_handlers:
+            for event in events:
+                cjc.add_event_handler(event, handler)
+
     def _register(self, obj):
         """Register object as a plugin service."""
         logger.debug("Registering object: {0!r}".format(obj))
@@ -161,6 +170,8 @@ class PluginContainer(object):
             self._register_configurable(obj)
         if isinstance(obj, CLI):
             self._register_cli(obj)
+        if isinstance(obj, EventListener):
+            self._register_event_listener(obj)
         for base_class in self._interface_cache:
             if isinstance(obj, base_class) \
                         and not obj in self._interface_cache[base_class]:

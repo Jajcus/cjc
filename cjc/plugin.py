@@ -16,6 +16,7 @@
 
 import logging
 import re
+import functools
 
 from .ui import cmdtable
 
@@ -250,6 +251,41 @@ class CLI:
                                                     method._completions))
         return cmdtable.CommandTable(self.command_table_name,
                                     self.command_table_priority, commands)
+
+def _event_handler_decorator(func, events):
+    """Decorator function for event listener."""
+    func._cjc_event_handler = True
+    func._events = events
+    return func
+
+def event_handler(event, *events):
+    """Returns decorator for event handler."""
+    return functools.partial(_event_handler_decorator,
+                                            events = [event] + list(events))
+
+class EventListener:
+    """Base for classes implementing event listeners.
+    
+    Subclasses may return own event listeners list by overriding the
+    `get_event_handlers` method or implement the commands as methods
+    decorated with @eventlistener(event, ...).
+    """
+    __metaclass__ = ABCMeta
+    def get_event_handlers(self):
+        """Return event listeners.
+
+        This implementation build the table from class methods
+        decorated with @event_handler(...)."""
+        event_handlers = []
+        for method in self.__class__.__dict__.values():
+            if not hasattr(method, "_cjc_event_handler"):
+                continue
+            if not method._cjc_event_handler:
+                continue
+            # bind the method
+            method = method.__get__(self, self.__class__)
+            event_handlers.append((method._events, method))
+        return event_handlers
 
 class PluginBase(Plugin, Configurable):
     """'Old-style' plugin base class"""
