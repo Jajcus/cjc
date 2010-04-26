@@ -220,13 +220,10 @@ class PluginContainer(object):
             full_name = plugin_module_name(name)
             logger.debug("Importing plugin {0!r}, module name: {1!r}"
                                                     .format(name, full_name))
-            if full_name in sys.modules:
-                logger.debug("Module was already in sys.path, reloading")
-                mod = reload(sys.modules[full_name])
-            else:
+            if full_name not in sys.modules:
                 __import__(full_name)
-                mod = sys.modules[full_name]
-                logger.debug("Module loaded: {0!r}".format(mod))
+            mod = sys.modules[full_name]
+            logger.debug("Module loaded: {0!r}".format(mod))
             self._plugins[name] = self._load_plugin_from_module(mod)
         except:
             logger.exception("Exception:")
