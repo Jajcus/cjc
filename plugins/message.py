@@ -293,7 +293,8 @@ class MessagesBuffer(ui.TextBuffer):
             older_than = self.last_record
         else:
             older_than = self.conversation.start_time
-        record_iter = self.archive.get_records('message', self.conversation.peer,
+        record_iter = self.archive.get_records('message', 
+                        self.conversation.peer.bare(),
                         older_than = older_than, limit = lines_needed,
                         order = Archive.REVERSE_CHRONOLOGICAL)
         records = list(record_iter)
