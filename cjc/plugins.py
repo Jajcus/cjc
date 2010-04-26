@@ -225,6 +225,8 @@ class PluginContainer(object):
             mod = sys.modules[full_name]
             logger.debug("Module loaded: {0!r}".format(mod))
             self._plugins[name] = self._load_plugin_from_module(mod)
+        except ImportError, err:
+            logger.warning("    skipped: {0}".format(err))
         except:
             logger.exception("Exception:")
             logger.info("Plugin load failed")
