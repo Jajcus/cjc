@@ -314,6 +314,7 @@ class PluginContainer(object):
                 logger.info("Skipping plugin directory %s" % (directory,))
                 continue
             logger.info("Loading plugins from %s:" % (directory, ))
+            names = set()
             for filename in files:
                 path = os.path.join(directory, filename)
                 if os.path.isdir(path):
@@ -331,6 +332,11 @@ class PluginContainer(object):
                     name, ext = filename.rsplit(".", 1)
                     if ext not in ("py", "pyc"):
                         continue
+                if name in names:
+                    # already processed
+                    continue
+                names.add(name)
                 if not self._plugins.has_key(name):
                     logger.info("  %s" % (name,))
                     self._load_plugin(name)
+
