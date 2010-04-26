@@ -3,6 +3,7 @@ import collections
 import logging
 import sys
 import os
+import imp
 import weakref
 
 from .plugin import Plugin, PluginBase, Configurable, NamedService, CLI
@@ -64,6 +65,9 @@ class WeakSequence(collections.Iterable):
             raise ValueError, "WeakSequence cannot store None"
         self._values.append(weakref.ref(value))
 
+def plugin_module_name(plugin_name):
+    return "cjc._plugins." + plugin_name
+
 class PluginContainer(object):
     """Plugin manager and a registry for the plugin-provided services.
     
@@ -73,9 +77,6 @@ class PluginContainer(object):
         - `_configurables`: registry of known configurables, indexed by the namespaces
         - `_plugins`: registry of loaded Plugin objects. Keys are the module names, values
           are lists of Plugin-subclass instances.
-        - `_plugin_modules`: information of loaded plugin modules. Keys are the module names,
-          values are tuples of module object and sys.path used to load it. These are used for reloading
-          the modules when neccessary.
         - `_plugin_dirs`: list of directories searched for plugins
         - `_warnings_emitted`: set of (service type, service name) pairs for
           which a 'service conflict' warnings were emitted by `get_service`."""
@@ -84,9 +85,13 @@ class PluginContainer(object):
         self._interface_cache = collections.defaultdict(WeakSequence)
         self._configurables = weakref.WeakValueDictionary()
         self._plugins = {}
-        self._plugin_modules = {}
-        self._plugin_dirs = plugin_dirs
+        self._plugin_dirs = list(plugin_dirs)
         self._warnings_emitted = set()
+        if "cjc._plugins" not in sys.modules:
+            package = imp.new_module("cjc._plugins")
+            package.__path__ = self._plugin_dirs
+            package.__file__ = "<cjc plugins>"
+            sys.modules["cjc._plugins"] = package
 
     def get_services(self, base_class, name = None):
         """Get all services subclassing given base class and, optionally,
@@ -146,7 +151,7 @@ class PluginContainer(object):
                                                 .format(namespace,))
         else:
             logger.debug("Registering a Configurable {0!r}"
-                            " with namespace {1!r}".format(namespace, obj))
+                            " with namespace {1!r}".format(obj, namespace))
             self._configurables[namespace] = obj
 
     def _register_cli(self, obj):
@@ -194,7 +199,12 @@ class PluginContainer(object):
                 # skip non-plugin classes
                 continue
             if issubclass(plugin, PluginBase):
-                plugin = plugin(cjc_globals.application, mod.__name__)
+                if mod.__name__.startswith("cjc._plugins."):
+                    mod_name = mod.__name__[13:]
+                    plugin = plugin(cjc_globals.application, mod_name)
+                else:
+                    logger.warning("Unexpected module name: {0!r}".format(
+                                                                 mod.__name__))
             else:
                 plugin = plugin()
             for obj in plugin.services:
@@ -203,20 +213,20 @@ class PluginContainer(object):
         return objects
 
     def _load_plugin(self, name):
-        """Load plugin by name from current `sys.path` or the path used
-        recently for loading the plugin module."""
+        """Load plugin by name.
+        
+        The plugin will be loaded as cjc._pugins.name"""
         try:
-            if name in self._plugin_modules:
-                mod, sys_path = self._plugin_modules.get(name)
-                old_sys_path, sys.path = sys.path, sys_path
-                try:
-                    mod = reload(mod)
-                finally:
-                    sys.path = old_sys_path
+            full_name = plugin_module_name(name)
+            logger.debug("Importing plugin {0!r}, module name: {1!r}"
+                                                    .format(name, full_name))
+            if full_name in sys.modules:
+                logger.debug("Module was already in sys.path, reloading")
+                mod = reload(sys.modules[full_name])
             else:
-                mod = __import__(name)
-                sys_path = sys.path
-            self._plugin_modules[name] = (mod, sys_path)
+                __import__(full_name)
+                mod = sys.modules[full_name]
+                logger.debug("Module loaded: {0!r}".format(mod))
             self._plugins[name] = self._load_plugin_from_module(mod)
         except:
             logger.exception("Exception:")
@@ -285,13 +295,8 @@ class PluginContainer(object):
             logger.error("Plugin %s cannot be reloaded" % (name,))
             return False
         try:
-            mod, sys_path = self._plugin_modules[name]
-            old_sys_path, sys.path = sys.path, sys_path
-            try:
-                mod = reload(mod)
-            finally:
-                sys.path = old_sys_path
-            self.plugin_modules[name] = (mod, sys_path)
+            mod = sys.modules[plugin_module_name(name)]
+            mod = reload(mod)
             new_objects = self._load_plugin_from_module(mod)
         except:
             logger.exception("Exception:")
@@ -302,25 +307,31 @@ class PluginContainer(object):
 
     def load_plugins(self):
         """Load all plugins from the plugin directories."""
-        sys_path = sys.path
-        try:
-            for path in self._plugin_dirs:
-                sys.path = [path] + sys_path
-                try:
-                    files = os.listdir(path)
-                except (OSError,IOError), err:
-                    logger.debug("Couldn't get plugin list: %s" % (err,))
-                    logger.info("Skipping plugin directory %s" % (path,))
+        for directory in self._plugin_dirs:
+            try:
+                files = os.listdir(directory)
+            except (OSError,IOError), err:
+                logger.debug("Couldn't get plugin list: %s" % (err,))
+                logger.info("Skipping plugin directory %s" % (directory,))
+                continue
+            logger.info("Loading plugins from %s:" % (directory, ))
+            for filename in files:
+                path = os.path.join(directory, filename)
+                if os.path.isdir(path):
+                    # a package?
+                    name = filename
+                    if (not os.path.exists(
+                                        os.path.join(path, "__init__.py")) 
+                            and not os.path.exists(
+                                        os.path.join(path, "__init__.pyc"))):
+                        continue
+                elif not "." in filename:
                     continue
-                logger.info("Loading plugins from %s:" % (path, ))
-                for filename in files:
-                    if not "." in filename:
-                        continue
+                else:
+                    # a python script?
                     name, ext = filename.rsplit(".", 1)
-                    if ext not in ("py", "pyc", "pyo"):
+                    if ext not in ("py", "pyc"):
                         continue
-                    if not self._plugins.has_key(name):
-                        logger.info("  %s" % (name,))
-                        self._load_plugin(name)
-        finally:
-            sys.path = sys_path
+                if not self._plugins.has_key(name):
+                    logger.info("  %s" % (name,))
+                    self._load_plugin(name)
