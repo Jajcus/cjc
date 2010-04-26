@@ -22,11 +22,12 @@ import os
 
 from cjc.main import Application
 from cjc.plugin import Archiver, Plugin, Configurable
+from cjc.plugin import EventListener, event_handler
 from cjc import cjc_globals
 
 logger = logging.getLogger("cjc.plugin.file_logger")
 
-class FileLogger(Archiver, Plugin, Configurable):
+class FileLogger(Archiver, Plugin, Configurable, EventListener):
     """Reimplementation of the old logging by the message, chat and muc
     plugins."""
     settings_namespace = "file_logger"
@@ -64,9 +65,16 @@ class FileLogger(Archiver, Plugin, Configurable):
                         "To: %(recipient)s\n"
                         "Subject: %(subject)s\n%(body)s\n",
                 }
+
+    @event_handler("config loaded")
+    def config_loaded(self, event, arg):
+        for plugin in ("chat", "message", "muc"):
+            self._migrate_settings(plugin)
+
     def unload(self):
         """Allow plugin unload/reload."""
         return True
+
     def _migrate_settings(self, plugin_name):
         """Migrate logging settings from the old chat and message plugins.
         
@@ -104,9 +112,7 @@ class FileLogger(Archiver, Plugin, Configurable):
             timestamp = datetime.now()
         filename = self.settings.get(event_type +"_filename")
         if not filename:
-            filename = self._migrate_settings(event_type)
-            if not filename:
-                return
+            return
         format = self.settings["{0}_format_{1}".format(event_type, direction)]
         cjc = Application.instance
         params = {
