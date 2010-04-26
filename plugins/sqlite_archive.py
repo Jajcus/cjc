@@ -260,13 +260,8 @@ class ArchiveImporter(object):
     def __init__(self):
         self.buffer = ui.TextBuffer({"buffer_name": "Archive importer"},
                                                 command_table = "buffer")
-        cjc = Application.instance
-        self.settings = cjc.settings
-        try:
-            self.file_logger_settings = cjc.plugins.get_configurable(
-                                                "file_logger").settings
-        except KeyError:
-            self.file_logger_settings = {}
+	self.settings = None
+	self.file_logger_settings = None
         self.archive = None
         self.older_than = None
 
@@ -475,8 +470,18 @@ class ArchiveImporter(object):
         self.buffer.append_themed("info", message)
         self.buffer.update()
 
+    def _locate_settings(self):
+	cjc = Application.instance
+        self.settings = cjc.settings
+        try:
+            self.file_logger_settings = cjc.plugins.get_configurable(
+                                                "file_logger").settings
+        except KeyError:
+            self.file_logger_settings = {}
+
     def start(self):
         cjc_globals.screen.display_buffer(self.buffer)
+	self._locate_settings()
         if not self.settings.get("jid"):
             return self.error("Own JID not set, cannot continue)")
         if Application.instance.stream:
