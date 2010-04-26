@@ -16,6 +16,7 @@ UNINSTALL_DIR=rm -r
 pkg_datadir=$(datadir)/cjc
 pkg_docdir=$(docdir)/cjc
 
+
 VERSION=1.2.0
 SNAPSHOT=
 
