@@ -53,10 +53,10 @@ class TLSMixIn:
                         cacert_file = location
                         break
                 if cacert_file:
-                    self.__logger.info("tls_cert_file not set, using {0}"
+                    self.__logger.info("tls_ca_cert_file not set, using {0}"
                                                             .format(cacert_file))
                 else:
-                    self.__logger.warning("tls_cert_file not set"
+                    self.__logger.warning("tls_ca_cert_file not set"
                             " and system CA certificate list not found."
                             " Expect failure.")
             else:
