@@ -193,7 +193,11 @@ class SqliteArchive(Plugin, Archiver, Archive, Configurable, EventListener):
             where.append("event_type = ?")
             params.append(event_type)
         if peer is not None:
-            where.append("peer = ?")
+            if limit and order in (self.CHRONOLOGICAL,
+                                            self.REVERSE_CHRONOLOGICAL):
+                where.append("+peer = ?")
+            else:
+                where.append("peer = ?")
             params.append(unicode(peer.bare()))
             if peer.resource:
                 where.append("peer_resource = ?")
