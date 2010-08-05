@@ -1,5 +1,5 @@
 # Console Jabber Client
-# Copyright (C) 2004-2010 Jacek Konieczny
+# Copyright (C) 2010-2010 Jacek Konieczny
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-"""Reimplementation of the old logging by the message, chat and muc plugins."""
+"""SQLite based message archive."""
 
 from datetime import datetime
 import logging
@@ -343,6 +343,7 @@ class ArchiveImporter(object):
                 "%a %b %d %H:%M:%S %Y", 
                 "%Y-%m-%d %H:%M",
                 "%Y-%m-%d %H:%M:%s",
+                "%a %d %b %Y %I:%M:%S %p ",
                 ):
             try:
                 return datetime.strptime(timestamp, pattern)
