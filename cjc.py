@@ -26,6 +26,15 @@
 #   pass
 
 import sys
+
+if len(sys.argv)>1 and sys.argv[1]=="--memory-profile":
+    # as soon as possible
+    from guppy import hpy
+    heapy = hpy()
+    sys.argv[1:]=sys.argv[2:]
+else:
+    heapy = None
+
 import os
 import glob
 
@@ -68,6 +77,6 @@ if len(sys.argv)>1 and sys.argv[1]=="--profile":
     import profile
     profile.run("main.main(base_dir,profile=True)","cjc.prof")
 else:
-    main.main(base_dir)
+    main.main(base_dir, heapy = heapy)
 
 # vi: sts=4 et sw=4

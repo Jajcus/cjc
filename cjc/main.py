@@ -142,7 +142,7 @@ class Application(tls.TLSMixIn,jabber.Client):
             raise "An Application instance already present"
         cjc_globals.application = self
         Application.instance = self
-        self.profile=profile
+        self.profile = profile
         tls.TLSMixIn.__init__(self)
         jabber.Client.__init__(self, disco_name="CJC", disco_type="console")
         self.__logger=logging.getLogger("cjc.Application")
@@ -1596,6 +1596,17 @@ ui.CommandTable("global",10,(
         "Reloads a plugin."),
     )).install()
 
+def cmd_hpy_dump(heapy, args):
+    logging.info("Dumping a snapshot to cjc.hpy...")
+    heapy.heap().dump("cjc.hpy")
+    logging.info(" ...done dumping the snapshot")
+ui.CommandTable("hpy",10,(
+    ui.Command("hpy_dump", cmd_hpy_dump,
+        "/hpy_dump",
+        "Dump a memory profiling snapshot to cjc.hpy",
+        ()),
+    )).install()
+
 def usage():
     print
     print "Console Jabber Client (c) 2003-2010 Jacek Konieczny <jajcus@jajcus.net>"
@@ -1625,10 +1636,18 @@ def usage():
     print "  -P"
     print "  --profile                Write profiling statistics"
 
-def main(base_dir,profile=False):
+def main(base_dir, profile = False, heapy = None):
+    if heapy:
+        try:
+            os.unlink("cjc.hpy")
+        except OSError:
+            pass
+        print >>sys.stderr, "Getting initial heap statistics..."
+        heapy.heap().dump("cjc.hpy")
+        libxml2.debugMemory(1)
+
     logger=logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    libxml2.debugMemory(1)
     locale.setlocale(locale.LC_ALL,"")
     encoding=locale.getlocale()[1]
     if not encoding:
@@ -1677,10 +1696,47 @@ def main(base_dir,profile=False):
     app=Application(base_dir,config_file,theme_file,home_dir=config_dir,profile=profile)
     try:
         screen=ui.init()
+        if heapy:
+            ui.activate_cmdtable("hpy", heapy)
         app.run(screen)
     finally:
         #logging.debug("Cleaning up")
         ui.deinit()
         #logging.debug("Cleaned up")
+    if heapy:
+        print >>sys.stderr, "Getting pre-cleanup memory usage information..."
+        libxml2_usage = libxml2.debugMemory(1)
+        print >>sys.stderr, "  libxml2 used: {0} B".format(libxml2_usage)
+        if libxml2_usage:
+            try:
+                os.unlink(".memdump")
+            except OSError:
+                pass
+            libxml2.dumpMemory()
+            if os.path.exists(".memdump"):
+                os.rename(".memdump", "cjc-pre.memdump")
+                print >>sys.stderr, ("  libxml2 memory dump saved to"
+                                                        " 'cjc-pre.memdump'")
+        heapy.heap().dump("cjc.hpy")
+        print >>sys.stderr, "Heapy profile saved to 'cjc.hpy'"
+        print >>sys.stderr, "cleaning up..."
+        del screen
+        del app
+        libxml2.cleanupParser()
+        print >>sys.stderr, "Getting post-cleanup memory usage information..."
+        libxml2_usage = libxml2.debugMemory(1)
+        print >>sys.stderr, "  libxml2 leaked: {0} B".format(libxml2_usage)
+        if libxml2_usage:
+            try:
+                os.unlink(".memdump")
+            except OSError:
+                pass
+            libxml2.dumpMemory()
+            if os.path.exists(".memdump"):
+                os.rename(".memdump", "cjc-post.memdump")
+                print >>sys.stderr, ("  libxml2 memory dump saved to"
+                                                        " 'cjc-post.memdump'")
+        heapy.heap().dump("cjc.hpy")
+        print >>sys.stderr, "Heapy profile saved to 'cjc.hpy'"
 
 # vi: sts=4 et sw=4
