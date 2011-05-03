@@ -1,1 +1,5 @@
 *.pyc
+ChangeLog
+cjc.inst
+cl-stamp
+dist/
