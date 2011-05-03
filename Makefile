@@ -33,19 +33,18 @@ doc/manual.html: doc/manual.xml
 	cd doc; make
 
 version:
-	if test -d ".svn" ; then \
-		echo "version='$(VERSION)+svn'" > cjc/version.py || : ; \
+	if test -d ".git" ; then \
+		echo "version='$(VERSION)+git'" > cjc/version.py || : ; \
 	fi
 
 cjc.inst: cjc.in
 	sed -e 's,BASE_DIR,$(pkg_datadir),' < cjc.in > cjc.inst 
 
 ChangeLog: 
-	test -f .svn/entries && make cl-stamp || :
+	test -d .git && make cl-stamp || :
 	
-cl-stamp: .svn/entries
-	TZ=UTC svn log -v --xml \
-		| aux/svn2log.py -p '/(branches/[^/]+|trunk)' -x ChangeLog -u aux/users -F
+cl-stamp: .git
+	git log > ChangeLog
 	touch cl-stamp
 
 cosmetics:

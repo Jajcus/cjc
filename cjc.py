@@ -50,8 +50,8 @@ for p in l:
         else:
             print >>sys.stderr,"Not compiled, skipping",
 
-if os.path.exists(os.path.join(base_dir,".svn/entries")):
-    print >>sys.stderr,"Running from SVN, updating version"
+if os.path.exists(os.path.join(base_dir,".git")):
+    print >>sys.stderr,"Running from git, updating version"
     try:
         cwd=os.getcwd()
         try:
