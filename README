@@ -1,5 +1,5 @@
 			     Console Jabber Client
-		   (c) 2003-2010 Jacek Konieczny <jajcus@jajcus.net>
+		   (c) 2003-2011 Jacek Konieczny <jajcus@jajcus.net>
 
 CJC is a Jabber/XMPP client for text terminals. It uses pyxmpp library for XMPP
 comunication and curses for screen output. It is not finished yet, but still
@@ -17,21 +17,23 @@ Requirements:
 
 	CJC 1.1.0 requires PyXMPP 1.1.0 or newer.
 
-	If you are using CJC from SVN then probably the best choice is to use
-	latest PyXMPP from SVN too. For official releases the latest PyXMPP
-	release before that CJC release should work well (but newer release may
-	work better).
+	If you are using current CJC version from github master branch then
+	probably the best choice is to use latest PyXMPP from github too. For
+	official releases the latest PyXMPP release before that CJC release
+	should work well (but newer release may work better).
 
-	PyXMPP should be installed in system in default Python module search path,
-	but it doesn't have to be installed (just compiled) if you want to run CJC
-	from the source tree (using cjc.py script). PyXMPP compiled sources should be
-	placed in same directory where cjc source tree is (both CJC and PyXMPP
-	tarballs unpacked or both SVN modules checked out in the same directory).
+	PyXMPP should be installed in system in default Python module search
+	path, but it doesn't have to be installed (just compiled) if you want
+	to run CJC from the source tree (using cjc.py script). PyXMPP compiled
+	sources should be placed in same directory where cjc source tree is
+	(both CJC and PyXMPP tarballs unpacked or both git trees checked out in
+	the same directory).
 
 Installation:
 -------------
 
-You may run CJC right from the source tree, but to install it into the system use:
+You may run CJC right from the source tree, but to install it into the system
+use:
 
 	make install
 
@@ -45,9 +47,9 @@ See the attached manual (doc/manual.html). Some day it may be complete :-)
 Bug reports and feature requests:
 ---------------------------------
 
-The best place to send those is the CJC trac:
+The best place to send those is the github issues list:
 
-	http://cjc.jajcus.net/trac/
+	https://github.com/Jajcus/cjc/issues
 
 But you can write to me directly via e-mail: jajcus@jajcus.net 
 or jabber: jajcus@jajcus.net
