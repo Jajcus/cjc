@@ -38,6 +38,7 @@ import dns.exception
 import pyxmpp.all
 import pyxmpp.jabber.all
 import pyxmpp.exceptions
+import pyxmpp.resolver
 from pyxmpp import jabber
 
 from cjc import cjclogging
@@ -83,6 +84,8 @@ global_settings={
     "editor": ("Editor for message composition. Default: $EDITOR or 'vi'", (str, None)),
     "editor_encoding": ("Character encoding for edited messages. Default: locale specific", (str, None)),
     "scrollback": ("Length of the scrollback buffers (default: 500).", int, "set_scrollback"),
+    "ipv6": ("Enable IPv6 support (auto if unset).", (bool, None), "set_ipv6"),
+    "dual_stack": ("Allow IPv4 too when IPv6 is enabled.", bool, "set_dual_stack"),
 }
 
 global_theme_attrs=(
@@ -164,7 +167,10 @@ class Application(tls.TLSMixIn,jabber.Client):
             "case_sensitive":True,
             "status_buffer_preference":1,
             "debug":False,
-            "scrollback":500}
+            "scrollback":500,
+            "ipv6": None,
+            "dual_stack": True,
+            }
         self.set_scrollback(0, self.settings['scrollback'])
         self.aliases={}
         self.available_settings=global_settings
@@ -861,6 +867,20 @@ class Application(tls.TLSMixIn,jabber.Client):
 
     def set_scrollback(self,oldval,newval):
         ui.TextBuffer.default_length = newval
+    
+    def set_ipv6(self, oldval, newval):
+        if newval:
+            if self.settings['dual_stack']:
+                pyxmpp.resolver.set_default_address_family(socket.AF_UNSPEC)
+            else:
+                pyxmpp.resolver.set_default_address_family(socket.AF_INET6)
+        else:
+            pyxmpp.resolver.set_default_address_family(socket.AF_INET)
+
+    def set_dual_stack(self, oldval, newval):
+        if self.settings.get('ipv6') is None:
+            return
+        self.set_ipv6(None, self.settings['ipv6'])
 
     def set_debug(self,oldval,newval):
         if newval:
