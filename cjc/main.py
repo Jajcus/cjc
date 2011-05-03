@@ -33,6 +33,8 @@ import logging
 import logging.config
 import codecs
 
+import dns.exception
+
 import pyxmpp.all
 import pyxmpp.jabber.all
 import pyxmpp.exceptions
@@ -534,10 +536,13 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.__logger.info(u"Connecting:")
         try:
             self.connect()
-        except pyxmpp.StreamError,e:
-            self.__logger.error("Connection failed: "+str(e))
-        except (socket.error),e:
-            self.__logger.error("Connection failed: "+e.args[1])
+        except pyxmpp.StreamError, err:
+            self.__logger.error("Connection failed: " + str(err))
+        except dns.exception.DNSException, err:
+            self.__logger.error("Connection failed, couldn't resolve host name: "
+                                                            + repr(err))
+        except (socket.error), err:
+            self.__logger.error("Connection failed: " + err.args[1])
 
     def cmd_register(self, args):
         if self.stream:
