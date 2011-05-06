@@ -100,7 +100,7 @@ class Conversation:
             self.thread=thread
             self.thread_inuse=1
         else:
-            self.thread = uuid.uuid4()
+            self.thread = unicode(uuid.uuid4())
             self.thread_inuse = 0
         self.fparams={
             "peer":self.peer,
