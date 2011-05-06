@@ -155,7 +155,7 @@ class SqliteArchive(Plugin, Archiver, Archive, Configurable, EventListener):
                         " direction, timestamp, subject, body, thread)"
                     " VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
                     (event_type, peer.as_unicode(), peer_resource, direction,
-                                            timestamp, subject, body, thread))
+                                        timestamp, subject, body, str(thread)))
 
     def log_event(self, event_type, peer, direction = None, timestamp = None,
                     subject = None, body = None, thread = None, **kwargs):

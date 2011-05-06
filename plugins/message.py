@@ -20,6 +20,8 @@ import os
 import locale
 import tempfile
 import re
+import uuid
+
 from datetime import datetime
 import logging
 
@@ -438,7 +440,6 @@ class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
         self.conversations={}
-        self.last_thread=0
         cjc_globals.theme_manager.set_default_attrs(theme_attrs)
         cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
@@ -496,8 +497,7 @@ class Plugin(PluginBase):
 
     def send_message(self,recipient,subject,body,thread=0,conv=None):
         if thread==0:
-            self.last_thread+=1
-            thread="message-thread-%i" % (self.last_thread,)
+            thread = uuid.uuid4()
         m=pyxmpp.Message(to_jid=recipient,stanza_type="normal",subject=subject,body=body,thread=thread)
         self.cjc.stream.send(m)
         if conv is None:

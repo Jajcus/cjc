@@ -19,6 +19,7 @@ import curses
 import os
 import logging
 from datetime import datetime
+import uuid
 
 import pyxmpp
 from pyxmpp.jabber import delay
@@ -99,9 +100,8 @@ class Conversation:
             self.thread=thread
             self.thread_inuse=1
         else:
-            plugin.last_thread+=1
-            self.thread="chat-thread-%i" % (plugin.last_thread,)
-            self.thread_inuse=0
+            self.thread = uuid.uuid4()
+            self.thread_inuse = 0
         self.fparams={
             "peer":self.peer,
             "jid":self.me,
@@ -223,7 +223,6 @@ class Plugin(PluginBase):
     def __init__(self,app,name):
         PluginBase.__init__(self,app,name)
         self.conversations={}
-        self.last_thread=0
         cjc_globals.theme_manager.set_default_attrs(theme_attrs)
         cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
