@@ -226,18 +226,14 @@ class Plugin(PluginBase):
         cjc_globals.theme_manager.set_default_attrs(theme_attrs)
         cjc_globals.theme_manager.set_default_formats(theme_formats)
         self.available_settings={
-#            "log_filename": ("Where messages should be logged to",(str,None)),
-#            "log_format_in": ("Format of incoming message log entries",(str,None)),
-#            "log_format_out": ("Format of outgoing message log entries",(str,None)),
             "buffer_preference": ("Preference of chat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
             "auto_popup": ("When enabled each new chat buffer is automatically made active.",bool),
+            "merge_threads": ("Use single chat buffer for a single peer.",bool),
             }
         self.settings={
-#                "log_filename": "%($HOME)s/.cjc/logs/chats/%(J:peer:bare)s",
-#                "log_format_in": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
-#                "log_format_out": "[%(T:now:%c)s] <%(J:sender:nick)s> %(body)s\n",
                 "buffer_preference": 100,
                 "auto_popup": False,
+                "merge_threads": False,
                 }
         app.add_event_handler("presence changed",self.ev_presence_changed)
         app.add_event_handler("day changed",self.ev_day_changed)
@@ -288,25 +284,34 @@ class Plugin(PluginBase):
         self.cjc.stream.set_message_handler("chat",self.message_chat)
         self.cjc.stream.set_message_handler("error",self.message_error,None,90)
 
+    def find_conversation(self, peer, thread, allow_other_thread = False):
+        key = peer.bare().as_unicode()
+        convs = self.conversations.get(key)
+        if not convs:
+            return None
+        conv = None
+        for c in convs:
+            if not thread and (not c.thread or not c.thread_inuse):
+                conv = c
+                break
+            if thread and thread == c.thread:
+                conv = c
+                break
+        if conv:
+            if conv.thread and not thread:
+                # peer doesn't copy thread-id, do not use it
+                conv.thread = None
+            elif thread:
+                conv.thread_inuse = 1
+        elif thread and allow_other_thread:
+            return convs[0]
+        return conv
+
     def message_error(self,stanza):
         fr=stanza.get_from()
         thread=stanza.get_thread()
-        key=fr.bare().as_unicode()
-
-        conv=None
-        if self.conversations.has_key(key):
-            convs=self.conversations[key]
-            for c in convs:
-                if not thread and (not c.thread or not c.thread_inuse):
-                    conv=c
-                    break
-                if thread and thread==c.thread:
-                    conv=c
-                    break
-            if conv and conv.thread and not thread:
-                conv.thread=None
-            elif conv and thread:
-                conv.thread_inuse=1
+        
+        conv = self.find_conversation(fr, thread, True)
 
         if not conv:
             return 0
@@ -332,24 +337,11 @@ class Plugin(PluginBase):
         else:
             timestamp=None
 
-        key=fr.bare().as_unicode()
-        conv=None
-        if self.conversations.has_key(key):
-            convs=self.conversations[key]
-            for c in convs:
-                if not thread and (not c.thread or not c.thread_inuse):
-                    conv=c
-                    break
-                if thread and thread==c.thread:
-                    conv=c
-                    break
-            if conv and conv.thread and not thread:
-                conv.thread=None
-            elif conv and thread:
-                conv.thread_inuse=1
+        conv = self.find_conversation(fr, thread, self.settings.get("merge_threads"))
 
         if not conv:
             conv=Conversation(self,self.cjc.jid,fr,thread, timestamp)
+            key=fr.bare().as_unicode()
             if self.conversations.has_key(key):
                 self.conversations[key].append(conv)
             else:
