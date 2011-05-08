@@ -375,11 +375,17 @@ def process_key(code):
     `code` is ncurses key code or a single unicode character."""
     global default_handler
     if not is_key_unhandled((code,meta)):
-        for t in [t for t in keytables if t.active]:
-            try:
-                return t.process_key(code,meta)
-            except (KeyBindingNotFoundError, FunctionNotFoundError):
-                continue
+        for i in (1, 2):
+            for t in [t for t in keytables if t.active]:
+                try:
+                    return t.process_key(code,meta)
+                except (KeyBindingNotFoundError, FunctionNotFoundError):
+                    continue
+            if code == curses.erasechar():
+                # workaround for bad terminfo
+                code = curses.KEY_BACKSPACE
+            else:
+                break
         unhandled_keys[code,meta]=True
     if default_handler:
         return default_handler(code,meta)

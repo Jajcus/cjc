@@ -465,7 +465,7 @@ ktb=keytable.KeyTable("text-input",50,(
         KeyFunction("delete-char",
                 TextInput.key_del,
                 "Delete current character",
-                ("DC","^D","\x7f")),
+                ("DC","^D")),
         KeyFunction("kill-line",
                 TextInput.key_kill,
                 "Erase whole text",
