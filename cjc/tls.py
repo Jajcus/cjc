@@ -82,7 +82,7 @@ class TLSMixIn:
 
     def tls_connected(self, tls):
         cipher, ssl_version, bits = tls.cipher()
-        self.__logger.info("Encrypted connection to {0} established using" 
+        self.__logger.info(u"Encrypted connection to {0} established using" 
                     " {1}, {2} ({3} bits)".format(unicode(self.stream.peer),
                                                     ssl_version, cipher, bits))
         verified = self.settings.get("tls_verify", True)
