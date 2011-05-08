@@ -238,7 +238,7 @@ class PluginContainer(object):
             for path in self._plugin_dirs:
                 sys.path = [path] + sys_path
                 for suffix in (".py", ".pyc", ".pyo"):
-                    filename = os.path.join(path, name + ".py")
+                    filename = os.path.join(path, name + suffix)
                     if os.path.exists(filename):
                         break
                     filename = None
