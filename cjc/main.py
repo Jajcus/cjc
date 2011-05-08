@@ -1490,14 +1490,19 @@ class Application(tls.TLSMixIn,jabber.Client):
         self.send_event("roster updated",jid)
 
     def stream_state_changed(self,state,arg):
+        if state in ("connecting", "connected"):
+            if ":" in arg[0]:
+                dst = "[%s]:%i" % (arg[0], arg[1])
+            else:
+                dst = "%s:%i" % (arg[0], arg[1])
         if state=="resolving":
             self.__logger.info(u"Resolving %r..." % (arg,))
         if state=="resolving srv":
             self.__logger.info(u"Resolving SRV for %r on %r..." % (arg[1],arg[0]))
         elif state=="connecting":
-            self.__logger.info(u"Connecting to %s:%i..." % (arg[0],arg[1]))
+            self.__logger.info(u"Connecting to %s..." % (dst,))
         elif state=="connected":
-            self.__logger.info(u"Connected to %s:%i." % (arg[0],arg[1]))
+            self.__logger.info(u"Connected to %s." % (dst,))
         elif state=="authenticating":
             self.__logger.info(u"Authenticating as %s..." % (unicode(arg),))
         elif state=="binding":
