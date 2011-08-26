@@ -1485,7 +1485,6 @@ class Application(tls.TLSMixIn,jabber.Client):
     def roster_updated(self,jid=None):
         if jid is None:
             self.__logger.info("Got roster")
-            self.send_event("autojoin", self.stream)
         else:
             self.__logger.debug("Roster updated")
         self.send_event("roster updated",jid)

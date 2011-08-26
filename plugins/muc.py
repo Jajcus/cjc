@@ -437,7 +437,7 @@ class Plugin(PluginBase):
                 "autojoin": None,
                 }
         app.add_event_handler("day changed",self.ev_day_changed)
-        app.add_event_handler("autojoin",self.autojoin)
+        app.add_event_handler("roster updated",self.autojoin)
         ui.activate_cmdtable("muc",self)
         self.room_manager=None
         MucNickCompletion(app).register("muc_nick")
@@ -492,11 +492,12 @@ class Plugin(PluginBase):
             self.error("Not in the room")
 
     def autojoin(self,event,arg):
-        rooms=self.settings.get("autojoin")
-        if rooms:
-            for room in rooms:
-                room = CommandArgs(room)
-                self.cmd_join(room)
+        if arg is None:
+            rooms=self.settings.get("autojoin")
+            if rooms:
+                for room in rooms:
+                    room = CommandArgs(room)
+                    self.cmd_join(room)
 
     def session_started(self,stream):
         if not self.room_manager:
