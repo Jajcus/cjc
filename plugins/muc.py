@@ -22,6 +22,7 @@ import logging
 import pyxmpp
 from pyxmpp.jabber import muc,delay
 from cjc import ui
+from cjc.ui import CommandArgs
 from cjc.ui.form_buffer import FormBuffer
 from cjc.plugin import PluginBase
 from cjc import common
@@ -428,12 +429,15 @@ class Plugin(PluginBase):
         self.available_settings={
             "default_nick": ("Default nickname. If not give then node part of JID will be used",(unicode,None)),
             "buffer_preference": ("Preference of groupchat buffers when switching to the next active buffer. If 0 then the buffer is not even shown in active buffer list.",int),
+            "autojoin": ("List of rooms to join after connecting.",list),
             }
         self.settings={
                 "buffer_preference": 10,
                 "default_nick": None,
+                "autojoin": None,
                 }
         app.add_event_handler("day changed",self.ev_day_changed)
+        app.add_event_handler("autojoin",self.autojoin)
         ui.activate_cmdtable("muc",self)
         self.room_manager=None
         MucNickCompletion(app).register("muc_nick")
@@ -486,6 +490,13 @@ class Plugin(PluginBase):
             rs.leave()
         else:
             self.error("Not in the room")
+
+    def autojoin(self,event,arg):
+        rooms=self.settings.get("autojoin")
+        if rooms:
+            for room in rooms:
+                room = CommandArgs(room)
+                self.cmd_join(room)
 
     def session_started(self,stream):
         if not self.room_manager:
